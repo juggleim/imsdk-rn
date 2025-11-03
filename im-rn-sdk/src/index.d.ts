@@ -135,6 +135,82 @@ declare module 'im-rn-sdk' {
     mentionInfo?: ConversationMentionInfo;
   }
 
+
+  /**
+   * 拉取方向枚举
+   */
+  export enum PullDirection {
+    OLDER = 0,
+    NEWER = 1
+  }
+
+  /**
+   * 获取会话选项
+   */
+  export interface GetConversationOptions {
+    conversationTypes?: number[];
+    count: number;
+    timestamp: number;
+    direction: PullDirection;
+  }
+
+  /**
+   * 简单回调接口
+   */
+  export interface SimpleCallback {
+    onSuccess: () => void;
+    onError: (errorCode: number) => void;
+  }
+
+  /**
+   * 创建会话回调接口
+   */
+  export interface CreateConversationCallback {
+    onSuccess: (conversationInfo: ConversationInfo) => void;
+    onError: (errorCode: number) => void;
+  }
+
+    /**
+   * 获取会话信息列表回调接口
+   */
+    export interface GetConversationInfoListCallback {
+      onSuccess: (conversationInfoList: ConversationInfo[]) => void;
+      onError: (errorCode: number) => void;
+    }
+  
+    /**
+     * 获取会话信息回调接口
+     */
+    export interface GetConversationInfoCallback {
+      onSuccess: (conversationInfo: ConversationInfo | null) => void;
+      onError: (errorCode: number) => void;
+    }
+  
+    /**
+     * 获取未读数回调接口
+     */
+    export interface GetUnreadCountCallback {
+      onSuccess: (count: number) => void;
+      onError: (errorCode: number) => void;
+    }
+  
+    /**
+     * 获取草稿回调接口
+     */
+    export interface GetDraftCallback {
+      onSuccess: (draft: string) => void;
+      onError: (errorCode: number) => void;
+    }
+  
+    /**
+     * 会话标签选项
+     */
+    export interface ConversationTagOptions {
+      tagId: string;
+      conversations: Conversation[];
+    }
+
+
   /**
    * 连接状态监听器回调函数
    */
@@ -240,5 +316,122 @@ declare module 'im-rn-sdk' {
      * @returns 返回取消监听的函数
      */
     static addConversationListener(key: string, listener: ConversationListener): () => void;
+
+       /**
+     * 获取会话信息列表
+     * @param options 获取选项
+     * @param callback 回调函数
+     */
+       static getConversationInfoList(options: GetConversationOptions, callback: GetConversationInfoListCallback): void;
+
+       /**
+        * 获取单个会话信息
+        * @param conversation 会话对象
+        * @param callback 回调函数
+        */
+       static getConversationInfo(conversation: Conversation, callback: GetConversationInfoCallback): void;
+   
+       /**
+        * 创建会话信息
+        * @param conversation 会话对象
+        * @param callback 回调函数
+        */
+       static createConversationInfo(conversation: Conversation, callback: CreateConversationCallback): void;
+   
+       /**
+        * 删除会话信息
+        * @param conversation 会话对象
+        * @param callback 回调函数
+        */
+       static deleteConversationInfo(conversation: Conversation, callback: SimpleCallback): void;
+   
+       /**
+        * 设置会话免打扰状态
+        * @param conversation 会话对象
+        * @param isMute 是否免打扰
+        * @param callback 回调函数
+        */
+       static setMute(conversation: Conversation, isMute: boolean, callback: SimpleCallback): void;
+   
+       /**
+        * 设置会话置顶状态
+        * @param conversation 会话对象
+        * @param isTop 是否置顶
+        * @param callback 回调函数
+        */
+       static setTop(conversation: Conversation, isTop: boolean, callback: SimpleCallback): void;
+   
+       /**
+        * 清除会话未读数
+        * @param conversation 会话对象
+        * @param callback 回调函数
+        */
+       static clearUnreadCount(conversation: Conversation, callback: SimpleCallback): void;
+   
+       /**
+        * 清除总未读数
+        * @param callback 回调函数
+        */
+       static clearTotalUnreadCount(callback: SimpleCallback): void;
+   
+       /**
+        * 获取总未读数
+        * @param callback 回调函数
+        */
+       static getTotalUnreadCount(callback: GetUnreadCountCallback): void;
+   
+       /**
+        * 设置会话草稿
+        * @param conversation 会话对象
+        * @param draft 草稿内容
+        * @param callback 回调函数
+        */
+       static setDraft(conversation: Conversation, draft: string, callback: SimpleCallback): void;
+   
+       /**
+        * 清除会话草稿
+        * @param conversation 会话对象
+        * @param callback 回调函数
+        */
+       static clearDraft(conversation: Conversation, callback: SimpleCallback): void;
+   
+       /**
+        * 设置会话未读状态
+        * @param conversation 会话对象
+        * @param isUnread 是否未读
+        * @param callback 回调函数
+        */
+       static setUnread(conversation: Conversation, isUnread: boolean, callback: SimpleCallback): void;
+   
+       /**
+        * 获取置顶会话信息列表
+        * @param conversationTypes 会话类型列表
+        * @param callback 回调函数
+        */
+       static getTopConversationInfoList(conversationTypes: number[], callback: GetConversationInfoListCallback): void;
+   
+       /**
+        * 获取指定类型的未读数
+        * @param conversationTypes 会话类型列表
+        * @param callback 回调函数
+        */
+       static getUnreadCountWithTypes(conversationTypes: number[], callback: GetUnreadCountCallback): void;
+   
+       /**
+        * 将会话添加到标签
+        * @param options 标签选项
+        * @param callback 回调函数
+        */
+       static addConversationsToTag(options: ConversationTagOptions, callback: SimpleCallback): void;
+   
+       /**
+        * 从标签中移除会话
+        * @param options 标签选项
+        * @param callback 回调函数
+        */
+       static removeConversationsFromTag(options: ConversationTagOptions, callback: SimpleCallback): void;
+   
   }
+
+    
 }

@@ -309,6 +309,222 @@ class JIMClient {
       subscriptions.forEach(subscription => subscription.remove());
     };
   }
+
+
+  /**
+   * 获取会话列表
+   * @param {number} count - 获取数量
+   * @param {string} pullDirection - 拉取方向 "up" 或 "down"
+   * @returns {Promise<Array>} 会话信息列表
+   */
+  static getConversationInfoList(count = 20, pullDirection = 'down') {
+    if (Platform.OS === 'android') {
+      return JuggleIM.getConversationInfoList(count, pullDirection);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.getConversationInfoList(count, pullDirection);
+    }
+  }
+
+  /**
+   * 获取单个会话信息
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<object>} 会话信息
+   */
+  static getConversationInfo(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.getConversationInfo(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.getConversationInfo(conversation);
+    }
+  }
+
+  /**
+   * 创建会话信息
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<object>} 创建的会话信息
+   */
+  static createConversationInfo(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.createConversationInfo(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.createConversationInfo(conversation);
+    }
+  }
+
+  /**
+   * 删除会话信息
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<boolean>} 删除结果
+   */
+  static deleteConversationInfo(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.deleteConversationInfo(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.deleteConversationInfo(conversation);
+    }
+  }
+
+  /**
+   * 设置会话免打扰状态
+   * @param {object} conversation - 会话对象
+   * @param {boolean} isMute - 是否免打扰
+   * @returns {Promise<boolean>} 设置结果
+   */
+  static setMute(conversation, isMute) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.setMute(conversation, isMute);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.setMute(conversation, isMute);
+    }
+  }
+
+  /**
+   * 设置会话置顶状态
+   * @param {object} conversation - 会话对象
+   * @param {boolean} isTop - 是否置顶
+   * @returns {Promise<boolean>} 设置结果
+   */
+  static setTop(conversation, isTop) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.setTop(conversation, isTop);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.setTop(conversation, isTop);
+    }
+  }
+
+  /**
+   * 清除会话未读数
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<boolean>} 清除结果
+   */
+  static clearUnreadCount(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.clearUnreadCount(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.clearUnreadCount(conversation);
+    }
+  }
+
+  /**
+   * 清除总未读数
+   * @returns {Promise<boolean>} 清除结果
+   */
+  static clearTotalUnreadCount() {
+    if (Platform.OS === 'android') {
+      return JuggleIM.clearTotalUnreadCount();
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.clearTotalUnreadCount();
+    }
+  }
+
+  /**
+   * 获取总未读数
+   * @returns {Promise<number>} 总未读数
+   */
+  static getTotalUnreadCount() {
+    if (Platform.OS === 'android') {
+      return JuggleIM.getTotalUnreadCount();
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.getTotalUnreadCount();
+    }
+  }
+
+  /**
+   * 设置会话草稿
+   * @param {object} conversation - 会话对象
+   * @param {string} draft - 草稿内容
+   * @returns {Promise<boolean>} 设置结果
+   */
+  static setDraft(conversation, draft) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.setDraft(conversation, draft);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.setDraft(conversation, draft);
+    }
+  }
+
+  /**
+   * 清除会话草稿
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<boolean>} 清除结果
+   */
+  static clearDraft(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.clearDraft(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.clearDraft(conversation);
+    }
+  }
+
+  /**
+   * 标记会话未读
+   * @param {object} conversation - 会话对象
+   * @returns {Promise<boolean>} 标记结果
+   */
+  static setUnread(conversation) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.setUnread(conversation);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.setUnread(conversation);
+    }
+  }
+
+  /**
+   * 获取置顶会话列表
+   * @param {number} count - 获取数量
+   * @param {number} timestamp - 时间戳
+   * @param {string} pullDirection - 拉取方向
+   * @returns {Promise<Array>} 置顶会话列表
+   */
+  static getTopConversationInfoList(count = 20, timestamp = 0, pullDirection = 'down') {
+    if (Platform.OS === 'android') {
+      return JuggleIM.getTopConversationInfoList(count, timestamp, pullDirection);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.getTopConversationInfoList(count, timestamp, pullDirection);
+    }
+  }
+
+  /**
+   * 获取指定类型未读数
+   * @param {Array<number>} conversationTypes - 会话类型数组
+   * @returns {Promise<number>} 未读数
+   */
+  static getUnreadCountWithTypes(conversationTypes) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.getUnreadCountWithTypes(conversationTypes);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.getUnreadCountWithTypes(conversationTypes);
+    }
+  }
+
+  /**
+   * 向标签添加会话
+   * @param {Array} conversations - 会话数组
+   * @param {string} tagId - 标签ID
+   * @returns {Promise<boolean>} 添加结果
+   */
+  static addConversationsToTag(conversations, tagId) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.addConversationsToTag(conversations, tagId);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.addConversationsToTag(conversations, tagId);
+    }
+  }
+
+  /**
+   * 从标签移除会话
+   * @param {Array} conversations - 会话数组
+   * @param {string} tagId - 标签ID
+   * @returns {Promise<boolean>} 移除结果
+   */
+  static removeConversationsFromTag(conversations, tagId) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.removeConversationsFromTag(conversations, tagId);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.removeConversationsFromTag(conversations, tagId);
+    }
+  }
+
 }
 
 export default JIMClient;

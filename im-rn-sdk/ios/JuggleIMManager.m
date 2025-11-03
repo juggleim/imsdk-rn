@@ -484,4 +484,282 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
   return dict;
 }
 
+// ... existing code ...
+
+#pragma mark - Conversation Methods
+
+/**
+ * 获取会话列表
+ */
+RCT_EXPORT_METHOD(getConversationInfoList:(int)count 
+                                pullDirection:(NSString *)pullDirection 
+                                resolver:(RCTPromiseResolveBlock)resolve 
+                                rejecter:(RCTPromiseRejectBlock)reject) {
+  JPullDirection direction = [@"up" isEqualToString:pullDirection] ? JPullDirectionNewer : JPullDirectionOlder;
+  
+  NSArray<JConversationInfo *> *conversationInfos = [JIM.shared.conversationManager 
+                                                    getConversationInfoListByCount:count 
+                                                    timestamp:0 
+                                                    direction:direction];
+  
+  NSMutableArray *result = [NSMutableArray array];
+  for (JConversationInfo *info in conversationInfos) {
+    [result addObject:[self convertConversationInfoToDictionary:info]];
+  }
+  
+  resolve(result);
+}
+
+/**
+ * 获取单个会话信息
+ */
+RCT_EXPORT_METHOD(getConversationInfo:(NSDictionary *)conversationMap 
+                            resolver:(RCTPromiseResolveBlock)resolve 
+                            rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  JConversationInfo *info = [JIM.shared.conversationManager getConversationInfo:conversation];
+  
+  if (info) {
+    resolve([self convertConversationInfoToDictionary:info]);
+  } else {
+    resolve([NSNull null]);
+  }
+}
+
+/**
+ * 创建会话信息
+ */
+RCT_EXPORT_METHOD(createConversationInfo:(NSDictionary *)conversationMap 
+                                resolver:(RCTPromiseResolveBlock)resolve 
+                                rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager createConversationInfo:conversation 
+                                                  success:^(JConversationInfo *info) {
+    resolve([self convertConversationInfoToDictionary:info]);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 删除会话信息
+ */
+RCT_EXPORT_METHOD(deleteConversationInfo:(NSDictionary *)conversationMap 
+                                resolver:(RCTPromiseResolveBlock)resolve 
+                                rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager deleteConversationInfoBy:conversation 
+                                                    success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 设置会话免打扰状态
+ */
+RCT_EXPORT_METHOD(setMute:(NSDictionary *)conversationMap 
+                   isMute:(BOOL)isMute 
+                 resolver:(RCTPromiseResolveBlock)resolve 
+                 rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager setMute:isMute 
+                              conversation:conversation 
+                                   success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 设置会话置顶状态
+ */
+RCT_EXPORT_METHOD(setTop:(NSDictionary *)conversationMap 
+                   isTop:(BOOL)isTop 
+                resolver:(RCTPromiseResolveBlock)resolve 
+                rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager setTop:isTop 
+                             conversation:conversation 
+                                  success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 清除会话未读数
+ */
+RCT_EXPORT_METHOD(clearUnreadCount:(NSDictionary *)conversationMap 
+                          resolver:(RCTPromiseResolveBlock)resolve 
+                          rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager clearUnreadCountByConversation:conversation 
+                                                          success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 清除总未读数
+ */
+RCT_EXPORT_METHOD(clearTotalUnreadCount:(RCTPromiseResolveBlock)resolve 
+                               rejecter:(RCTPromiseRejectBlock)reject) {
+  [JIM.shared.conversationManager clearTotalUnreadCount:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 获取总未读数
+ */
+RCT_EXPORT_METHOD(getTotalUnreadCount:(RCTPromiseResolveBlock)resolve 
+                             rejecter:(RCTPromiseRejectBlock)reject) {
+  int count = [JIM.shared.conversationManager getTotalUnreadCount];
+  resolve(@(count));
+}
+
+/**
+ * 设置会话草稿
+ */
+RCT_EXPORT_METHOD(setDraft:(NSDictionary *)conversationMap 
+                     draft:(NSString *)draft 
+                  resolver:(RCTPromiseResolveBlock)resolve 
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager setDraft:draft inConversation:conversation];
+  resolve(@YES);
+}
+
+/**
+ * 清除会话草稿
+ */
+RCT_EXPORT_METHOD(clearDraft:(NSDictionary *)conversationMap 
+                     resolver:(RCTPromiseResolveBlock)resolve 
+                     rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager clearDraftInConversation:conversation];
+  resolve(@YES);
+}
+
+/**
+ * 标记会话未读
+ */
+RCT_EXPORT_METHOD(setUnread:(NSDictionary *)conversationMap 
+                    resolver:(RCTPromiseResolveBlock)resolve 
+                    rejecter:(RCTPromiseRejectBlock)reject) {
+  JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+  
+  [JIM.shared.conversationManager setUnread:conversation 
+                                     success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 获取置顶会话列表
+ */
+RCT_EXPORT_METHOD(getTopConversationInfoList:(int)count 
+                                   timestamp:(long long)timestamp 
+                               pullDirection:(NSString *)pullDirection 
+                                    resolver:(RCTPromiseResolveBlock)resolve 
+                                    rejecter:(RCTPromiseRejectBlock)reject) {
+  JPullDirection direction = [@"up" isEqualToString:pullDirection] ? JPullDirectionNewer : JPullDirectionOlder;
+  
+  NSArray<JConversationInfo *> *conversationInfos = [JIM.shared.conversationManager 
+                                                    getTopConversationInfoListByCount:count 
+                                                    timestamp:timestamp 
+                                                    direction:direction];
+  
+  NSMutableArray *result = [NSMutableArray array];
+  for (JConversationInfo *info in conversationInfos) {
+    [result addObject:[self convertConversationInfoToDictionary:info]];
+  }
+  
+  resolve(result);
+}
+
+/**
+ * 获取指定类型未读数
+ */
+RCT_EXPORT_METHOD(getUnreadCountWithTypes:(NSArray<NSNumber *> *)conversationTypes 
+                                 resolver:(RCTPromiseResolveBlock)resolve 
+                                 rejecter:(RCTPromiseRejectBlock)reject) {
+  int count = [JIM.shared.conversationManager getUnreadCountWithTypes:conversationTypes];
+  resolve(@(count));
+}
+
+#pragma mark - Conversation Tag Methods
+
+/**
+ * 向标签添加会话
+ */
+RCT_EXPORT_METHOD(addConversationsToTag:(NSArray *)conversationMaps 
+                                  tagId:(NSString *)tagId 
+                               resolver:(RCTPromiseResolveBlock)resolve 
+                               rejecter:(RCTPromiseRejectBlock)reject) {
+  NSMutableArray<JConversation *> *conversations = [NSMutableArray array];
+  for (NSDictionary *conversationMap in conversationMaps) {
+    [conversations addObject:[self convertDictionaryToConversation:conversationMap]];
+  }
+  
+  [JIM.shared.conversationManager addConversationList:conversations 
+                                                toTag:tagId 
+                                              success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+/**
+ * 从标签移除会话
+ */
+RCT_EXPORT_METHOD(removeConversationsFromTag:(NSArray *)conversationMaps 
+                                       tagId:(NSString *)tagId 
+                                    resolver:(RCTPromiseResolveBlock)resolve 
+                                    rejecter:(RCTPromiseRejectBlock)reject) {
+  NSMutableArray<JConversation *> *conversations = [NSMutableArray array];
+  for (NSDictionary *conversationMap in conversationMaps) {
+    [conversations addObject:[self convertDictionaryToConversation:conversationMap]];
+  }
+  
+  [JIM.shared.conversationManager removeConversationList:conversations 
+                                                  fromTag:tagId 
+                                                  success:^{
+    resolve(@YES);
+  } error:^(JErrorCode code) {
+    reject(@"error", [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+  }];
+}
+
+#pragma mark - Helper Methods
+
+/**
+ * 将字典转换为会话对象
+ */
+- (JConversation *)convertDictionaryToConversation:(NSDictionary *)dict {
+  JConversationType type = (JConversationType)[dict[@"conversationType"] intValue];
+  NSString *conversationId = dict[@"conversationId"];
+  return [[JConversation alloc] initWithConversationType:type conversationId:conversationId];
+}
+
+
 @end

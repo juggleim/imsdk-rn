@@ -483,4 +483,266 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
         return map;
     }
+
+    //conversation
+   /**
+     * 获取会话信息列表
+     */
+    @ReactMethod
+    public void getConversationInfoList(int count, String pullDirection, Promise promise) {
+        JIMConst.PullDirection direction = "up".equals(pullDirection) ? 
+            JIMConst.PullDirection.UP : JIMConst.PullDirection.DOWN;
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .getConversationInfoList(count, direction, new IConversationManager.ISimpleCallback<List<ConversationInfo>>() {
+                @Override
+                public void onSuccess(List<ConversationInfo> conversationInfos) {
+                    WritableArray result = new WritableNativeArray();
+                    for (ConversationInfo info : conversationInfos) {
+                        result.pushMap(convertConversationInfoToMap(info));
+                    }
+                    promise.resolve(result);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 获取单个会话信息
+     */
+    @ReactMethod
+    public void getConversationInfo(ReadableMap conversationMap, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .getConversationInfo(conversation, new IConversationManager.ISimpleCallback<ConversationInfo>() {
+                @Override
+                public void onSuccess(ConversationInfo conversationInfo) {
+                    promise.resolve(convertConversationInfoToMap(conversationInfo));
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 创建会话信息
+     */
+    @ReactMethod
+    public void createConversationInfo(ReadableMap conversationInfoMap, Promise promise) {
+        ConversationInfo conversationInfo = convertMapToConversationInfo(conversationInfoMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .createConversationInfo(conversationInfo, new IConversationManager.ICreateConversationInfoCallback() {
+                @Override
+                public void onSuccess(ConversationInfo info) {
+                    promise.resolve(convertConversationInfoToMap(info));
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 删除会话信息
+     */
+    @ReactMethod
+    public void deleteConversationInfo(ReadableMap conversationMap, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .deleteConversationInfo(conversation, new IConversationManager.ISimpleCallback<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 设置会话免打扰状态
+     */
+    @ReactMethod
+    public void setMute(ReadableMap conversationMap, boolean isMute, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .setMute(conversation, isMute, new IConversationManager.ISimpleCallback<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 清除会话未读数
+     */
+    @ReactMethod
+    public void clearUnreadCount(ReadableMap conversationMap, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .clearUnreadCount(conversation, new IConversationManager.ISimpleCallback<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 设置会话草稿
+     */
+    @ReactMethod
+    public void setDraft(ReadableMap conversationMap, String draft, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .setDraft(conversation, draft, new IConversationManager.ISimpleCallback<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 获取总未读数
+     */
+    @ReactMethod
+    public void getTotalUnreadCount(Promise promise) {
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .getTotalUnreadCount(new IConversationManager.ISimpleCallback<Integer>() {
+                @Override
+                public void onSuccess(Integer count) {
+                    promise.resolve(count);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 设置会话置顶状态
+     */
+    @ReactMethod
+    public void setTop(ReadableMap conversationMap, boolean isTop, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        
+        com.juggle.im.JIM.getInstance().getConversationManager()
+            .setTop(conversation, isTop, new IConversationManager.ISimpleCallback<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+    }
+
+    /**
+     * 将 ReadableMap 转换为 Conversation 对象
+     */
+    private Conversation convertMapToConversation(ReadableMap map) {
+        Conversation conversation = new Conversation();
+        conversation.setConversationId(map.getString("conversationId"));
+        conversation.setConversationType(JIMConst.ConversationType.setValue(map.getInt("conversationType")));
+        return conversation;
+    }
+
+    /**
+     * 将 ReadableMap 转换为 ConversationInfo 对象
+     */
+    private ConversationInfo convertMapToConversationInfo(ReadableMap map) {
+        ConversationInfo info = new ConversationInfo();
+        info.setConversation(convertMapToConversation(map.getMap("conversation")));
+        info.setUnreadCount(map.getInt("unreadMessageCount"));
+        info.setTop(map.getBoolean("isTop"));
+        info.setMute(map.getBoolean("isMute"));
+        info.setDraft(map.getString("draft"));
+        return info;
+    }
+
+    /**
+     * 将 ConversationInfo 转换为 WritableMap
+     */
+    private WritableMap convertConversationInfoToMap(ConversationInfo info) {
+        WritableMap map = new WritableNativeMap();
+        map.putMap("conversation", convertConversationToMap(info.getConversation()));
+        map.putInt("unreadMessageCount", info.getUnreadCount());
+        map.putBoolean("isTop", info.isTop());
+        map.putBoolean("isMute", info.isMute());
+        map.putBoolean("hasUnread", info.hasUnread());
+        map.putString("draft", info.getDraft() != null ? info.getDraft() : "");
+        map.putDouble("topTime", info.getTopTime());
+        map.putDouble("sortTime", info.getSortTime());
+        
+        if (info.getLastMessage() != null) {
+            map.putMap("lastMessage", convertMessageToMap(info.getLastMessage()));
+        }
+        
+        if (info.getMentionInfo() != null) {
+            map.putMap("mentionInfo", convertMentionInfoToMap(info.getMentionInfo()));
+        }
+        
+        return map;
+    }
+
+    /**
+     * 将 MentionInfo 转换为 WritableMap
+     */
+    private WritableMap convertMentionInfoToMap(com.juggle.im.model.ConversationMentionInfo mentionInfo) {
+        WritableMap map = new WritableNativeMap();
+        if (mentionInfo.getMentionMsgList() != null) {
+            WritableArray mentionMsgArray = new WritableNativeArray();
+            for (com.juggle.im.model.MentionMsg mentionMsg : mentionInfo.getMentionMsgList()) {
+                WritableMap msgMap = new WritableNativeMap();
+                msgMap.putString("senderId", mentionMsg.getSenderId());
+                msgMap.putString("msgId", mentionMsg.getMsgId());
+                msgMap.putDouble("msgTime", mentionMsg.getMsgTime());
+                msgMap.putInt("type", mentionMsg.getType().getValue());
+                mentionMsgArray.pushMap(msgMap);
+            }
+            map.putArray("mentionMsgList", mentionMsgArray);
+        }
+        return map;
+    }
+
 }
