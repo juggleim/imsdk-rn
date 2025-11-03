@@ -761,5 +761,205 @@ RCT_EXPORT_METHOD(removeConversationsFromTag:(NSArray *)conversationMaps
   return [[JConversation alloc] initWithConversationType:type conversationId:conversationId];
 }
 
+/**
+ * 发送消息
+ */
+RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
+                  callbacks:(NSDictionary *)callbacks
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        // 构建消息内容和会话对象
+        JMessageContent *content = [self convertDictToMessageContent:messageDict];
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        
+        // 发送消息
+        JMessage *message = [JIM.shared.messageManager sendMessage:content
+                                                    inConversation:conversation
+                                                           success:^(JMessage *sentMessage) {
+            NSDictionary *result = @{
+                @"messageId": sentMessage.messageId ?: @"",
+                @"sentTime": @(sentMessage.timestamp)
+            };
+            resolve(result);
+        } error:^(JErrorCode errorCode, JMessage *message) {
+            NSMutableDictionary *error = [NSMutableDictionary dictionary];
+            if (message) {
+                error[@"tid"] = @(message.clientMsgNo).stringValue;
+            }
+            error[@"msg"] = @(errorCode).stringValue;
+            reject(@"SEND_MESSAGE_ERROR", @"发送消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:error]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"SEND_MESSAGE_ERROR", exception.reason, nil);
+    }
+}
 
+/**
+ * 获取历史消息
+ */
+RCT_EXPORT_METHOD(getMessages:(NSDictionary *)conversationDict
+                  direction:(NSInteger)direction
+                  options:(NSDictionary *)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        JConversation *conversation = [self convertDictionaryToConversation:conversationDict];
+        JGetMessageOptions *getOptions = [[JGetMessageOptions alloc] init];
+        
+        if (options[@"count"]) {
+            getOptions.count = [options[@"count"] integerValue];
+        }
+        if (options[@"startTime"]) {
+            getOptions.startTime = [options[@"startTime"] longLongValue];
+        }
+        
+        JPullDirection pullDirection = direction == 0 ? JPullDirectionOlder : JPullDirectionNewer;
+        
+        [JIM.shared.messageManager getMessages:conversation
+                                     direction:pullDirection
+                                        option:getOptions
+                                      complete:^(NSArray<JMessage *> *messages, long long timestamp, BOOL hasMore, JErrorCode code) {
+            NSMutableArray *messageArray = [NSMutableArray array];
+            for (JMessage *msg in messages) {
+                [messageArray addObject:[self convertMessageToDictionary:msg]];
+            }
+            
+            NSDictionary *result = @{
+                @"messages": messageArray,
+                @"timestamp": @(timestamp),
+                @"hasMore": @(hasMore),
+                @"code": @(code)
+            };
+            
+            resolve(result);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"GET_MESSAGES_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 撤回消息
+ */
+RCT_EXPORT_METHOD(recallMessage:(NSDictionary *)messageDict
+                  extras:(NSDictionary *)extras
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSString *messageId = messageDict[@"messageId"];
+        NSDictionary *extrasDict = extras ?: @{};
+        
+        [JIM.shared.messageManager recallMessage:messageId
+                                           extras:extrasDict
+                                          success:^(JMessage *message){
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"RECALL_MESSAGE_ERROR", @"撤回消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"RECALL_MESSAGE_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 添加消息反应
+ */
+RCT_EXPORT_METHOD(addMessageReaction:(NSDictionary *)messageDict
+                  reactionId:(NSString *)reactionId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSString *messageId = messageDict[@"messageId"];
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        
+        [JIM.shared.messageManager addMessageReaction:messageId
+                                         conversation:conversation
+                                            reactionId:reactionId
+                                               success:^{
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"ADD_REACTION_ERROR", @"添加反应失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"ADD_REACTION_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 移除消息反应
+ */
+RCT_EXPORT_METHOD(removeMessageReaction:(NSDictionary *)messageDict
+                  reactionId:(NSString *)reactionId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSString *messageId = messageDict[@"messageId"];
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        
+        [JIM.shared.messageManager removeMessageReaction:messageId
+                                            conversation:conversation
+                                              reactionId:reactionId
+                                                 success:^{
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"REMOVE_REACTION_ERROR", @"移除反应失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"REMOVE_REACTION_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 添加收藏消息
+ */
+RCT_EXPORT_METHOD(addFavoriteMessages:(NSArray *)messagesArray
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSMutableArray *messageIdList = [NSMutableArray array];
+        for (NSDictionary *messageDict in messagesArray) {
+            [messageIdList addObject:messageDict[@"messageId"]];
+        }
+        
+        [JIM.shared.messageManager addFavorite:messageIdList
+                                               success:^{
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"ADD_FAVORITE_ERROR", @"添加收藏失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"ADD_FAVORITE_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 移除收藏消息
+ */
+RCT_EXPORT_METHOD(removeFavoriteMessages:(NSArray *)messagesArray
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSMutableArray *messageIdList = [NSMutableArray array];
+        for (NSDictionary *messageDict in messagesArray) {
+            [messageIdList addObject:messageDict[@"messageId"]];
+        }
+        
+        [JIM.shared.messageManager removeFavorite:messageIdList
+                                                  success:^{
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"REMOVE_FAVORITE_ERROR", @"移除收藏失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"REMOVE_FAVORITE_ERROR", exception.reason, nil);
+    }
+}
+
+// 辅助方法：将字典转换为消息内容
+- (JMessageContent *)convertDictToMessageContent:(NSDictionary *)messageDict {
+    // 根据消息类型创建相应的 JMessageContent 子类
+    // 这里需要根据具体的消息类型进行实现
+    return [[JTextMessage alloc] initWithContent:messageDict[@"content"] ?: @""];
+}
 @end

@@ -525,6 +525,105 @@ class JIMClient {
     }
   }
 
+  //message 
+
+  /**
+   * 发送消息
+   * @param {Object} message - 消息对象
+   * @param {Object} callbacks - 回调对象
+   * @returns {Promise} 返回消息发送结果
+   */
+  static sendMessage(message, callbacks = {}) {
+    if (Platform.OS === 'android') {
+      return JuggleIM.sendMessage(message, callbacks);
+    } else if (Platform.OS === 'ios') {
+      return JuggleIM.sendMessage(message, callbacks);
+    }
+  }
+
+  /**
+   * 获取历史消息
+   * @param {Object} conversation - 会话对象
+   * @param {number} direction - 拉取方向
+   * @param {Object} options - 获取选项
+   * @param {function} callback - 回调函数
+   */
+  static getMessages(conversation, direction, options, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.getMessages(conversation, direction, options, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.getMessages(conversation, direction, options, callback);
+    }
+  }
+
+  /**
+   * 撤回消息
+   * @param {Object} message - 消息对象
+   * @param {Object} extras - 扩展信息
+   * @param {function} callback - 回调函数
+   */
+  static recallMessage(message, extras = {}, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.recallMessage(message, extras, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.recallMessage(message, extras, callback);
+    }
+  }
+
+  /**
+   * 添加消息反应
+   * @param {Object} message - 消息对象
+   * @param {string} reactionId - 反应ID
+   * @param {function} callback - 回调函数
+   */
+  static addMessageReaction(message, reactionId, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.addMessageReaction(message, reactionId, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.addMessageReaction(message, reactionId, callback);
+    }
+  }
+
+  /**
+   * 移除消息反应
+   * @param {Object} message - 消息对象
+   * @param {string} reactionId - 反应ID
+   * @param {function} callback - 回调函数
+   */
+  static removeMessageReaction(message, reactionId, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.removeMessageReaction(message, reactionId, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.removeMessageReaction(message, reactionId, callback);
+    }
+  }
+
+  /**
+   * 添加收藏消息
+   * @param {Array} messages - 消息数组
+   * @param {function} callback - 回调函数
+   */
+  static addFavoriteMessages(messages, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.addFavoriteMessages(messages, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.addFavoriteMessages(messages, callback);
+    }
+  }
+
+  /**
+   * 移除收藏消息
+   * @param {Array} messages - 消息数组
+   * @param {function} callback - 回调函数
+   */
+  static removeFavoriteMessages(messages, callback) {
+    if (Platform.OS === 'android') {
+      JuggleIM.removeFavoriteMessages(messages, callback);
+    } else if (Platform.OS === 'ios') {
+      JuggleIM.removeFavoriteMessages(messages, callback);
+    }
+  }
+
 }
 
 export default JIMClient;

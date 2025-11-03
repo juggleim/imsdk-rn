@@ -745,4 +745,256 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         return map;
     }
 
+    /**
+     * 发送消息
+     */
+    @ReactMethod
+    public void sendMessage(ReadableMap messageMap, ReadableMap callbacks, Promise promise) {
+        try {
+            // 构建消息对象
+            Message message = convertMapToMessage(messageMap);
+            
+            // 发送消息
+            JIM.getInstance().getMessageManager().sendMessage(
+                message.getContent(),
+                message.getConversation(),
+                new IMessageManager.ISendMessageCallback() {
+                    @Override
+                    public void onSuccess(Message sentMessage) {
+                        WritableMap result = new WritableNativeMap();
+                        result.putString("messageId", sentMessage.getMessageId());
+                        result.putDouble("sentTime", sentMessage.getTimestamp());
+                        promise.resolve(result);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode, Message message) {
+                        WritableMap error = new WritableNativeMap();
+                        if (message != null) {
+                            error.putString("tid", String.valueOf(message.getClientMsgNo()));
+                        }
+                        error.putString("msg", errorCode.toString());
+                        promise.reject("SEND_MESSAGE_ERROR", error.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("SEND_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 获取历史消息
+     */
+    @ReactMethod
+    public void getMessages(ReadableMap conversationMap, int direction, ReadableMap options, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(conversationMap);
+            GetMessageOptions getOptions = new GetMessageOptions();
+            
+            if (options.hasKey("count")) {
+                getOptions.setCount(options.getInt("count"));
+            }
+            if (options.hasKey("startTime")) {
+                getOptions.setStartTime((long)options.getDouble("startTime"));
+            }
+            
+            JIMConst.PullDirection pullDirection = direction == 0 ? 
+                JIMConst.PullDirection.OLDER : JIMConst.PullDirection.NEWER;
+                
+            JIM.getInstance().getMessageManager().getMessages(
+                conversation,
+                pullDirection,
+                getOptions,
+                new IMessageManager.IGetMessagesCallbackV3() {
+                    @Override
+                    public void onGetMessages(List<Message> messages, long timestamp, boolean hasMore, int code) {
+                        WritableMap result = new WritableNativeMap();
+                        WritableArray messageArray = new WritableNativeArray();
+                        
+                        for (Message msg : messages) {
+                            messageArray.pushMap(convertMessageToMap(msg));
+                        }
+                        
+                        result.putArray("messages", messageArray);
+                        result.putDouble("timestamp", timestamp);
+                        result.putBoolean("hasMore", hasMore);
+                        result.putInt("code", code);
+                        
+                        promise.resolve(result);
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("GET_MESSAGES_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 撤回消息
+     */
+    @ReactMethod
+    public void recallMessage(ReadableMap messageMap, ReadableMap extras, Promise promise) {
+        try {
+            String messageId = messageMap.getString("messageId");
+            Map<String, Object> extrasMap = extras != null ? extras.toHashMap() : new HashMap<>();
+            
+            JIM.getInstance().getMessageManager().recallMessage(
+                messageId,
+                extrasMap,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode) {
+                        promise.reject("RECALL_MESSAGE_ERROR", errorCode.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("RECALL_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 添加消息反应
+     */
+    @ReactMethod
+    public void addMessageReaction(ReadableMap messageMap, String reactionId, Promise promise) {
+        try {
+            String messageId = messageMap.getString("messageId");
+            Conversation conversation = convertMapToConversation(messageMap);
+            
+            JIM.getInstance().getMessageManager().addMessageReaction(
+                messageId,
+                conversation,
+                reactionId,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode) {
+                        promise.reject("ADD_REACTION_ERROR", errorCode.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("ADD_REACTION_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 移除消息反应
+     */
+    @ReactMethod
+    public void removeMessageReaction(ReadableMap messageMap, String reactionId, Promise promise) {
+        try {
+            String messageId = messageMap.getString("messageId");
+            Conversation conversation = convertMapToConversation(messageMap);
+            
+            JIM.getInstance().getMessageManager().removeMessageReaction(
+                messageId,
+                conversation,
+                reactionId,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode) {
+                        promise.reject("REMOVE_REACTION_ERROR", errorCode.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("REMOVE_REACTION_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 添加收藏消息
+     */
+    @ReactMethod
+    public void addFavoriteMessages(ReadableArray messagesArray, Promise promise) {
+        try {
+            List<String> messageIdList = new ArrayList<>();
+            for (int i = 0; i < messagesArray.size(); i++) {
+                ReadableMap messageMap = messagesArray.getMap(i);
+                messageIdList.add(messageMap.getString("messageId"));
+            }
+            
+            JIM.getInstance().getMessageManager().addFavoriteMessages(
+                messageIdList,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode) {
+                        promise.reject("ADD_FAVORITE_ERROR", errorCode.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("ADD_FAVORITE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 移除收藏消息
+     */
+    @ReactMethod
+    public void removeFavoriteMessages(ReadableArray messagesArray, Promise promise) {
+        try {
+            List<String> messageIdList = new ArrayList<>();
+            for (int i = 0; i < messagesArray.size(); i++) {
+                ReadableMap messageMap = messagesArray.getMap(i);
+                messageIdList.add(messageMap.getString("messageId"));
+            }
+            
+            JIM.getInstance().getMessageManager().removeFavoriteMessages(
+                messageIdList,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+                    
+                    @Override
+                    public void onError(JErrorCode errorCode) {
+                        promise.reject("REMOVE_FAVORITE_ERROR", errorCode.toString());
+                    }
+                }
+            );
+        } catch (Exception e) {
+            promise.reject("REMOVE_FAVORITE_ERROR", e.getMessage());
+        }
+    }
+
+    // 辅助方法：将 ReadableMap 转换为 Message 对象
+    private Message convertMapToMessage(ReadableMap messageMap) {
+        // 实现消息对象转换逻辑
+        // 根据 messageMap 中的数据构建相应的 MessageContent 和 Conversation
+        return new Message(); // 简化示例
+    }
+
+    // 辅助方法：将 Message 对象转换为 WritableMap
+    private WritableMap convertMessageToMap(Message message) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("messageId", message.getMessageId());
+        map.putDouble("timestamp", message.getTimestamp());
+        map.putString("senderId", message.getSenderId());
+        // 添加更多字段转换
+        return map;
+    }
 }

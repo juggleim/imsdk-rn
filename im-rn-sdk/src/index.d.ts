@@ -210,6 +210,34 @@ declare module 'im-rn-sdk' {
       conversations: Conversation[];
     }
 
+    // 消息发送相关接口
+export interface SendMessageCallbacks {
+  onbefore?: (tid: string) => void;
+}
+
+export interface SendMessageResult {
+  messageId: string;
+  sentTime: number;
+}
+
+export interface SendMessageCallback {
+  (success: boolean, result?: SendMessageResult, error?: { tid?: string; msg?: string }): void;
+}
+
+// 获取消息相关接口
+export interface GetMessageOptions {
+  count?: number;
+  startTime?: number;
+}
+
+export interface GetMessagesCallback {
+  (messages: Message[], timestamp: number, hasMore: boolean, code: number): void;
+}
+
+// 消息操作回调接口
+export interface MessageOperationCallback {
+  (success: boolean, error?: string): void;
+}
 
   /**
    * 连接状态监听器回调函数
@@ -431,6 +459,102 @@ declare module 'im-rn-sdk' {
         */
        static removeConversationsFromTag(options: ConversationTagOptions, callback: SimpleCallback): void;
    
+
+         /**
+   * 发送消息
+   */
+  static sendMessage(message: {
+    conversationType: number;
+    conversationId: string;
+    name: string;
+    content: any;
+    referMsg?: Message;
+    mentionInfo?: {
+      mentionType?: number;
+      members?: string[];
+    };
+    lifeTime?: number;
+    lifeTimeAfterRead?: number;
+  }, callbacks?: SendMessageCallbacks): Promise<SendMessageResult>;
+
+  /**
+   * 获取历史消息
+   */
+  static getMessages(
+    conversation: Conversation,
+    direction: PullDirection,
+    options: GetMessageOptions,
+    callback: GetMessagesCallback
+  ): void;
+
+  /**
+   * 撤回消息
+   */
+  static recallMessage(
+    message: {
+      conversationType: number;
+      conversationId: string;
+      messageId: string;
+      sentTime: number;
+      exts?: { [key: string]: any };
+    },
+    extras?: { [key: string]: any },
+    callback: MessageOperationCallback
+  ): void;
+
+  /**
+   * 添加消息反应
+   */
+  static addMessageReaction(
+    message: {
+      conversationType: number;
+      conversationId: string;
+      messageId: string;
+      reactionId: string;
+    },
+    reactionId: string,
+    callback: MessageOperationCallback
+  ): void;
+
+  /**
+   * 移除消息反应
+   */
+  static removeMessageReaction(
+    message: {
+      conversationType: number;
+      conversationId: string;
+      messageId: string;
+      reactionId: string;
+    },
+    reactionId: string,
+    callback: MessageOperationCallback
+  ): void;
+
+  /**
+   * 添加收藏消息
+   */
+  static addFavoriteMessages(
+    messages: Array<{
+      conversationType: number;
+      conversationId: string;
+      senderId: string;
+      messageId: string;
+    }>,
+    callback: MessageOperationCallback
+  ): void;
+
+  /**
+   * 移除收藏消息
+   */
+  static removeFavoriteMessages(
+    messages: Array<{
+      conversationType: number;
+      conversationId: string;
+      senderId: string;
+      messageId: string;
+    }>,
+    callback: MessageOperationCallback
+  ): void;
   }
 
     
