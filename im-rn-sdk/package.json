@@ -1,0 +1,45 @@
+{
+  "name": "im-rn-sdk",
+  "react-native": "src/index.js",
+  "version": "1.0.0",
+  "description": "React Native wrapper for Juggle IM SDK",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "homepage": "https://github.com/juggleim/im-rn-sdk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juggleim/im-rn-sdk.git"
+  },
+  "files": [
+    "src",
+    "android",
+    "ios",
+    "im-rn-sdk.podspec",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "demo": "cd demo && npm start",
+    "prepare": "npm run build",
+    "build": "echo \"Build completed\""
+  },
+  "keywords": [
+    "react-native",
+    "juggle",
+    "juggleim",
+    "im",
+    "messaging",
+    "chat",
+    "sdk"
+  ],
+  "author": "Juggle IM",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.60.0"
+  },
+  "devDependencies": {
+    "react": "^18.0.0",
+    "react-native": "^0.70.0"
+  }
+}

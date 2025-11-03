@@ -1,0 +1,25 @@
+# Build artifacts
+.gradle/
+build/
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Demo and test files
+demo/
+example/
+__tests__/
+*.test.js
+*.spec.js
+
+# Git
+.git/
+.gitignore
