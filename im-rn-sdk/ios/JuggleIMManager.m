@@ -446,20 +446,40 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 /**
  * 将会话信息转换为字典
  */
-- (NSDictionary *)convertConversationInfoToDictionary:
-    (JConversationInfo *)info {
+- (NSDictionary *)convertConversationInfoToDictionary:(JConversationInfo *)info {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-  dict[@"conversation"] =
-      [self convertConversationToDictionary:info.conversation];
-  dict[@"unreadCount"] = @(info.unreadCount);
+  dict[@"conversation"] = [self convertConversationToDictionary:info.conversation];
+  dict[@"unreadMessageCount"] = @(info.unreadCount); // 统一字段名
   dict[@"topTime"] = @(info.topTime);
   dict[@"sortTime"] = @(info.sortTime);
   dict[@"isTop"] = @(info.isTop);
   dict[@"isMute"] = @(info.mute);
   dict[@"hasUnread"] = @(info.hasUnread);
-  dict[@"draft"] = info.draft;
+  dict[@"draft"] = info.draft ?: @"";
   if (info.lastMessage) {
     dict[@"lastMessage"] = [self convertMessageToDictionary:info.lastMessage];
+  }
+  if (info.mentionInfo) { // 新增
+    dict[@"mentionInfo"] = [self convertConversationMentionInfoToDictionary:info.mentionInfo];
+  }
+  return dict;
+}
+
+// 新增转换方法
+- (NSDictionary *)convertConversationMentionInfoToDictionary:(JConversationMentionInfo *)mentionInfo {
+  NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+  if (mentionInfo.mentionMsgList) {
+    NSMutableArray *mentionMsgArray = [NSMutableArray array];
+    for (JConversationMentionMessage *mentionMsg in mentionInfo.mentionMsgList) {
+      NSDictionary *msgDict = @{
+        @"senderId": mentionMsg.senderId ?: @"",
+        @"msgId": mentionMsg.msgId ?: @"",
+        @"msgTime": @(mentionMsg.msgTime),
+        @"type": @(mentionMsg.type)
+      };
+      [mentionMsgArray addObject:msgDict];
+    }
+    dict[@"mentionMsgList"] = mentionMsgArray;
   }
   return dict;
 }

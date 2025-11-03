@@ -111,6 +111,17 @@ declare module 'im-rn-sdk' {
   /**
    * 会话信息
    */
+  export interface ConversationMentionInfo {
+    mentionMsgList: MentionMsg[];
+  }
+
+  export interface MentionMsg {
+    senderId: string;
+    msgId: string;
+    msgTime: number;
+    type: number; // MentionType枚举值
+  }
+
   export interface ConversationInfo {
     conversation: Conversation;
     unreadMessageCount: number;
@@ -121,7 +132,7 @@ declare module 'im-rn-sdk' {
     sortTime: number;
     hasUnread: boolean;
     draft: string;
-    lastMessage: Message;
+    mentionInfo?: ConversationMentionInfo;
   }
 
   /**

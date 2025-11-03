@@ -450,12 +450,36 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     private WritableMap convertConversationInfoToMap(ConversationInfo info) {
         WritableMap map = new WritableNativeMap();
         map.putMap("conversation", convertConversationToMap(info.getConversation()));
-        map.putInt("unreadMessageCount", info.getUnreadMessageCount());
-        map.putDouble("lastMessageTime", info.getLastMessageTime());
+        map.putInt("unreadMessageCount", info.getUnreadCount()); // 修正方法名
+        map.putLong("topTime", info.getTopTime()); // 新增
+        map.putLong("sortTime", info.getSortTime()); // 新增
         map.putBoolean("isTop", info.isTop());
         map.putBoolean("isMute", info.isMute());
+        map.putBoolean("hasUnread", info.hasUnread()); // 新增
+        map.putString("draft", info.getDraft()); // 新增
         if (info.getLastMessage() != null) {
             map.putMap("lastMessage", convertMessageToMap(info.getLastMessage()));
+        }
+        if (info.getMentionInfo() != null) { // 新增
+            map.putMap("mentionInfo", convertConversationMentionInfoToMap(info.getMentionInfo()));
+        }
+        return map;
+    }
+
+    // 新增转换方法
+    private WritableMap convertConversationMentionInfoToMap(ConversationMentionInfo mentionInfo) {
+        WritableMap map = new WritableNativeMap();
+        if (mentionInfo.getMentionMsgList() != null) {
+            WritableArray mentionMsgArray = new WritableNativeArray();
+            for (ConversationMentionInfo.MentionMsg mentionMsg : mentionInfo.getMentionMsgList()) {
+                WritableMap msgMap = new WritableNativeMap();
+                msgMap.putString("senderId", mentionMsg.getSenderId());
+                msgMap.putString("msgId", mentionMsg.getMsgId());
+                msgMap.putDouble("msgTime", mentionMsg.getMsgTime());
+                msgMap.putInt("type", mentionMsg.getType().getValue());
+                mentionMsgArray.pushMap(msgMap);
+            }
+            map.putArray("mentionMsgList", mentionMsgArray);
         }
         return map;
     }
