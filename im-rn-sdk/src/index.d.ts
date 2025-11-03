@@ -5,16 +5,171 @@ declare module 'im-rn-sdk' {
   export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'failure' | 'dbOpen' | 'dbClose';
   
   /**
+   * 会话类型
+   */
+  export enum ConversationType {
+    PRIVATE = 1,
+    GROUP = 2,
+    CHATROOM = 3,
+    SYSTEM = 4
+  }
+
+  /**
+   * 会话对象
+   */
+  export interface Conversation {
+    conversationType: ConversationType;
+    conversationId: string;
+  }
+
+  /**
+   * 消息内容基类
+   */
+  export interface MessageContent {
+    contentType: string;
+  }
+
+  /**
+   * 文本消息内容
+   */
+  export interface TextMessageContent extends MessageContent {
+    content: string;
+  }
+
+  /**
+   * 图片消息内容
+   */
+  export interface ImageMessageContent extends MessageContent {
+    url: string;
+    name: string;
+    width: number;
+    height: number;
+  }
+
+  /**
+   * 文件消息内容
+   */
+  export interface FileMessageContent extends MessageContent {
+    url: string;
+    name: string;
+    size: number;
+  }
+
+  /**
+   * 语音消息内容
+   */
+  export interface VoiceMessageContent extends MessageContent {
+    url: string;
+    duration: number;
+  }
+
+  /**
+   * 消息对象
+   */
+  export interface Message {
+    messageId: string;
+    clientMsgNo: number;
+    timestamp: number;
+    senderId: string;
+    conversation: Conversation;
+    content: MessageContent;
+  }
+
+  /**
+   * 用户信息
+   */
+  export interface UserInfo {
+    userId: string;
+    nickname: string;
+    avatar: string;
+  }
+
+
+  export interface MessageReactionItem {
+    reactionId: string;
+    userInfoList: UserInfo[];
+  }
+
+  /**
+   * 消息回应
+   */
+  export interface MessageReaction {
+    messageId: string;
+    reactionType: string;
+    userId: string;
+    timestamp: number;
+  }
+
+  /**
+   * 群消息阅读信息
+   */
+  export interface GroupMessageReadInfo {
+    readCount: number;
+    memberCount: number;
+  }
+
+  /**
+   * 会话信息
+   */
+  export interface ConversationInfo {
+    conversation: Conversation;
+    unreadMessageCount: number;
+    isTop: boolean;
+    isMute: boolean;
+    lastMessage?: Message;
+    topTime: number;
+    sortTime: number;
+    hasUnread: boolean;
+    draft: string;
+    lastMessage: Message;
+  }
+
+  /**
    * 连接状态监听器回调函数
-   * @param status 连接状态
-   * @param code 错误码，在 failure 状态时有效，其它状态均为 0
-   * @param extra 附加信息
    */
   export type ConnectionStatusListener = (status: ConnectionStatus, code: number, extra: string) => void;
   
   /**
+   * 消息监听器回调函数
+   */
+  export interface MessageListener {
+    onMessageReceive?: (message: Message) => void;
+    onMessageRecall?: (message: Message) => void;
+    onMessageUpdate?: (message: Message) => void;
+    onMessageDelete?: (conversation: Conversation, clientMsgNos: number[]) => void;
+    onMessageClear?: (conversation: Conversation, timestamp: number, senderId: string) => void;
+    onMessageReactionAdd?: (conversation: Conversation, reaction: MessageReaction) => void;
+    onMessageReactionRemove?: (conversation: Conversation, reaction: MessageReaction) => void;
+    onMessageSetTop?: (message: Message, operator: UserInfo, isTop: boolean) => void;
+  }
+
+  /**
+   * 消息阅读状态监听器回调函数
+   */
+  export interface MessageReadReceiptListener {
+    onMessagesRead?: (conversation: Conversation, messageIds: string[]) => void;
+    onGroupMessagesRead?: (conversation: Conversation, messages: { [messageId: string]: GroupMessageReadInfo }) => void;
+  }
+
+  /**
+   * 消息销毁监听器回调函数
+   */
+  export interface MessageDestroyListener {
+    onMessageDestroyTimeUpdate?: (messageId: string, conversation: Conversation, destroyTime: number) => void;
+  }
+
+  /**
+   * 会话监听器回调函数
+   */
+  export interface ConversationListener {
+    onConversationInfoAdd?: (conversations: ConversationInfo[]) => void;
+    onConversationInfoUpdate?: (conversations: ConversationInfo[]) => void;
+    onConversationInfoDelete?: (conversations: ConversationInfo[]) => void;
+    onTotalUnreadMessageCountUpdate?: (count: number) => void;
+  }
+  
+  /**
    * Juggle IM React Native SDK
-   * @class JuggleIM
    */
   export default class JuggleIM {
     /**
@@ -42,5 +197,37 @@ declare module 'im-rn-sdk' {
      * @returns 返回取消监听的函数
      */
     static addConnectionStatusListener(key: string, listener: ConnectionStatusListener): () => void;
+
+    /**
+     * 添加消息监听器
+     * @param key 监听器标识
+     * @param listener 监听器回调函数
+     * @returns 返回取消监听的函数
+     */
+    static addMessageListener(key: string, listener: MessageListener): () => void;
+
+    /**
+     * 添加消息阅读状态监听器
+     * @param key 监听器标识
+     * @param listener 监听器回调函数
+     * @returns 返回取消监听的函数
+     */
+    static addMessageReadReceiptListener(key: string, listener: MessageReadReceiptListener): () => void;
+
+    /**
+     * 添加消息销毁监听器
+     * @param key 监听器标识
+     * @param listener 监听器回调函数
+     * @returns 返回取消监听的函数
+     */
+    static addMessageDestroyListener(key: string, listener: MessageDestroyListener): () => void;
+
+    /**
+     * 添加会话监听器
+     * @param key 监听器标识
+     * @param listener 监听器回调函数
+     * @returns 返回取消监听的函数
+     */
+    static addConversationListener(key: string, listener: ConversationListener): () => void;
   }
 }

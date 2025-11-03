@@ -6,9 +6,21 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.juggle.im.JIMConst;
 import com.juggle.im.interfaces.IConnectionManager;
+import com.juggle.im.interfaces.IMessageManager;
+import com.juggle.im.interfaces.IConversationManager;
+import com.juggle.im.model.Message;
+import com.juggle.im.model.Conversation;
+import com.juggle.im.model.ConversationInfo;
+import com.juggle.im.model.MessageReaction;
+import com.juggle.im.model.UserInfo;
+import com.juggle.im.model.GroupMessageReadInfo;
+import com.juggle.im.model.MessageContent;
+import com.juggle.im.model.messages.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +34,11 @@ import javax.annotation.Nonnull;
  */
 public class JuggleIMManager extends ReactContextBaseJavaModule {
     private static final String MODULE_NAME = "JuggleIM";
-    private Map<String, IConnectionManager.IConnectionStatusListener> listeners = new HashMap<>();
+    private Map<String, IConnectionManager.IConnectionStatusListener> connectionListeners = new HashMap<>();
+    private Map<String, IMessageManager.IMessageListener> messageListeners = new HashMap<>();
+    private Map<String, IMessageManager.IMessageReadReceiptListener> readReceiptListeners = new HashMap<>();
+    private Map<String, IMessageManager.IMessageDestroyListener> destroyListeners = new HashMap<>();
+    private Map<String, IConversationManager.IConversationListener> conversationListeners = new HashMap<>();
 
     public JuggleIMManager(@Nonnull ReactApplicationContext reactContext) {
         super(reactContext);
@@ -127,5 +143,320 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             default:
                 return "unknown";
         }
+    }
+
+    /**
+     * 添加消息监听器
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void addMessageListener(String key) {
+        IMessageManager.IMessageListener listener = new IMessageManager.IMessageListener() {
+            @Override
+            public void onMessageReceive(Message message) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                sendEvent("MessageReceived", params);
+            }
+
+            @Override
+            public void onMessageRecall(Message message) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                sendEvent("MessageRecalled", params);
+            }
+
+            @Override
+            public void onMessageUpdate(Message message) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                sendEvent("MessageUpdated", params);
+            }
+
+            @Override
+            public void onMessageDelete(Conversation conversation, List<Long> clientMsgNos) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                WritableArray msgNos = new WritableNativeArray();
+                for (Long msgNo : clientMsgNos) {
+                    msgNos.pushDouble(msgNo.doubleValue());
+                }
+                params.putArray("clientMsgNos", msgNos);
+                sendEvent("MessageDeleted", params);
+            }
+
+            @Override
+            public void onMessageClear(Conversation conversation, long timestamp, String senderId) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                params.putDouble("timestamp", timestamp);
+                params.putString("senderId", senderId != null ? senderId : "");
+                sendEvent("MessageCleared", params);
+            }
+
+            @Override
+            public void onMessageReactionAdd(Conversation conversation, MessageReaction reaction) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                params.putMap("reaction", convertReactionToMap(reaction));
+                sendEvent("MessageReactionAdded", params);
+            }
+
+            @Override
+            public void onMessageReactionRemove(Conversation conversation, MessageReaction reaction) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                params.putMap("reaction", convertReactionToMap(reaction));
+                sendEvent("MessageReactionRemoved", params);
+            }
+
+            @Override
+            public void onMessageSetTop(Message message, UserInfo operator, boolean isTop) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                params.putMap("operator", convertUserInfoToMap(operator));
+                params.putBoolean("isTop", isTop);
+                sendEvent("MessageSetTop", params);
+            }
+        };
+        
+        messageListeners.put(key, listener);
+        com.juggle.im.JIM.getInstance().getMessageManager().addListener(key, listener);
+    }
+
+    /**
+     * 添加消息阅读状态监听器
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void addMessageReadReceiptListener(String key) {
+        IMessageManager.IMessageReadReceiptListener listener = new IMessageManager.IMessageReadReceiptListener() {
+            @Override
+            public void onMessagesRead(Conversation conversation, List<String> messageIds) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                WritableArray msgIds = new WritableNativeArray();
+                for (String msgId : messageIds) {
+                    msgIds.pushString(msgId);
+                }
+                params.putArray("messageIds", msgIds);
+                sendEvent("MessagesRead", params);
+            }
+
+            @Override
+            public void onGroupMessagesRead(Conversation conversation, Map<String, GroupMessageReadInfo> messages) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                WritableMap messagesMap = new WritableNativeMap();
+                for (Map.Entry<String, GroupMessageReadInfo> entry : messages.entrySet()) {
+                    messagesMap.putMap(entry.getKey(), convertGroupMessageReadInfoToMap(entry.getValue()));
+                }
+                params.putMap("messages", messagesMap);
+                sendEvent("GroupMessagesRead", params);
+            }
+        };
+        
+        readReceiptListeners.put(key, listener);
+        com.juggle.im.JIM.getInstance().getMessageManager().addReadReceiptListener(key, listener);
+    }
+
+    /**
+     * 添加消息销毁监听器
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void addMessageDestroyListener(String key) {
+        IMessageManager.IMessageDestroyListener listener = new IMessageManager.IMessageDestroyListener() {
+            @Override
+            public void onMessageDestroyTimeUpdate(String messageId, Conversation conversation, long destroyTime) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putString("messageId", messageId);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                params.putDouble("destroyTime", destroyTime);
+                sendEvent("MessageDestroyTimeUpdated", params);
+            }
+        };
+        
+        destroyListeners.put(key, listener);
+        com.juggle.im.JIM.getInstance().getMessageManager().addDestroyListener(key, listener);
+    }
+
+    /**
+     * 添加会话监听器
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void addConversationListener(String key) {
+        IConversationManager.IConversationListener listener = new IConversationManager.IConversationListener() {
+            @Override
+            public void onConversationInfoAdd(List<ConversationInfo> conversationInfoList) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                WritableArray conversations = new WritableNativeArray();
+                for (ConversationInfo info : conversationInfoList) {
+                    conversations.pushMap(convertConversationInfoToMap(info));
+                }
+                params.putArray("conversations", conversations);
+                sendEvent("ConversationInfoAdded", params);
+            }
+
+            @Override
+            public void onConversationInfoUpdate(List<ConversationInfo> conversationInfoList) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                WritableArray conversations = new WritableNativeArray();
+                for (ConversationInfo info : conversationInfoList) {
+                    conversations.pushMap(convertConversationInfoToMap(info));
+                }
+                params.putArray("conversations", conversations);
+                sendEvent("ConversationInfoUpdated", params);
+            }
+
+            @Override
+            public void onConversationInfoDelete(List<ConversationInfo> conversationInfoList) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                WritableArray conversations = new WritableNativeArray();
+                for (ConversationInfo info : conversationInfoList) {
+                    conversations.pushMap(convertConversationInfoToMap(info));
+                }
+                params.putArray("conversations", conversations);
+                sendEvent("ConversationInfoDeleted", params);
+            }
+
+            @Override
+            public void onTotalUnreadMessageCountUpdate(int count) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putInt("count", count);
+                sendEvent("TotalUnreadMessageCountUpdated", params);
+            }
+        };
+        
+        conversationListeners.put(key, listener);
+        com.juggle.im.JIM.getInstance().getConversationManager().addListener(key, listener);
+    }
+
+    /**
+     * 将消息对象转换为Map
+     */
+    private WritableMap convertMessageToMap(Message message) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("messageId", message.getMessageId());
+        map.putDouble("clientMsgNo", message.getClientMsgNo());
+        map.putDouble("timestamp", message.getTimestamp());
+        map.putString("senderId", message.getSenderId());
+        map.putMap("conversation", convertConversationToMap(message.getConversation()));
+        map.putMap("content", convertMessageContentToMap(message.getContent()));
+        return map;
+    }
+
+    /**
+     * 将会话对象转换为Map
+     */
+    private WritableMap convertConversationToMap(Conversation conversation) {
+        WritableMap map = new WritableNativeMap();
+        map.putInt("conversationType", conversation.getConversationType().getValue());
+        map.putString("conversationId", conversation.getConversationId());
+        return map;
+    }
+
+    /**
+     * 将消息内容转换为Map
+     */
+    private WritableMap convertMessageContentToMap(MessageContent content) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("contentType", content.getContentType());
+        
+        if (content instanceof TextMessage) {
+            map.putString("content", ((TextMessage) content).getContent());
+        } else if (content instanceof ImageMessage) {
+            ImageMessage img = (ImageMessage) content;
+            map.putString("url", img.getUrl());
+            map.putString("name", img.getName());
+            map.putInt("width", img.getWidth());
+            map.putInt("height", img.getHeight());
+        } else if (content instanceof FileMessage) {
+            FileMessage file = (FileMessage) content;
+            map.putString("url", file.getUrl());
+            map.putString("name", file.getName());
+            map.putDouble("size", file.getSize());
+        } else if (content instanceof VoiceMessage) {
+            VoiceMessage voice = (VoiceMessage) content;
+            map.putString("url", voice.getUrl());
+            map.putInt("duration", voice.getDuration());
+        }
+        
+        return map;
+    }
+
+    /**
+     * 将消息回应转换为Map
+     */
+    private WritableMap convertReactionToMap(MessageReaction reaction) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("messageId", reaction.getMessageId());
+        WritableArray itemList = new WritableNativeArray();
+        for (MessageReactionItem item : reaction.getItemList()) {
+          WritableMap mi = new WritableNativeMap();
+          mi.putString("reactionId", item.getReactionId());
+          WritableArray us = new WritableNativeArray();
+          for (UserInfo user : item.getUserInfoList()) {
+            us.putArray(convertUserInfoToMap(user));
+          }
+          mi.putArray("userInfoList", us);
+
+          itemList.putArray(mi);
+        }
+        map.putArray("itemList", itemList);
+        return map;
+    }
+
+    /**
+     * 将用户信息转换为Map
+     */
+    private WritableMap convertUserInfoToMap(UserInfo userInfo) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("userId", userInfo.getUserId());
+        map.putString("nickname", userInfo.getNickname());
+        map.putString("avatar", userInfo.getAvatar());
+        return map;
+    }
+
+    /**
+     * 将群消息阅读信息转换为Map
+     */
+    private WritableMap convertGroupMessageReadInfoToMap(GroupMessageReadInfo info) {
+        WritableMap map = new WritableNativeMap();
+        map.putInt("readCount", info.getReadCount());
+        map.putInt("memberCount", info.getMemberCount());
+        return map;
+    }
+
+    /**
+     * 将会话信息转换为Map
+     */
+    private WritableMap convertConversationInfoToMap(ConversationInfo info) {
+        WritableMap map = new WritableNativeMap();
+        map.putMap("conversation", convertConversationToMap(info.getConversation()));
+        map.putInt("unreadMessageCount", info.getUnreadMessageCount());
+        map.putDouble("lastMessageTime", info.getLastMessageTime());
+        map.putBoolean("isTop", info.isTop());
+        map.putBoolean("isMute", info.isMute());
+        if (info.getLastMessage() != null) {
+            map.putMap("lastMessage", convertMessageToMap(info.getLastMessage()));
+        }
+        return map;
     }
 }
