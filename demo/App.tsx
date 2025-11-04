@@ -6,7 +6,6 @@
  */
 
 import React, {useEffect, useState} from 'react';
-import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -17,39 +16,15 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  Button,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-// 导入JuggleIM SDK
-import JuggleIM from 'im-rn-sdk';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import JuggleIM, {
+  ConversationInfo,
+  PullDirection,
+  TextMessageContent,
+} from 'im-rn-sdk';
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -64,13 +39,16 @@ function App(): JSX.Element {
   // SDK配置
   const imServer = 'wss://ws.snailchat.im';
   const appKey = 'nwm6fxqt2aeebhb7';
-  const token = 'ChBud202ZnhxdDJhZWViaGI3GiCuH1rw5sUNbzaUd35z0NugduYHIY2J3Fr6kXLVxvxx-g==';
+  const token1 =
+    'ChBud202ZnhxdDJhZWViaGI3GiCuH1rw5sUNbzaUd35z0NugduYHIY2J3Fr6kXLVxvxx-g==';
+  const token2 =
+    'ChBud202ZnhxdDJhZWViaGI3GiDAln9OPZcTPWPNIdLzIgze03JIhfPqLPmdqEspQEX6AQ==';
 
   // 添加状态到历史记录
   const addStatusToHistory = (status: string) => {
     const timestamp = new Date().toLocaleTimeString();
     const statusWithTime = `[${timestamp}] ${status}`;
-    setStatusHistory(prev => [statusWithTime, ...prev].slice(0, 10)); // 保留最近10条记录
+    setStatusHistory(prev => [statusWithTime, ...prev].slice(0, 2));
   };
 
   // 初始化SDK
@@ -78,67 +56,173 @@ function App(): JSX.Element {
     try {
       // 设置服务器地址
       JuggleIM.setServerUrls([imServer]);
-      addStatusToHistory('服务器地址设置完成');
-      
-      // 初始化SDK
       JuggleIM.init(appKey);
       setIsInitialized(true);
-      addStatusToHistory('SDK初始化完成');
-      
+
       // 添加连接状态监听器
-      const unsubscribe = JuggleIM.addConnectionStatusListener('demo', (status, code, extra) => {
-        console.log('连接状态变化:', status, code, extra);
-        let statusText = '';
-        switch (status) {
-          case 'connected':
-            statusText = '已连接';
-            break;
-          case 'connecting':
-            statusText = '连接中';
-            break;
-          case 'disconnected':
-            statusText = '已断开';
-            break;
-          case 'failure':
-            statusText = `连接失败 (${code})`;
-            break;
-          case 'dbOpen':
-            statusText = '数据库已打开';
-            break;
-          case 'dbClose':
-            statusText = '数据库已关闭';
-            break;
-          default:
-            statusText = `未知状态: ${status}`;
-        }
-        setConnectionStatus(statusText);
-        addStatusToHistory(`状态变化: ${statusText}${extra ? ` - ${extra}` : ''}`);
+      const unsubscribe = JuggleIM.addConnectionStatusListener(
+        'demo',
+        (status, code, extra) => {
+          console.log('连接状态变化:', status, code, extra);
+          let statusText = '';
+          switch (status) {
+            case 'connected':
+              statusText = '已连接';
+              break;
+            case 'connecting':
+              statusText = '连接中';
+              break;
+            case 'disconnected':
+              statusText = '已断开';
+              break;
+            case 'failure':
+              statusText = `连接失败 (${code})`;
+              break;
+            case 'dbOpen':
+              statusText = '数据库已打开';
+              break;
+            case 'dbClose':
+              statusText = '数据库已关闭';
+              break;
+            default:
+              statusText = `未知状态: ${status}`;
+          }
+          setConnectionStatus(statusText);
+        },
+      );
+
+      JuggleIM.addMessageListener('demo', {
+        onMessageReceive: (message: any) => {
+          console.log('收到消息:', message);
+          addStatusToHistory(`收到消息: ${JSON.stringify(message)}`);
+        },
+        onMessageUpdate: (message: any) => {
+          console.log('消息更新:', message);
+          addStatusToHistory(`消息更新: ${JSON.stringify(message)}`);
+        },
+        onMessageDelete: (conv, messageIds) => {
+          console.log('消息删除:', messageIds);
+          addStatusToHistory(`消息删除: ${messageIds.join(', ')}`);
+        },
       });
-      
+
+      JuggleIM.addConversationListener('demo', {
+        onConversationInfoAdd: (conversations: ConversationInfo[]) => {
+          console.log('会话添加:', conversations);
+          addStatusToHistory(`会话添加: ${JSON.stringify(conversations)}`);
+        },
+        onConversationInfoUpdate: (conversations: ConversationInfo[]) => {
+          console.log('会话更新:', conversations);
+          addStatusToHistory(`会话更新: ${JSON.stringify(conversations)}`);
+        },
+        onConversationInfoDelete: (conversations: ConversationInfo[]) => {
+          console.log('会话删除:', conversations);
+          addStatusToHistory(`会话删除: ${conversations.join(', ')}`);
+        },
+        onTotalUnreadMessageCountUpdate: (totalUnreadCount: number) => {
+          console.log('未读消息总数更新:', totalUnreadCount);
+          addStatusToHistory(`未读消息总数更新: ${totalUnreadCount}`);
+        },
+      });
+
       return () => {
         unsubscribe();
       };
     } catch (error) {
       console.error('SDK初始化失败:', error);
-      addStatusToHistory(`初始化失败: ${error}`);
       Alert.alert('错误', 'SDK初始化失败');
     }
   }, []);
 
   // 连接到服务器
-  const handleConnect = () => {
+  const handleConnect1 = () => {
     if (!isInitialized) {
       Alert.alert('错误', 'SDK未初始化');
       return;
     }
-    
+
     try {
-      JuggleIM.connect(token);
-      addStatusToHistory('开始连接服务器');
+      JuggleIM.connect(token1);
     } catch (error) {
       console.error('连接失败:', error);
-      addStatusToHistory(`连接失败: ${error}`);
       Alert.alert('错误', '连接失败');
+    }
+  };
+
+  // 连接到服务器
+  const handleConnect2 = () => {
+    if (!isInitialized) {
+      Alert.alert('错误', 'SDK未初始化');
+      return;
+    }
+
+    try {
+      JuggleIM.connect(token2);
+    } catch (error) {
+      console.error('连接失败:', error);
+      Alert.alert('错误', '连接失败');
+    }
+  };
+
+  const sendMsg = (txt: string) => {
+    try {
+      const content: TextMessageContent = {
+        content: txt,
+        contentType: 'jg:text',
+      };
+      JuggleIM.sendMessage(
+        {
+          conversationType: 1,
+          conversationId: 'FnjQBq8bL-h',
+          content: content,
+        },
+        (error, message) => {
+          if (error) {
+            console.error('发送消息出错:', error);
+          } else {
+            console.log('消息发送成功:', message);
+          }
+        },
+      );
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      Alert.alert('错误', '发送消息失败');
+    }
+  };
+
+  const getConversationList = () => {
+    try {
+      JuggleIM.getConversationInfoList({
+        count: 20,
+        timestamp: -1,
+        direction: 0,
+      }).then(conversations => {
+        console.log('会话列表:', conversations);
+      });
+    } catch (error) {
+      console.error('获取会话列表失败:', error);
+      Alert.alert('错误', '获取会话列表失败');
+    }
+  };
+
+  const getMessageList = () => {
+    try {
+      JuggleIM.getMessageList(
+        {
+          conversationType: 1,
+          conversationId: 'FnjQBq8bL-h',
+        },
+        1,
+        {
+          count: 20,
+          startTime: -1,
+        },
+      ).then(messages => {
+        console.log('消息列表:', messages);
+      });
+    } catch (error) {
+      console.error('获取消息列表失败:', error);
+      Alert.alert('错误', '获取消息列表失败');
     }
   };
 
@@ -155,38 +239,70 @@ function App(): JSX.Element {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          
-          <Section title="JuggleIM SDK 测试">
-            <View style={styles.testContainer}>
-              <Text style={styles.statusText}>初始化状态: {isInitialized ? '已初始化' : '未初始化'}</Text>
-              <Text style={styles.statusText}>连接状态: {connectionStatus}</Text>
-              
-              <TouchableOpacity 
-                style={[styles.connectButton, !isInitialized && styles.disabledButton]} 
-                onPress={handleConnect}
-                disabled={!isInitialized}>
-                <Text style={styles.buttonText}>连接服务器</Text>
-              </TouchableOpacity>
-              
-              <Text style={styles.configTitle}>配置信息:</Text>
-              <Text style={styles.configText}>服务器: {imServer}</Text>
-              <Text style={styles.configText}>AppKey: {appKey}</Text>
-              <Text style={styles.configText}>Token: {token.substring(0, 20)}...</Text>
-            </View>
-          </Section>
-          
+          <View style={styles.testContainer}>
+            <Text style={styles.statusText}>连接状态: {connectionStatus}</Text>
+            <TouchableOpacity
+              style={[
+                styles.connectButton,
+                !isInitialized && styles.disabledButton,
+              ]}
+              onPress={handleConnect1}
+              disabled={!isInitialized}>
+              <Text style={styles.buttonText}>用户1</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.connectButton,
+                !isInitialized && styles.disabledButton,
+              ]}
+              onPress={handleConnect2}
+              disabled={!isInitialized}>
+              <Text style={styles.buttonText}>用户2</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* 状态历史记录 */}
-          <Section title="状态历史">
-            <View style={styles.historyContainer}>
-              {statusHistory.length === 0 ? (
-                <Text style={styles.historyText}>暂无状态记录</Text>
-              ) : (
-                statusHistory.map((status, index) => (
-                  <Text key={index} style={styles.historyText}>{status}</Text>
-                ))
-              )}
-            </View>
-          </Section>
+          <View style={styles.historyContainer}>
+            {statusHistory.length === 0 ? (
+              <Text style={styles.historyText}>暂无状态记录</Text>
+            ) : (
+              statusHistory.map((status, index) => (
+                <Text key={index} style={styles.historyText}>
+                  {status}
+                </Text>
+              ))
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.connectButton,
+              !isInitialized && styles.disabledButton,
+            ]}
+            onPress={sendMsg.bind(this, '你好，JuggleIM！')}
+            disabled={!isInitialized}>
+            <Text style={styles.buttonText}>发消息</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.connectButton,
+              !isInitialized && styles.disabledButton,
+            ]}
+            onPress={getConversationList.bind(this)}
+            disabled={!isInitialized}>
+            <Text style={styles.buttonText}>会话列表</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.connectButton,
+              !isInitialized && styles.disabledButton,
+            ]}
+            onPress={getMessageList.bind(this)}
+            disabled={!isInitialized}>
+            <Text style={styles.buttonText}>消息列表</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -195,7 +311,7 @@ function App(): JSX.Element {
 
 const styles = StyleSheet.create({
   sectionContainer: {
-    marginTop: 32,
+    width: '100%',
     paddingHorizontal: 24,
   },
   sectionTitle: {
@@ -235,6 +351,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+    marginTop: 4,
   },
   configTitle: {
     fontSize: 16,

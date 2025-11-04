@@ -338,13 +338,42 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 - (NSDictionary *)convertMessageToDictionary:(JMessage *)message {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
   dict[@"messageId"] = message.messageId ?: @"";
-  dict[@"conversation"] = message.conversation ?: @"";
   dict[@"clientMsgNo"] = @(message.clientMsgNo);
   dict[@"timestamp"] = @(message.timestamp);
   dict[@"senderUserId"] = message.senderUserId ?: @"";
   dict[@"conversation"] =
       [self convertConversationToDictionary:message.conversation];
   dict[@"content"] = [self convertMessageContentToDictionary:message.content];
+  dict[@"direction"] = @(message.direction);
+    dict[@"messageState"] = @(message.messageState);
+
+  // 添加是否已读
+  dict[@"hasRead"] = @(message.hasRead);
+  
+  // 添加群消息阅读信息
+  if (message.groupReadInfo) {
+      dict[@"groupMessageReadInfo"] = [self convertGroupMessageReadInfoToDictionary:message.groupReadInfo];
+  }
+  
+  // 添加引用消息
+  if (message.referredMsg) {
+      dict[@"referredMessage"] = [self convertMessageToDictionary:message.referredMsg];
+  }
+  
+  // 添加@消息信息
+  if (message.mentionInfo) {
+      dict[@"mentionInfo"] = [self convertMentionInfoToDictionary:message.mentionInfo];
+  }
+  
+  // 添加本地属性
+  dict[@"localAttribute"] = message.localAttribute ?: @"";
+  
+  // 添加是否删除
+  dict[@"isDelete"] = @(message.isDeleted);
+  
+  // 添加是否编辑
+  dict[@"isEdit"] = @(message.isEdit);
+
   return dict;
 }
 
@@ -384,10 +413,12 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"url"] = fileMsg.url ?: @"";
     dict[@"name"] = fileMsg.name ?: @"";
     dict[@"size"] = @(fileMsg.size);
+    dict[@"type"] = fileMsg.type ?: @"";
     dict[@"extra"] = fileMsg.extra ?: @"";
   } else if ([content isKindOfClass:[JVoiceMessage class]]) {
     JVoiceMessage *voiceMsg = (JVoiceMessage *)content;
     dict[@"url"] = voiceMsg.url ?: @"";
+    dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
   }
@@ -432,6 +463,22 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     @"userName" : userInfo.userName ?: @"",
     @"avatar" : userInfo.portrait ?: @""
   };
+}
+
+/**
+ * 将@消息信息转换为字典
+ */
+- (NSDictionary *)convertMentionInfoToDictionary:(JMessageMentionInfo *)mentionInfo {
+    NSMutableDictionary *map = [NSMutableDictionary dictionary];
+    map[@"type"] = @(mentionInfo.type);
+    
+    NSMutableArray *userArray = [NSMutableArray array];
+    for (JUserInfo *userInfo in mentionInfo.targetUsers) {
+        [userArray addObject:[self convertUserInfoToDictionary:userInfo]];
+    }
+    map[@"targetUsers"] = userArray;
+    
+    return map;
 }
 
 /**
@@ -484,7 +531,6 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
   return dict;
 }
 
-// ... existing code ...
 
 #pragma mark - Conversation Methods
 
@@ -765,29 +811,30 @@ RCT_EXPORT_METHOD(removeConversationsFromTag:(NSArray *)conversationMaps
  * 发送消息
  */
 RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
-                  callbacks:(NSDictionary *)callbacks
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
         // 构建消息内容和会话对象
-        JMessageContent *content = [self convertDictToMessageContent:messageDict];
+        JMessageContent *content = [self convertDictToMessageContent:[messageDict objectForKey:@"content"]];
         JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        
+        if (!content) {
+            reject(@"SEND_MESSAGE_ERROR", @"无效的消息内容", nil);
+            return;
+        }
         
         // 发送消息
         JMessage *message = [JIM.shared.messageManager sendMessage:content
                                                     inConversation:conversation
                                                            success:^(JMessage *sentMessage) {
-            NSDictionary *result = @{
-                @"messageId": sentMessage.messageId ?: @"",
-                @"sentTime": @(sentMessage.timestamp)
-            };
+            NSDictionary *result = [self convertMessageToDictionary:sentMessage];
             resolve(result);
         } error:^(JErrorCode errorCode, JMessage *message) {
             NSMutableDictionary *error = [NSMutableDictionary dictionary];
             if (message) {
                 error[@"tid"] = @(message.clientMsgNo).stringValue;
             }
-            error[@"msg"] = @(errorCode).stringValue;
+            error[@"errorCode"] = @(errorCode);
             reject(@"SEND_MESSAGE_ERROR", @"发送消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:error]);
         }];
     } @catch (NSException *exception) {
@@ -910,56 +957,37 @@ RCT_EXPORT_METHOD(removeMessageReaction:(NSDictionary *)messageDict
     }
 }
 
-/**
- * 添加收藏消息
- */
-RCT_EXPORT_METHOD(addFavoriteMessages:(NSArray *)messagesArray
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    @try {
-        NSMutableArray *messageIdList = [NSMutableArray array];
-        for (NSDictionary *messageDict in messagesArray) {
-            [messageIdList addObject:messageDict[@"messageId"]];
-        }
-        
-        [JIM.shared.messageManager addFavorite:messageIdList
-                                               success:^{
-            resolve(@YES);
-        } error:^(JErrorCode errorCode) {
-            reject(@"ADD_FAVORITE_ERROR", @"添加收藏失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
-        }];
-    } @catch (NSException *exception) {
-        reject(@"ADD_FAVORITE_ERROR", exception.reason, nil);
-    }
-}
-
-/**
- * 移除收藏消息
- */
-RCT_EXPORT_METHOD(removeFavoriteMessages:(NSArray *)messagesArray
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
-    @try {
-        NSMutableArray *messageIdList = [NSMutableArray array];
-        for (NSDictionary *messageDict in messagesArray) {
-            [messageIdList addObject:messageDict[@"messageId"]];
-        }
-        
-        [JIM.shared.messageManager removeFavorite:messageIdList
-                                                  success:^{
-            resolve(@YES);
-        } error:^(JErrorCode errorCode) {
-            reject(@"REMOVE_FAVORITE_ERROR", @"移除收藏失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
-        }];
-    } @catch (NSException *exception) {
-        reject(@"REMOVE_FAVORITE_ERROR", exception.reason, nil);
-    }
-}
-
 // 辅助方法：将字典转换为消息内容
 - (JMessageContent *)convertDictToMessageContent:(NSDictionary *)messageDict {
-    // 根据消息类型创建相应的 JMessageContent 子类
-    // 这里需要根据具体的消息类型进行实现
-    return [[JTextMessage alloc] initWithContent:messageDict[@"content"] ?: @""];
+    NSString *contentType = messageDict[@"contentType"];
+    
+    if ([contentType isEqualToString:@"jg:text"]) {
+        JTextMessage *text = [[JTextMessage alloc] initWithContent:messageDict[@"content"] ?: @""];
+        return text;
+    } else if ([contentType isEqualToString:@"jg:image"]) {
+        JImageMessage *img = [[JImageMessage alloc] init];
+        img.url = messageDict[@"url"];
+        img.localPath = messageDict[@"localPath"];
+        img.thumbnailLocalPath = messageDict[@"thumbnailLocalPath"];
+        img.thumbnailUrl = messageDict[@"thumbnailUrl"];
+        img.width = [messageDict[@"width"] integerValue];
+        img.height = [messageDict[@"height"] integerValue];
+        return img;
+    } else if ([contentType isEqualToString:@"jg:file"]) {
+        JFileMessage *file = [[JFileMessage alloc] init];
+        file.url = messageDict[@"url"];
+        file.type = messageDict[@"type"];
+        file.name = messageDict[@"name"];
+        file.size = [messageDict[@"size"] longLongValue];
+        return file;
+    } else if ([contentType isEqualToString:@"jg:voice"]) {
+        JVoiceMessage *voice = [[JVoiceMessage alloc] init];
+        voice.url = messageDict[@"url"];
+        voice.localPath = messageDict[@"localPath"];
+        voice.duration = [messageDict[@"duration"] integerValue];
+        return voice;
+    }
+    
+    return nil;
 }
 @end

@@ -140,15 +140,14 @@ declare module 'im-rn-sdk' {
    * 拉取方向枚举
    */
   export enum PullDirection {
-    OLDER = 0,
-    NEWER = 1
+    NEWER = 0,
+    OLDER = 1,
   }
 
   /**
    * 获取会话选项
    */
   export interface GetConversationOptions {
-    conversationTypes?: number[];
     count: number;
     timestamp: number;
     direction: PullDirection;
@@ -174,18 +173,9 @@ declare module 'im-rn-sdk' {
    * 获取会话信息列表回调接口
    */
     export interface GetConversationInfoListCallback {
-      onSuccess: (conversationInfoList: ConversationInfo[]) => void;
-      onError: (errorCode: number) => void;
+      (conversationInfoList: ConversationInfo[]): void;
     }
-  
-    /**
-     * 获取会话信息回调接口
-     */
-    export interface GetConversationInfoCallback {
-      onSuccess: (conversationInfo: ConversationInfo | null) => void;
-      onError: (errorCode: number) => void;
-    }
-  
+
     /**
      * 获取未读数回调接口
      */
@@ -210,18 +200,13 @@ declare module 'im-rn-sdk' {
       conversations: Conversation[];
     }
 
-    // 消息发送相关接口
-export interface SendMessageCallbacks {
-  onbefore?: (tid: string) => void;
-}
-
 export interface SendMessageResult {
   messageId: string;
   sentTime: number;
 }
 
 export interface SendMessageCallback {
-  (success: boolean, result?: SendMessageResult, error?: { tid?: string; msg?: string }): void;
+  (message: Message, errorCode?: number): void;
 }
 
 // 获取消息相关接口
@@ -348,16 +333,16 @@ export interface MessageOperationCallback {
        /**
      * 获取会话信息列表
      * @param options 获取选项
-     * @param callback 回调函数
+     * @returns {Promise<ConversationInfo[]>} 会话信息列表
      */
-       static getConversationInfoList(options: GetConversationOptions, callback: GetConversationInfoListCallback): void;
+       static getConversationInfoList(options: GetConversationOptions): Promise<ConversationInfo[]|null>;
 
        /**
         * 获取单个会话信息
         * @param conversation 会话对象
         * @param callback 回调函数
         */
-       static getConversationInfo(conversation: Conversation, callback: GetConversationInfoCallback): void;
+       static getConversationInfo(conversation: Conversation): Promise<ConversationInfo | null>;
    
        /**
         * 创建会话信息
@@ -406,7 +391,7 @@ export interface MessageOperationCallback {
         * 获取总未读数
         * @param callback 回调函数
         */
-       static getTotalUnreadCount(callback: GetUnreadCountCallback): void;
+       static getTotalUnreadCount(): Promise<number>;
    
        /**
         * 设置会话草稿
@@ -466,8 +451,7 @@ export interface MessageOperationCallback {
   static sendMessage(message: {
     conversationType: number;
     conversationId: string;
-    name: string;
-    content: any;
+    content: MessageContent;
     referMsg?: Message;
     mentionInfo?: {
       mentionType?: number;
@@ -475,17 +459,16 @@ export interface MessageOperationCallback {
     };
     lifeTime?: number;
     lifeTimeAfterRead?: number;
-  }, callbacks?: SendMessageCallbacks): Promise<SendMessageResult>;
+  }, callbacks?: SendMessageCallback): void;
 
   /**
    * 获取历史消息
    */
-  static getMessages(
+  static getMessageList(
     conversation: Conversation,
     direction: PullDirection,
-    options: GetMessageOptions,
-    callback: GetMessagesCallback
-  ): void;
+    options: GetMessageOptions
+  ): Promise<Message[]>;
 
   /**
    * 撤回消息
@@ -546,7 +529,7 @@ export interface MessageOperationCallback {
   /**
    * 移除收藏消息
    */
-  static removeFavoriteMessages(
+  static removeFavorite(
     messages: Array<{
       conversationType: number;
       conversationId: string;

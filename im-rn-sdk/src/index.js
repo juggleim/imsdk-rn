@@ -1,4 +1,4 @@
-import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
+import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
 const { JuggleIM } = NativeModules;
 const juggleIMEmitter = new NativeEventEmitter(JuggleIM);
@@ -14,11 +14,7 @@ class JIMClient {
    * @returns {void}
    */
   static setServerUrls(urls) {
-    if (Platform.OS === 'android') {
-      JuggleIM.setServerUrls(urls);
-    } else if (Platform.OS === 'ios') {
-      JuggleIM.setServerUrls(urls);
-    }
+    JuggleIM.setServerUrls(urls);
   }
 
   /**
@@ -27,9 +23,9 @@ class JIMClient {
    * @returns {void}
    */
   static init(appKey) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.init(appKey);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.initWithAppKey(appKey);
     }
   }
@@ -40,9 +36,9 @@ class JIMClient {
    * @returns {void}
    */
   static connect(token) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.connect(token);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.connectWithToken(token);
     }
   }
@@ -54,35 +50,44 @@ class JIMClient {
    * @returns {function} 返回取消监听的函数
    */
   static addConnectionStatusListener(key, listener) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addConnectionStatusListener(key);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addConnectionDelegate();
     }
-    
+
     // 监听原生事件
-    const subscription = juggleIMEmitter.addListener('ConnectionStatusChanged', (event) => {
-      if (Platform.OS === 'android') {
-        if (event.key === key) {
+    const subscription = juggleIMEmitter.addListener(
+      "ConnectionStatusChanged",
+      (event) => {
+        if (Platform.OS === "android") {
+          if (event.key === key) {
+            listener(event.status, event.code, event.extra);
+          }
+        } else if (Platform.OS === "ios") {
           listener(event.status, event.code, event.extra);
         }
-      } else if (Platform.OS === 'ios') {
-        listener(event.status, event.code, event.extra);
       }
-    });
-    
-    const dbOpenSubscription = juggleIMEmitter.addListener('DbDidOpen', (event) => {
-      if (event.key === key) {
-        listener('dbOpen', 0, '');
+    );
+
+    const dbOpenSubscription = juggleIMEmitter.addListener(
+      "DbDidOpen",
+      (event) => {
+        if (event.key === key) {
+          listener("dbOpen", 0, "");
+        }
       }
-    });
-    
-    const dbCloseSubscription = juggleIMEmitter.addListener('DbDidClose', (event) => {
-      if (event.key === key) {
-        listener('dbClose', 0, '');
+    );
+
+    const dbCloseSubscription = juggleIMEmitter.addListener(
+      "DbDidClose",
+      (event) => {
+        if (event.key === key) {
+          listener("dbClose", 0, "");
+        }
       }
-    });
-    
+    );
+
     // 返回取消监听的函数
     return () => {
       subscription.remove();
@@ -98,89 +103,117 @@ class JIMClient {
    * @returns {function} 返回取消监听的函数
    */
   static addMessageListener(key, listener) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addMessageListener(key);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addMessageDelegate();
     }
-    
+
     const subscriptions = [];
-    
+
     // 消息接收监听
     if (listener.onMessageReceive) {
-      const subscription = juggleIMEmitter.addListener('MessageReceived', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageReceive(event.message);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageReceived",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageReceive(event.message);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息撤回监听
     if (listener.onMessageRecall) {
-      const subscription = juggleIMEmitter.addListener('MessageRecalled', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageRecall(event.message);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageRecalled",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageRecall(event.message);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息修改监听
     if (listener.onMessageUpdate) {
-      const subscription = juggleIMEmitter.addListener('MessageUpdated', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageUpdate(event.message);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageUpdated",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageUpdate(event.message);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息删除监听
     if (listener.onMessageDelete) {
-      const subscription = juggleIMEmitter.addListener('MessageDeleted', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageDelete(event.conversation, event.clientMsgNos);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageDeleted",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageDelete(event.conversation, event.clientMsgNos);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息清除监听
     if (listener.onMessageClear) {
-      const subscription = juggleIMEmitter.addListener('MessageCleared', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageClear(event.conversation, event.timestamp, event.senderId);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageCleared",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageClear(
+            event.conversation,
+            event.timestamp,
+            event.senderId
+          );
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息回应添加监听
     if (listener.onMessageReactionAdd) {
-      const subscription = juggleIMEmitter.addListener('MessageReactionAdded', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageReactionAdd(event.conversation, event.reaction);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageReactionAdded",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageReactionAdd(event.conversation, event.reaction);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息回应删除监听
     if (listener.onMessageReactionRemove) {
-      const subscription = juggleIMEmitter.addListener('MessageReactionRemoved', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageReactionRemove(event.conversation, event.reaction);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageReactionRemoved",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageReactionRemove(event.conversation, event.reaction);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 消息置顶监听
     if (listener.onMessageSetTop) {
-      const subscription = juggleIMEmitter.addListener('MessageSetTop', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageSetTop(event.message, event.operator, event.isTop);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageSetTop",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageSetTop(event.message, event.operator, event.isTop);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 返回取消监听的函数
     return () => {
-      subscriptions.forEach(subscription => subscription.remove());
+      subscriptions.forEach((subscription) => subscription.remove());
     };
   }
 
@@ -191,35 +224,41 @@ class JIMClient {
    * @returns {function} 返回取消监听的函数
    */
   static addMessageReadReceiptListener(key, listener) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addMessageReadReceiptListener(key);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addMessageReadReceiptDelegate();
     }
-    
+
     const subscriptions = [];
-    
+
     // 单聊消息阅读监听
     if (listener.onMessagesRead) {
-      const subscription = juggleIMEmitter.addListener('MessagesRead', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessagesRead(event.conversation, event.messageIds);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessagesRead",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessagesRead(event.conversation, event.messageIds);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 群消息阅读监听
     if (listener.onGroupMessagesRead) {
-      const subscription = juggleIMEmitter.addListener('GroupMessagesRead', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onGroupMessagesRead(event.conversation, event.messages);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "GroupMessagesRead",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onGroupMessagesRead(event.conversation, event.messages);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 返回取消监听的函数
     return () => {
-      subscriptions.forEach(subscription => subscription.remove());
+      subscriptions.forEach((subscription) => subscription.remove());
     };
   }
 
@@ -230,26 +269,33 @@ class JIMClient {
    * @returns {function} 返回取消监听的函数
    */
   static addMessageDestroyListener(key, listener) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addMessageDestroyListener(key);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addMessageDestroyDelegate();
     }
-    
+
     const subscriptions = [];
-    
+
     // 消息销毁时间更新监听
     if (listener.onMessageDestroyTimeUpdate) {
-      const subscription = juggleIMEmitter.addListener('MessageDestroyTimeUpdated', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onMessageDestroyTimeUpdate(event.messageId, event.conversation, event.destroyTime);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "MessageDestroyTimeUpdated",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onMessageDestroyTimeUpdate(
+            event.messageId,
+            event.conversation,
+            event.destroyTime
+          );
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 返回取消监听的函数
     return () => {
-      subscriptions.forEach(subscription => subscription.remove());
+      subscriptions.forEach((subscription) => subscription.remove());
     };
   }
 
@@ -260,69 +306,80 @@ class JIMClient {
    * @returns {function} 返回取消监听的函数
    */
   static addConversationListener(key, listener) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addConversationListener(key);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addConversationDelegate();
     }
-    
+
     const subscriptions = [];
-    
+
     // 会话新增监听
     if (listener.onConversationInfoAdd) {
-      const subscription = juggleIMEmitter.addListener('ConversationInfoAdded', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onConversationInfoAdd(event.conversations);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "ConversationInfoAdded",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onConversationInfoAdd(event.conversations);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 会话更新监听
     if (listener.onConversationInfoUpdate) {
-      const subscription = juggleIMEmitter.addListener('ConversationInfoUpdated', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onConversationInfoUpdate(event.conversations);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "ConversationInfoUpdated",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onConversationInfoUpdate(event.conversations);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 会话删除监听
     if (listener.onConversationInfoDelete) {
-      const subscription = juggleIMEmitter.addListener('ConversationInfoDeleted', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onConversationInfoDelete(event.conversations);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "ConversationInfoDeleted",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onConversationInfoDelete(event.conversations);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 总未读数更新监听
     if (listener.onTotalUnreadMessageCountUpdate) {
-      const subscription = juggleIMEmitter.addListener('TotalUnreadMessageCountUpdated', (event) => {
-        if (Platform.OS === 'android' && event.key !== key) return;
-        listener.onTotalUnreadMessageCountUpdate(event.count);
-      });
+      const subscription = juggleIMEmitter.addListener(
+        "TotalUnreadMessageCountUpdated",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onTotalUnreadMessageCountUpdate(event.count);
+        }
+      );
       subscriptions.push(subscription);
     }
-    
+
     // 返回取消监听的函数
     return () => {
-      subscriptions.forEach(subscription => subscription.remove());
+      subscriptions.forEach((subscription) => subscription.remove());
     };
   }
 
-
   /**
-   * 获取会话列表
-   * @param {number} count - 获取数量
-   * @param {string} pullDirection - 拉取方向 "up" 或 "down"
-   * @returns {Promise<Array>} 会话信息列表
+   * 获取会话信息列表
+   * @param {object} option - 获取选项
+   * @returns {Promise<ConversationInfo[]>} 会话信息列表
    */
-  static getConversationInfoList(count = 20, pullDirection = 'down') {
-    if (Platform.OS === 'android') {
-      return JuggleIM.getConversationInfoList(count, pullDirection);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.getConversationInfoList(count, pullDirection);
-    }
+  static getConversationInfoList(option) {
+    console.log("getConversationInfoList called with option:", option);
+    return JuggleIM.getConversationInfoList(
+      option.count,
+      option.timestamp,
+      option.direction
+    );
   }
 
   /**
@@ -331,11 +388,7 @@ class JIMClient {
    * @returns {Promise<object>} 会话信息
    */
   static getConversationInfo(conversation) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.getConversationInfo(conversation);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.getConversationInfo(conversation);
-    }
+    return JuggleIM.getConversationInfo(conversation);
   }
 
   /**
@@ -344,9 +397,9 @@ class JIMClient {
    * @returns {Promise<object>} 创建的会话信息
    */
   static createConversationInfo(conversation) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.createConversationInfo(conversation);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.createConversationInfo(conversation);
     }
   }
@@ -357,9 +410,9 @@ class JIMClient {
    * @returns {Promise<boolean>} 删除结果
    */
   static deleteConversationInfo(conversation) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.deleteConversationInfo(conversation);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.deleteConversationInfo(conversation);
     }
   }
@@ -371,9 +424,9 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setMute(conversation, isMute) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.setMute(conversation, isMute);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.setMute(conversation, isMute);
     }
   }
@@ -385,9 +438,9 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setTop(conversation, isTop) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.setTop(conversation, isTop);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.setTop(conversation, isTop);
     }
   }
@@ -398,9 +451,9 @@ class JIMClient {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearUnreadCount(conversation) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.clearUnreadCount(conversation);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.clearUnreadCount(conversation);
     }
   }
@@ -410,11 +463,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearTotalUnreadCount() {
-    if (Platform.OS === 'android') {
-      return JuggleIM.clearTotalUnreadCount();
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.clearTotalUnreadCount();
-    }
+    return JuggleIM.clearTotalUnreadCount();
   }
 
   /**
@@ -422,11 +471,7 @@ class JIMClient {
    * @returns {Promise<number>} 总未读数
    */
   static getTotalUnreadCount() {
-    if (Platform.OS === 'android') {
-      return JuggleIM.getTotalUnreadCount();
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.getTotalUnreadCount();
-    }
+    return JuggleIM.getTotalUnreadCount();
   }
 
   /**
@@ -436,11 +481,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setDraft(conversation, draft) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.setDraft(conversation, draft);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.setDraft(conversation, draft);
-    }
+    return JuggleIM.setDraft(conversation, draft);
   }
 
   /**
@@ -449,11 +490,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearDraft(conversation) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.clearDraft(conversation);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.clearDraft(conversation);
-    }
+    return JuggleIM.clearDraft(conversation);
   }
 
   /**
@@ -462,11 +499,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 标记结果
    */
   static setUnread(conversation) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.setUnread(conversation);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.setUnread(conversation);
-    }
+    return JuggleIM.setUnread(conversation);
   }
 
   /**
@@ -476,12 +509,16 @@ class JIMClient {
    * @param {string} pullDirection - 拉取方向
    * @returns {Promise<Array>} 置顶会话列表
    */
-  static getTopConversationInfoList(count = 20, timestamp = 0, pullDirection = 'down') {
-    if (Platform.OS === 'android') {
-      return JuggleIM.getTopConversationInfoList(count, timestamp, pullDirection);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.getTopConversationInfoList(count, timestamp, pullDirection);
-    }
+  static getTopConversationInfoList(
+    count = 20,
+    timestamp = 0,
+    direction = 0
+  ) {
+    return JuggleIM.getTopConversationInfoList(
+      count,
+      timestamp,
+      direction
+    );
   }
 
   /**
@@ -490,11 +527,7 @@ class JIMClient {
    * @returns {Promise<number>} 未读数
    */
   static getUnreadCountWithTypes(conversationTypes) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.getUnreadCountWithTypes(conversationTypes);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.getUnreadCountWithTypes(conversationTypes);
-    }
+    return JuggleIM.getUnreadCountWithTypes(conversationTypes);
   }
 
   /**
@@ -504,9 +537,9 @@ class JIMClient {
    * @returns {Promise<boolean>} 添加结果
    */
   static addConversationsToTag(conversations, tagId) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.addConversationsToTag(conversations, tagId);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.addConversationsToTag(conversations, tagId);
     }
   }
@@ -518,27 +551,31 @@ class JIMClient {
    * @returns {Promise<boolean>} 移除结果
    */
   static removeConversationsFromTag(conversations, tagId) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       return JuggleIM.removeConversationsFromTag(conversations, tagId);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       return JuggleIM.removeConversationsFromTag(conversations, tagId);
     }
   }
 
-  //message 
+  //message
 
   /**
    * 发送消息
    * @param {Object} message - 消息对象
-   * @param {Object} callbacks - 回调对象
-   * @returns {Promise} 返回消息发送结果
+   * @param {Object} callback - 回调对象
+   * @returns {Void}
    */
-  static sendMessage(message, callbacks = {}) {
-    if (Platform.OS === 'android') {
-      return JuggleIM.sendMessage(message, callbacks);
-    } else if (Platform.OS === 'ios') {
-      return JuggleIM.sendMessage(message, callbacks);
-    }
+  static sendMessage(message, callback) {
+    console.log("sendMessage called with message:", message);
+    return JuggleIM.sendMessage(message)
+      .then((result) => {
+        callback && callback(null, result);
+        return result;
+      })
+      .catch((error) => {
+        callback && callback(error, null);
+      });
   }
 
   /**
@@ -546,14 +583,9 @@ class JIMClient {
    * @param {Object} conversation - 会话对象
    * @param {number} direction - 拉取方向
    * @param {Object} options - 获取选项
-   * @param {function} callback - 回调函数
    */
-  static getMessages(conversation, direction, options, callback) {
-    if (Platform.OS === 'android') {
-      JuggleIM.getMessages(conversation, direction, options, callback);
-    } else if (Platform.OS === 'ios') {
-      JuggleIM.getMessages(conversation, direction, options, callback);
-    }
+  static getMessageList(conversation, direction, options) {
+    return JuggleIM.getMessages(conversation, direction, options);
   }
 
   /**
@@ -563,11 +595,13 @@ class JIMClient {
    * @param {function} callback - 回调函数
    */
   static recallMessage(message, extras = {}, callback) {
-    if (Platform.OS === 'android') {
-      JuggleIM.recallMessage(message, extras, callback);
-    } else if (Platform.OS === 'ios') {
-      JuggleIM.recallMessage(message, extras, callback);
-    }
+    return JuggleIM.recallMessage(message, extras, callback)
+      .then((result) => {
+        callback && callback(null, result);
+      })
+      .catch((error) => {
+        callback && callback(error, null);
+      });
   }
 
   /**
@@ -577,9 +611,9 @@ class JIMClient {
    * @param {function} callback - 回调函数
    */
   static addMessageReaction(message, reactionId, callback) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.addMessageReaction(message, reactionId, callback);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.addMessageReaction(message, reactionId, callback);
     }
   }
@@ -591,39 +625,12 @@ class JIMClient {
    * @param {function} callback - 回调函数
    */
   static removeMessageReaction(message, reactionId, callback) {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       JuggleIM.removeMessageReaction(message, reactionId, callback);
-    } else if (Platform.OS === 'ios') {
+    } else if (Platform.OS === "ios") {
       JuggleIM.removeMessageReaction(message, reactionId, callback);
     }
   }
-
-  /**
-   * 添加收藏消息
-   * @param {Array} messages - 消息数组
-   * @param {function} callback - 回调函数
-   */
-  static addFavoriteMessages(messages, callback) {
-    if (Platform.OS === 'android') {
-      JuggleIM.addFavoriteMessages(messages, callback);
-    } else if (Platform.OS === 'ios') {
-      JuggleIM.addFavoriteMessages(messages, callback);
-    }
-  }
-
-  /**
-   * 移除收藏消息
-   * @param {Array} messages - 消息数组
-   * @param {function} callback - 回调函数
-   */
-  static removeFavoriteMessages(messages, callback) {
-    if (Platform.OS === 'android') {
-      JuggleIM.removeFavoriteMessages(messages, callback);
-    } else if (Platform.OS === 'ios') {
-      JuggleIM.removeFavoriteMessages(messages, callback);
-    }
-  }
-
 }
 
 export default JIMClient;
