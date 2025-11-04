@@ -338,7 +338,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 - (NSDictionary *)convertMessageToDictionary:(JMessage *)message {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
   dict[@"messageId"] = message.messageId ?: @"";
-  dict[@"clientMsgNo"] = @(message.clientMsgNo);
+  dict[@"clientMsgNo"] = [NSString stringWithFormat:@"%lld", message.clientMsgNo];
   dict[@"timestamp"] = @(message.timestamp);
   dict[@"senderUserId"] = message.senderUserId ?: @"";
   dict[@"conversation"] =
@@ -496,7 +496,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 - (NSDictionary *)convertConversationInfoToDictionary:(JConversationInfo *)info {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
   dict[@"conversation"] = [self convertConversationToDictionary:info.conversation];
-  dict[@"unreadMessageCount"] = @(info.unreadCount); // 统一字段名
+  dict[@"unreadCount"] = @(info.unreadCount); 
   dict[@"topTime"] = @(info.topTime);
   dict[@"sortTime"] = @(info.sortTime);
   dict[@"isTop"] = @(info.isTop);
@@ -506,13 +506,12 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
   if (info.lastMessage) {
     dict[@"lastMessage"] = [self convertMessageToDictionary:info.lastMessage];
   }
-  if (info.mentionInfo) { // 新增
+  if (info.mentionInfo) { 
     dict[@"mentionInfo"] = [self convertConversationMentionInfoToDictionary:info.mentionInfo];
   }
   return dict;
 }
 
-// 新增转换方法
 - (NSDictionary *)convertConversationMentionInfoToDictionary:(JConversationMentionInfo *)mentionInfo {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
   if (mentionInfo.mentionMsgList) {
@@ -538,14 +537,15 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
  * 获取会话列表
  */
 RCT_EXPORT_METHOD(getConversationInfoList:(int)count 
-                                pullDirection:(NSString *)pullDirection 
+                                timestamp:(double)timestamp
+                                pullDirection:(int)pullDirection 
                                 resolver:(RCTPromiseResolveBlock)resolve 
                                 rejecter:(RCTPromiseRejectBlock)reject) {
-  JPullDirection direction = [@"up" isEqualToString:pullDirection] ? JPullDirectionNewer : JPullDirectionOlder;
+  JPullDirection direction = 0 == pullDirection ? JPullDirectionNewer : JPullDirectionOlder;
   
   NSArray<JConversationInfo *> *conversationInfos = [JIM.shared.conversationManager 
                                                     getConversationInfoListByCount:count 
-                                                    timestamp:0 
+                                                    timestamp:timestamp 
                                                     direction:direction];
   
   NSMutableArray *result = [NSMutableArray array];
@@ -846,7 +846,7 @@ RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
  * 获取历史消息
  */
 RCT_EXPORT_METHOD(getMessages:(NSDictionary *)conversationDict
-                  direction:(NSInteger)direction
+                  direction:(int)direction
                   options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
@@ -871,7 +871,8 @@ RCT_EXPORT_METHOD(getMessages:(NSDictionary *)conversationDict
             for (JMessage *msg in messages) {
                 [messageArray addObject:[self convertMessageToDictionary:msg]];
             }
-            
+            NSLog(@"getMessages complete: %lu messages, timestamp: %lld, hasMore: %d, code: %ld",
+                  (unsigned long)messages.count, timestamp, hasMore, (long)code);
             NSDictionary *result = @{
                 @"messages": messageArray,
                 @"timestamp": @(timestamp),
