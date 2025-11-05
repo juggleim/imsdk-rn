@@ -177,7 +177,10 @@ declare module "im-rn-sdk" {
   }
 
   /**
-   * 获取会话选项
+   * 分页获取会话选项
+   * @property {number} count - 获取数量
+   * @property {number} timestamp - 上一页最后一条数据的时间戳
+   * @property {number} direction - 拉取方向: 0-更新的消息, 1-更早的消息
    */
   export interface GetConversationOptions {
     count: number;
@@ -202,29 +205,6 @@ declare module "im-rn-sdk" {
   }
 
   /**
-   * 获取会话信息列表回调接口
-   */
-  export interface GetConversationInfoListCallback {
-    (conversationInfoList: ConversationInfo[]): void;
-  }
-
-  /**
-   * 获取未读数回调接口
-   */
-  export interface GetUnreadCountCallback {
-    onSuccess: (count: number) => void;
-    onError: (errorCode: number) => void;
-  }
-
-  /**
-   * 获取草稿回调接口
-   */
-  export interface GetDraftCallback {
-    onSuccess: (draft: string) => void;
-    onError: (errorCode: number) => void;
-  }
-
-  /**
    * 会话标签选项
    */
   export interface ConversationTagOptions {
@@ -245,11 +225,6 @@ declare module "im-rn-sdk" {
   export interface GetMessageOptions {
     count?: number;
     startTime?: number;
-  }
-
-  // 消息操作回调接口
-  export interface MessageOperationCallback {
-    (success: boolean, error?: string): void;
   }
 
   /**
@@ -408,12 +383,12 @@ declare module "im-rn-sdk" {
      */
     static getConversationInfoList(
       options: GetConversationOptions
-    ): Promise<ConversationInfo[] | null>;
+    ): Promise<ConversationInfo[]>;
 
     /**
      * 获取单个会话信息
-     * @param conversation 会话对象
-     * @param callback 回调函数
+     * @param {Conversation} conversation 会话对象
+     * @returns {Promise<ConversationInfo | null>} 会话信息对象
      */
     static getConversationInfo(
       conversation: Conversation
@@ -425,9 +400,8 @@ declare module "im-rn-sdk" {
      * @param callback 回调函数
      */
     static createConversationInfo(
-      conversation: Conversation,
-      callback: CreateConversationCallback
-    ): void;
+      conversation: Conversation
+    ): Promise<ConversationInfo>;
 
     /**
      * 删除会话信息
@@ -437,7 +411,7 @@ declare module "im-rn-sdk" {
     static deleteConversationInfo(
       conversation: Conversation,
       callback: SimpleCallback
-    ): void;
+    ): Promise<Boolean>;
 
     /**
      * 设置会话免打扰状态
@@ -447,9 +421,8 @@ declare module "im-rn-sdk" {
      */
     static setMute(
       conversation: Conversation,
-      isMute: boolean,
-      callback: SimpleCallback
-    ): void;
+      isMute: boolean
+    ): Promise<Boolean>;
 
     /**
      * 设置会话置顶状态
@@ -457,27 +430,20 @@ declare module "im-rn-sdk" {
      * @param isTop 是否置顶
      * @param callback 回调函数
      */
-    static setTop(
-      conversation: Conversation,
-      isTop: boolean,
-      callback: SimpleCallback
-    ): void;
+    static setTop(conversation: Conversation, isTop: boolean): Promise<Boolean>;
 
     /**
      * 清除会话未读数
      * @param conversation 会话对象
      * @param callback 回调函数
      */
-    static clearUnreadCount(
-      conversation: Conversation,
-      callback: SimpleCallback
-    ): void;
+    static clearUnreadCount(conversation: Conversation): Promise<Boolean>;
 
     /**
      * 清除总未读数
      * @param callback 回调函数
      */
-    static clearTotalUnreadCount(callback: SimpleCallback): void;
+    static clearTotalUnreadCount(): Promise<Boolean>;
 
     /**
      * 获取总未读数
@@ -493,19 +459,15 @@ declare module "im-rn-sdk" {
      */
     static setDraft(
       conversation: Conversation,
-      draft: string,
-      callback: SimpleCallback
-    ): void;
+      draft: string
+    ): Promise<Boolean>;
 
     /**
      * 清除会话草稿
      * @param conversation 会话对象
      * @param callback 回调函数
      */
-    static clearDraft(
-      conversation: Conversation,
-      callback: SimpleCallback
-    ): void;
+    static clearDraft(conversation: Conversation): Promise<Boolean>;
 
     /**
      * 设置会话未读状态
@@ -515,49 +477,46 @@ declare module "im-rn-sdk" {
      */
     static setUnread(
       conversation: Conversation,
-      isUnread: boolean,
-      callback: SimpleCallback
-    ): void;
+      isUnread: boolean
+    ): Promise<Boolean>;
 
     /**
      * 获取置顶会话信息列表
-     * @param conversationTypes 会话类型列表
-     * @param callback 回调函数
+     * @param count 获取数量
+     * @param timestamp 上一页最后一条数据的时间戳
+     * @param direction 拉取方向: 0-更新的消息, 1-更早的消息
+     * @returns {Promise<ConversationInfo[]>} 会话信息列表
      */
     static getTopConversationInfoList(
-      conversationTypes: number[],
-      callback: GetConversationInfoListCallback
-    ): void;
+      count: number,
+      timestamp: number,
+      direction: number
+    ): Promise<ConversationInfo[]>;
 
     /**
      * 获取指定类型的未读数
-     * @param conversationTypes 会话类型列表
-     * @param callback 回调函数
+     * @param conversationTypes 会话类型数组
+     * @returns {Promise<number>} 未读数
      */
     static getUnreadCountWithTypes(
-      conversationTypes: number[],
-      callback: GetUnreadCountCallback
-    ): void;
+      conversationTypes: number[]
+    ): Promise<number>;
 
     /**
      * 将会话添加到标签
      * @param options 标签选项
-     * @param callback 回调函数
      */
     static addConversationsToTag(
-      options: ConversationTagOptions,
-      callback: SimpleCallback
-    ): void;
+      options: ConversationTagOptions
+    ): Promise<Boolean>;
 
     /**
      * 从标签中移除会话
      * @param options 标签选项
-     * @param callback 回调函数
      */
     static removeConversationsFromTag(
-      options: ConversationTagOptions,
-      callback: SimpleCallback
-    ): void;
+      options: ConversationTagOptions
+    ): Promise<Boolean>;
 
     /**
      * 发送消息
@@ -608,69 +567,26 @@ declare module "im-rn-sdk" {
      * @param message 消息对象
      */
     static recallMessage(
-      message: {
-        conversationType: number;
-        conversationId: string;
-        messageId: string;
-        sentTime: number;
-        exts?: { [key: string]: any };
-      },
-      extras?: { [key: string]: any },
-      callback: MessageOperationCallback
-    ): void;
+      messageIds: string[],
+      extras?: { [key: string]: any }
+    ): Promise<Boolean>;
 
     /**
      * 添加消息反应
+     * @param messageId 消息ID
+     * @param reactionId 反应ID
      */
     static addMessageReaction(
-      message: {
-        conversationType: number;
-        conversationId: string;
-        messageId: string;
-        reactionId: string;
-      },
-      reactionId: string,
-      callback: MessageOperationCallback
-    ): void;
+      messageId: string,
+      reactionId: string
+    ): Promise<Boolean>;
 
     /**
      * 移除消息反应
      */
     static removeMessageReaction(
-      message: {
-        conversationType: number;
-        conversationId: string;
-        messageId: string;
-        reactionId: string;
-      },
-      reactionId: string,
-      callback: MessageOperationCallback
-    ): void;
-
-    /**
-     * 添加收藏消息
-     */
-    static addFavoriteMessages(
-      messages: Array<{
-        conversationType: number;
-        conversationId: string;
-        senderId: string;
-        messageId: string;
-      }>,
-      callback: MessageOperationCallback
-    ): void;
-
-    /**
-     * 移除收藏消息
-     */
-    static removeFavorite(
-      messages: Array<{
-        conversationType: number;
-        conversationId: string;
-        senderId: string;
-        messageId: string;
-      }>,
-      callback: MessageOperationCallback
-    ): void;
+      messageId: string,
+      reactionId: string
+    ): Promise<Boolean>;
   }
 }

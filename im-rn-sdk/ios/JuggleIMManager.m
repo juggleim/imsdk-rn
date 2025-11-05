@@ -35,8 +35,7 @@ RCT_EXPORT_METHOD(connectWithToken : (NSString *)token) {
     @"MessageReactionAdded", @"MessageReactionRemoved", @"MessageSetTop",
     @"MessagesRead", @"GroupMessagesRead", @"MessageDestroyTimeUpdated",
     @"ConversationInfoAdded", @"ConversationInfoUpdated",
-    @"ConversationInfoDeleted", @"TotalUnreadMessageCountUpdated",
-    @"onMessageSent", @"onMessageSentError"
+    @"ConversationInfoDeleted", @"TotalUnreadMessageCountUpdated"
   ];
 }
 

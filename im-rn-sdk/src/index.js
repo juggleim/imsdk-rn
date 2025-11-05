@@ -1,7 +1,7 @@
 import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
 const { JuggleIM } = NativeModules;
-const juggleIMEmitter = new NativeEventEmitter(JuggleIM);
+const juggleIMEmitter = new NativeEventEmitter();
 
 /**
  * Juggle IM React Native SDK
@@ -397,11 +397,7 @@ class JIMClient {
    * @returns {Promise<object>} 创建的会话信息
    */
   static createConversationInfo(conversation) {
-    if (Platform.OS === "android") {
-      return JuggleIM.createConversationInfo(conversation);
-    } else if (Platform.OS === "ios") {
-      return JuggleIM.createConversationInfo(conversation);
-    }
+    return JuggleIM.createConversationInfo(conversation);
   }
 
   /**
@@ -410,11 +406,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 删除结果
    */
   static deleteConversationInfo(conversation) {
-    if (Platform.OS === "android") {
-      return JuggleIM.deleteConversationInfo(conversation);
-    } else if (Platform.OS === "ios") {
-      return JuggleIM.deleteConversationInfo(conversation);
-    }
+    return JuggleIM.deleteConversationInfo(conversation);
   }
 
   /**
@@ -424,11 +416,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setMute(conversation, isMute) {
-    if (Platform.OS === "android") {
-      return JuggleIM.setMute(conversation, isMute);
-    } else if (Platform.OS === "ios") {
-      return JuggleIM.setMute(conversation, isMute);
-    }
+    return JuggleIM.setMute(conversation, isMute);
   }
 
   /**
@@ -506,19 +494,11 @@ class JIMClient {
    * 获取置顶会话列表
    * @param {number} count - 获取数量
    * @param {number} timestamp - 时间戳
-   * @param {string} pullDirection - 拉取方向
+   * @param {number} direction - 拉取方向
    * @returns {Promise<Array>} 置顶会话列表
    */
-  static getTopConversationInfoList(
-    count = 20,
-    timestamp = 0,
-    direction = 0
-  ) {
-    return JuggleIM.getTopConversationInfoList(
-      count,
-      timestamp,
-      direction
-    );
+  static getTopConversationInfoList(count = 20, timestamp = 0, direction = 0) {
+    return JuggleIM.getTopConversationInfoList(count, timestamp, direction);
   }
 
   /**
@@ -537,11 +517,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 添加结果
    */
   static addConversationsToTag(conversations, tagId) {
-    if (Platform.OS === "android") {
-      return JuggleIM.addConversationsToTag(conversations, tagId);
-    } else if (Platform.OS === "ios") {
-      return JuggleIM.addConversationsToTag(conversations, tagId);
-    }
+    return JuggleIM.addConversationsToTag(conversations, tagId);
   }
 
   /**
@@ -551,11 +527,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 移除结果
    */
   static removeConversationsFromTag(conversations, tagId) {
-    if (Platform.OS === "android") {
-      return JuggleIM.removeConversationsFromTag(conversations, tagId);
-    } else if (Platform.OS === "ios") {
-      return JuggleIM.removeConversationsFromTag(conversations, tagId);
-    }
+    return JuggleIM.removeConversationsFromTag(conversations, tagId);
   }
 
   //message
@@ -567,25 +539,31 @@ class JIMClient {
    * @returns {Message} - 消息对象
    */
   static async sendMessage(message, callback = {}) {
-    const successListener = juggleIMEmitter.addListener('onMessageSent', (msg) => {
-      callback?.(msg, 0);
-      successListener.remove();
-    });
+    const successListener = juggleIMEmitter.addListener(
+      "onMessageSent",
+      (msg) => {
+        callback?.(msg, 0);
+        successListener.remove();
+      }
+    );
 
-    const errorListener = juggleIMEmitter.addListener('onMessageSentError', (msg) => {
-      callback?.(msg, msg.errorCode || -1);
-      errorListener.remove();
-    });
+    const errorListener = juggleIMEmitter.addListener(
+      "onMessageSentError",
+      (msg) => {
+        callback?.(msg, msg.errorCode || -1);
+        errorListener.remove();
+      }
+    );
 
     try {
       const localMsg = await JuggleIM.sendMessage(message);
-      console.log('sendMessage localMsg:', localMsg);
+      console.log("sendMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {
       callback?.(null, -1);
       successListener.remove();
       errorListener.remove();
-      console.error('sendMessage error:', error);
+      console.error("sendMessage error:", error);
     }
   }
 
@@ -602,45 +580,28 @@ class JIMClient {
   /**
    * 撤回消息
    * @param {Object} message - 消息对象
-   * @param {Object} extras - 扩展信息
-   * @param {function} callback - 回调函数
+   * @param {Object} extras - kv 扩展信息
    */
-  static recallMessage(message, extras = {}, callback) {
-    return JuggleIM.recallMessage(message, extras, callback)
-      .then((result) => {
-        callback && callback(null, result);
-      })
-      .catch((error) => {
-        callback && callback(error, null);
-      });
+  static recallMessage(message, extras = {}) {
+    return JuggleIM.recallMessage(message, extras, callback);
   }
 
   /**
    * 添加消息反应
    * @param {Object} message - 消息对象
    * @param {string} reactionId - 反应ID
-   * @param {function} callback - 回调函数
    */
-  static addMessageReaction(message, reactionId, callback) {
-    if (Platform.OS === "android") {
-      JuggleIM.addMessageReaction(message, reactionId, callback);
-    } else if (Platform.OS === "ios") {
-      JuggleIM.addMessageReaction(message, reactionId, callback);
-    }
+  static addMessageReaction(message, reactionId) {
+    JuggleIM.addMessageReaction(message, reactionId);
   }
 
   /**
    * 移除消息反应
    * @param {Object} message - 消息对象
    * @param {string} reactionId - 反应ID
-   * @param {function} callback - 回调函数
    */
-  static removeMessageReaction(message, reactionId, callback) {
-    if (Platform.OS === "android") {
-      JuggleIM.removeMessageReaction(message, reactionId, callback);
-    } else if (Platform.OS === "ios") {
-      JuggleIM.removeMessageReaction(message, reactionId, callback);
-    }
+  static removeMessageReaction(message, reactionId) {
+    JuggleIM.removeMessageReaction(message, reactionId, callback);
   }
 }
 
