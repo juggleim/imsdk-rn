@@ -265,7 +265,11 @@ declare module "im-rn-sdk" {
     count?: number;
     startTime?: number;
   }
-
+  export interface SendMessageObject {
+    conversationType: number;
+    conversationId: string;
+    content: MessageContent;
+  }
   /**
    * 连接状态监听器回调函数
    */
@@ -569,16 +573,12 @@ declare module "im-rn-sdk" {
 
     /**
      * 发送消息
-     * @param {number} message.conversationType 会话类型
-     * @param {string} message.conversationId 会话ID
-     * @param {MessageContent} message.content 消息内容
+     * @param {SendMessageObject} message  发送消息对象
      * @param {SendMessageCallback} [callback] 发送消息回调函数
      * @returns {Message} 发送中的消息对象
      */
     static sendMessage(
-      conversationType: number,
-      conversationId: string,
-      content: MessageContent,
+      message: SendMessageObject,
       callback?: SendMessageCallback
     ): Promise<Message>;
 

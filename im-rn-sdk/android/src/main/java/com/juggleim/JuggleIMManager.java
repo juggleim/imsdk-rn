@@ -532,11 +532,11 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
             List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager().getConversationInfoList(count, (long)ts, direction);
             Log.d("getConversationInfoList", "conversationInfos: " + conversationInfos.size());
-            WritableArray result = new WritableNativeArray();
-            for (ConversationInfo info : conversationInfos) {
-                result.pushMap(convertConversationInfoToMap(info));
-            }
-            promise.resolve(result);
+            // WritableArray result = new WritableNativeArray();
+            // for (ConversationInfo info : conversationInfos) {
+            //     result.pushMap(convertConversationInfoToMap(info));
+            // }
+            promise.resolve(RNTypeConverter.toWritableMap(conversationInfos));
         } catch (Exception e) {
             e.printStackTrace();
             promise.reject(e);
@@ -746,7 +746,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     @ReactMethod
     public void sendMessage(ReadableMap messageMap, Promise promise) {
         try {
-            Message message = convertMapToMessage(messageMap);
+            // Message message = convertMapToMessage(messageMap);
+            Message message = RNTypeConverter.fromReadableMap(messageMap, Message.class);
+            Log.d("sendMessage", message);
             Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
                     message.getContent(),
                     message.getConversation(),
@@ -765,7 +767,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         }
                     }
             );
-            WritableMap result = convertMessageToMap(sendMsg);
+            WritableMap result = RNTypeConverter.toWritableMap(sendMsg); // = convertMessageToMap(sendMsg);
             promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_MESSAGE_ERROR", e.getMessage());
@@ -799,17 +801,10 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onGetMessages(List<Message> messages, long timestamp, boolean hasMore, int code) {
                             WritableMap result = new WritableNativeMap();
-                            WritableArray messageArray = new WritableNativeArray();
-
-                            for (Message msg : messages) {
-                                messageArray.pushMap(convertMessageToMap(msg));
-                            }
-
-                            result.putArray("messages", messageArray);
+                            result.putArray("messages", RNTypeConverter.toWritableMap(messages));
                             result.putDouble("timestamp", timestamp);
                             result.putBoolean("hasMore", hasMore);
                             result.putInt("code", code);
-
                             promise.resolve(result);
                         }
                     }

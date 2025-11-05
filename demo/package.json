@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "im-rn-sdk": "^0.0.3",
+    "im-rn-sdk": "file:../im-rn-sdk",
     "react": "18.2.0",
     "react-native": "0.71.19"
   },

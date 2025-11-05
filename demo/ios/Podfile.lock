@@ -14,7 +14,7 @@ PODS:
   - hermes-engine (0.71.19):
     - hermes-engine/Pre-built (= 0.71.19)
   - hermes-engine/Pre-built (0.71.19)
-  - im-rn-sdk (1.0.0):
+  - im-rn-sdk (0.0.3):
     - JuggleIM (~> 1.8.25)
     - React-Core
   - JuggleIM (1.8.25)
@@ -481,7 +481,7 @@ SPEC CHECKSUMS:
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
   glog: 04b94705f318337d7ead9e6d17c019bd9b1f6b1b
   hermes-engine: 1468b458e81705fcd55ed6e29c32ff069f04b69c
-  im-rn-sdk: ceb70b55964882f77b51690441f170e49dc92c76
+  im-rn-sdk: 7838922e40c261c7cf95470a19df71639f452b81
   JuggleIM: 1918430c22247314e4f28554353890a57d42b3f1
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   RCT-Folly: 8dc08ca5a393b48b1c523ab6220dfdcc0fe000ad

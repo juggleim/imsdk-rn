@@ -534,11 +534,15 @@ class JIMClient {
 
   /**
    * 发送消息
-   * @param {Object} message - 消息对象
+   * @param {SendMessageObject} message
    * @param {Object} callback - 回调对象
-   * @returns {Message} - 消息对象
+   * @returns {import("im-rn-sdk").Message} - 消息对象
    */
-  static async sendMessage(message, callback = {}) {
+  static async sendMessage(
+    message,
+    callback = {}
+  ) {
+    console.log("sendMessage message:", message);
     const successListener = juggleIMEmitter.addListener(
       "onMessageSent",
       (msg) => {
@@ -575,23 +579,30 @@ class JIMClient {
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
-  static async sendImageMessage(conversationType, conversationId, content, callback = {}) {
+  static async sendImageMessage(
+    conversationType,
+    conversationId,
+    content,
+    callback = {}
+  ) {
     // 构造消息对象
     const message = {
       conversationType,
       conversationId,
       content: {
         ...content,
-        contentType: "jg:image"
-      }
+        contentType: "jg:image",
+      },
     };
 
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -600,8 +611,10 @@ class JIMClient {
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onSuccess?.(msg);
           progressListener.remove();
           successListener.remove();
@@ -614,8 +627,10 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -628,8 +643,10 @@ class JIMClient {
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onCancel?.(msg);
           progressListener.remove();
           successListener.remove();
@@ -661,23 +678,30 @@ class JIMClient {
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
-  static async sendFileMessage(conversationType, conversationId, content, callback = {}) {
+  static async sendFileMessage(
+    conversationType,
+    conversationId,
+    content,
+    callback = {}
+  ) {
     // 构造消息对象
     const message = {
       conversationType,
       conversationId,
       content: {
         ...content,
-        contentType: "jg:file"
-      }
+        contentType: "jg:file",
+      },
     };
 
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -686,8 +710,10 @@ class JIMClient {
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onSuccess?.(msg);
           progressListener.remove();
           successListener.remove();
@@ -700,8 +726,10 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -714,8 +742,10 @@ class JIMClient {
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onCancel?.(msg);
           progressListener.remove();
           successListener.remove();
@@ -747,23 +777,30 @@ class JIMClient {
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
-  static async sendVoiceMessage(conversationType, conversationId, content, callback = {}) {
+  static async sendVoiceMessage(
+    conversationType,
+    conversationId,
+    content,
+    callback = {}
+  ) {
     // 构造消息对象
     const message = {
       conversationType,
       conversationId,
       content: {
         ...content,
-        contentType: "jg:voice"
-      }
+        contentType: "jg:voice",
+      },
     };
 
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -772,8 +809,10 @@ class JIMClient {
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onSuccess?.(msg);
           progressListener.remove();
           successListener.remove();
@@ -786,8 +825,10 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (event.message.conversation.conversationType === conversationType &&
-            event.message.conversation.conversationId === conversationId) {
+        if (
+          event.message.conversation.conversationType === conversationType &&
+          event.message.conversation.conversationId === conversationId
+        ) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -800,8 +841,10 @@ class JIMClient {
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
       (msg) => {
-        if (msg.conversation.conversationType === conversationType &&
-            msg.conversation.conversationId === conversationId) {
+        if (
+          msg.conversation.conversationType === conversationType &&
+          msg.conversation.conversationId === conversationId
+        ) {
           callback.onCancel?.(msg);
           progressListener.remove();
           successListener.remove();
