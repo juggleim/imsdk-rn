@@ -564,18 +564,29 @@ class JIMClient {
    * 发送消息
    * @param {Object} message - 消息对象
    * @param {Object} callback - 回调对象
-   * @returns {Void}
+   * @returns {Message} - 消息对象
    */
-  static sendMessage(message, callback) {
-    console.log("sendMessage called with message:", message);
-    return JuggleIM.sendMessage(message)
-      .then((result) => {
-        callback && callback(null, result);
-        return result;
-      })
-      .catch((error) => {
-        callback && callback(error, null);
-      });
+  static async sendMessage(message, callback = {}) {
+    const successListener = juggleIMEmitter.addListener('onMessageSent', (msg) => {
+      callback?.(msg, 0);
+      successListener.remove();
+    });
+
+    const errorListener = juggleIMEmitter.addListener('onMessageSentError', (msg) => {
+      callback?.(msg, msg.errorCode || -1);
+      errorListener.remove();
+    });
+
+    try {
+      const localMsg = await JuggleIM.sendMessage(message);
+      console.log('sendMessage localMsg:', localMsg);
+      return localMsg;
+    } catch (error) {
+      callback?.(null, -1);
+      successListener.remove();
+      errorListener.remove();
+      console.error('sendMessage error:', error);
+    }
   }
 
   /**

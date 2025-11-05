@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -16,21 +16,246 @@ import {
   View,
   TouchableOpacity,
   Alert,
-  Button,
+  Modal,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import JuggleIM, {
   ConversationInfo,
-  PullDirection,
   TextMessageContent,
+  Message,
+  Conversation,
+  ConversationType,
 } from 'im-rn-sdk';
+
+// 定义会话列表项组件的属性
+interface ConversationListItemProps {
+  item: ConversationInfo;
+  onPress: () => void;
+}
+
+// 会话列表项组件
+const ConversationListItem: React.FC<ConversationListItemProps> = ({
+  item,
+  onPress,
+}) => {
+  // 格式化时间显示
+  const formatTime = (timestamp: number) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return `${date.getHours().toString().padStart(2, '0')}:${date
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+  };
+
+  // 获取最后一条消息的内容
+  const getLastMessageContent = () => {
+    if (item.draft) {
+      return `[草稿] ${item.draft}`;
+    }
+
+    if (item.lastMessage) {
+      const {content} = item.lastMessage;
+      switch (content.contentType) {
+        case 'jg:text':
+          return (content as TextMessageContent).content;
+        case 'jg:image':
+          return '[图片]';
+        case 'jg:voice':
+          return '[语音]';
+        case 'jg:file':
+          return '[文件]';
+        default:
+          return '未知消息类型';
+      }
+    }
+
+    return '';
+  };
+
+  // 生成默认头像颜色
+  const getDefaultAvatarColor = (id: string) => {
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 50%)`;
+  };
+
+  // 获取会话名称
+  const getConversationName = () => {
+    // 在实际应用中，这里应该从用户信息或者群组信息中获取
+    // 此处简化处理，根据会话ID生成名称
+    return `用户${item.conversation.conversationId.substring(0, 4)}`;
+  };
+
+  return (
+    <TouchableOpacity style={styles.conversationItem} onPress={onPress}>
+      <View
+        style={[
+          styles.avatar,
+          {
+            backgroundColor: getDefaultAvatarColor(
+              item.conversation.conversationId,
+            ),
+          },
+        ]}>
+        <Text style={styles.avatarText}>
+          {getConversationName().substring(0, 2)}
+        </Text>
+      </View>
+      <View style={styles.conversationInfo}>
+        <View style={styles.conversationHeader}>
+          <Text style={styles.conversationName} numberOfLines={1}>
+            {getConversationName()}
+          </Text>
+          <Text style={styles.messageTime}>
+            {formatTime(item.sortTime || item.topTime)}
+          </Text>
+        </View>
+        <View style={styles.messageInfo}>
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {getLastMessageContent()}
+          </Text>
+          {item.unreadMessageCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>
+                {item.unreadMessageCount > 99 ? '99+' : item.unreadMessageCount}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// 消息项组件属性
+interface MessageItemProps {
+  item: Message;
+  currentUserId: string;
+}
+
+// 消息项组件
+const MessageItem: React.FC<MessageItemProps> = ({item, currentUserId}) => {
+  const isSentByMe = item.direction === 1;
+
+  // 格式化消息时间
+  const formatMessageTime = (timestamp: number) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return `${date.getHours().toString().padStart(2, '0')}:${date
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+  };
+
+  // 获取消息内容
+  const getMessageContent = () => {
+    switch (item.content.contentType) {
+      case 'jg:text':
+        return (item.content as TextMessageContent).content;
+      case 'jg:image':
+        return '[图片]';
+      case 'jg:voice':
+        return '[语音]';
+      case 'jg:file':
+        return '[文件]';
+      default:
+        return '[未知消息类型]';
+    }
+  };
+
+  // 生成默认头像颜色
+  const getDefaultAvatarColor = (item: Message) => {
+    const id = item.senderUserId;
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash % 360);
+    return `hsl(${hue}, 70%, 50%)`;
+  };
+
+  return (
+    <View
+      style={[
+        styles.messageContainer,
+        isSentByMe
+          ? styles.sentMessageContainer
+          : styles.receivedMessageContainer,
+      ]}>
+      {!isSentByMe && (
+        <View
+          style={[
+            styles.avatar,
+            {backgroundColor: getDefaultAvatarColor(item)},
+          ]}>
+          <Text style={styles.avatarText}>
+            {item.senderUserId.substring(0, 2)}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.messageContentContainer}>
+        <View
+          style={[
+            styles.messageBubble,
+            isSentByMe
+              ? styles.sentMessageBubble
+              : styles.receivedMessageBubble,
+          ]}>
+          <Text
+            style={[
+              styles.messageText,
+              isSentByMe ? styles.sentMessageText : styles.receivedMessageText,
+            ]}>
+            {getMessageContent()}
+          </Text>
+        </View>
+        <Text style={styles.messageTimeText}>
+          {formatMessageTime(item.timestamp)}
+        </Text>
+      </View>
+
+      {isSentByMe && (
+        <View
+          style={[
+            styles.avatar,
+            {backgroundColor: getDefaultAvatarColor(item)},
+          ]}>
+          <Text style={styles.avatarText}>
+            {item.senderUserId.substring(0, 2)}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   const [connectionStatus, setConnectionStatus] = useState('未连接');
   const [isInitialized, setIsInitialized] = useState(false);
   const [statusHistory, setStatusHistory] = useState<string[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [conversationList, setConversationList] = useState<ConversationInfo[]>(
+    [],
+  );
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [messageList, setMessageList] = useState<Message[]>([]);
+  const [currentConversation, setCurrentConversation] = useState<Conversation>({
+    conversationId: '',
+    conversationType: 1,
+  });
+  const [inputText, setInputText] = useState('');
+  const flatListRef = useRef<FlatList>(null);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -95,12 +320,29 @@ function App(): JSX.Element {
         onMessageReceive: (message: any) => {
           console.log('收到消息:', message);
           addStatusToHistory(`收到消息: ${JSON.stringify(message)}`);
+
+          // 如果当前正在查看消息列表，且是当前会话的消息，则更新消息列表
+          if (
+            messageModalVisible &&
+            currentConversation &&
+            message.conversation.conversationType ===
+              currentConversation.conversationType &&
+            message.conversation.conversationId ===
+              currentConversation.conversationId
+          ) {
+            setMessageList(prev => [...prev, message]);
+
+            // 滚动到底部
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({animated: true});
+            }, 100);
+          }
         },
         onMessageUpdate: (message: any) => {
           console.log('消息更新:', message);
           addStatusToHistory(`消息更新: ${JSON.stringify(message)}`);
         },
-        onMessageDelete: (conv, messageIds) => {
+        onMessageDelete: (_conv, messageIds) => {
           console.log('消息删除:', messageIds);
           addStatusToHistory(`消息删除: ${messageIds.join(', ')}`);
         },
@@ -112,7 +354,7 @@ function App(): JSX.Element {
           addStatusToHistory(`会话添加: ${JSON.stringify(conversations)}`);
         },
         onConversationInfoUpdate: (conversations: ConversationInfo[]) => {
-          console.log('会话更新:', conversations);
+          // console.log('会话更新:', conversations);
           addStatusToHistory(`会话更新: ${JSON.stringify(conversations)}`);
         },
         onConversationInfoDelete: (conversations: ConversationInfo[]) => {
@@ -170,61 +412,113 @@ function App(): JSX.Element {
         content: txt,
         contentType: 'jg:text',
       };
-      JuggleIM.sendMessage(
+      const msg = JuggleIM.sendMessage(
         {
-          conversationType: 1,
-          conversationId: 'FnjQBq8bL-h',
+          conversationType: currentConversation.conversationType,
+          conversationId: currentConversation.conversationId,
           content: content,
         },
-        (error, message) => {
-          if (error) {
-            console.error('发送消息出错:', error);
-          } else {
-            console.log('消息发送成功:', message);
-          }
+        (message: any, error: any) => {
+          console.log('发送消息:', message, error);
+          // 发送成功 根据消息 clientMsgNo 查找替换 message list
+          setMessageList([...messageList, msg]);
         },
       );
+      console.log('发送的消息:', msg);
+      setMessageList(prev => [...prev, msg]);
     } catch (error) {
       console.error('发送消息失败:', error);
       Alert.alert('错误', '发送消息失败');
     }
   };
 
-  const getConversationList = () => {
+  const getConversationList = async () => {
     try {
-      JuggleIM.getConversationInfoList({
+      const conversations = await JuggleIM.getConversationInfoList({
         count: 20,
         timestamp: -1,
         direction: 0,
-      }).then(conversations => {
-        console.log('会话列表:', conversations);
       });
+      console.log('会话列表:', conversations);
+      setConversationList(conversations);
+      setModalVisible(true);
     } catch (error) {
       console.error('获取会话列表失败:', error);
       Alert.alert('错误', '获取会话列表失败');
     }
   };
 
-  const getMessageList = () => {
+  const getMessageList = async (conv: Conversation) => {
     try {
-      JuggleIM.getMessageList(
-        {
-          conversationType: 1,
-          conversationId: 'FnjQBq8bL-h',
-        },
-        1,
-        {
-          count: 20,
-          startTime: -1,
-        },
-      ).then(messages => {
-        console.log('消息列表:', messages);
+      const result = await JuggleIM.getMessageList(conv, 1, {
+        count: 20,
+        startTime: -1,
       });
+
+      // console.log('消息列表:', result);
+      const messages = result.messages || [];
+      setMessageList(messages);
     } catch (error) {
       console.error('获取消息列表失败:', error);
       Alert.alert('错误', '获取消息列表失败');
     }
   };
+
+  // 发送消息
+  const handleSend = () => {
+    if (!inputText.trim() || !currentConversation) return;
+
+    try {
+      const content: TextMessageContent = {
+        content: inputText,
+        contentType: 'jg:text',
+      };
+
+      JuggleIM.sendMessage(
+        {
+          conversationType: currentConversation.conversationType,
+          conversationId: currentConversation.conversationId,
+          content: content,
+        },
+        (message, errorCode) => {
+          // setMessageList(prev => [...prev, message]);
+          console.log('消息发送回调:', message, errorCode);
+          setInputText('');
+        },
+      )
+        .then((msg: Message) => {
+          console.log('发送的消息:', msg);
+          setInputText('');
+          setMessageList(prev => [...prev, msg]);
+        })
+        .catch(_error => {});
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      Alert.alert('错误', '发送消息失败');
+    }
+  };
+
+  // 渲染会话列表项
+  const renderConversationItem = ({item}: {item: ConversationInfo}) => (
+    <ConversationListItem
+      item={item}
+      onPress={() => {
+        const conv = item.conversation;
+        console.log('点击了会话:', conv);
+        setCurrentConversation({
+          conversationId: conv.conversationId,
+          conversationType: conv.conversationType,
+        });
+        getMessageList(conv);
+        setMessageModalVisible(true);
+      }}
+    />
+  );
+
+  // 渲染消息列表项
+  const renderMessageItem = ({item}: {item: Message}) => (
+    <MessageItem item={item} currentUserId="currentUser" />
+  );
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -289,7 +583,7 @@ function App(): JSX.Element {
               styles.connectButton,
               !isInitialized && styles.disabledButton,
             ]}
-            onPress={getConversationList.bind(this)}
+            onPress={getConversationList}
             disabled={!isInitialized}>
             <Text style={styles.buttonText}>会话列表</Text>
           </TouchableOpacity>
@@ -299,12 +593,108 @@ function App(): JSX.Element {
               styles.connectButton,
               !isInitialized && styles.disabledButton,
             ]}
-            onPress={getMessageList.bind(this)}
+            onPress={getMessageList.bind(this, {
+              conversationType: 1,
+              conversationId: 'FnjQBq8bL-h',
+            })}
             disabled={!isInitialized}>
             <Text style={styles.buttonText}>消息列表</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* 会话列表模态框 */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(false);
+        }}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>会话列表</Text>
+            <View style={{width: 40}} />
+          </View>
+
+          {conversationList.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>暂无会话</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={conversationList}
+              renderItem={renderConversationItem}
+              keyExtractor={(_item, index) => index.toString()}
+              style={styles.conversationList}
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* 消息列表模态框 */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={messageModalVisible}
+        onRequestClose={() => {
+          setMessageModalVisible(false);
+        }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setMessageModalVisible(false)}>
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>消息列表</Text>
+              <View style={{width: 40}} />
+            </View>
+
+            <FlatList
+              ref={flatListRef}
+              data={messageList}
+              renderItem={renderMessageItem}
+              keyExtractor={(item, index) =>
+                item.clientMsgNo + '' || index.toString()
+              }
+              style={styles.messageList}
+              contentContainerStyle={styles.messageListContent}
+              onContentSizeChange={() =>
+                flatListRef.current?.scrollToEnd({animated: true})
+              }
+            />
+
+            {/* 输入区域 */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="请输入消息..."
+                multiline={true}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  !inputText.trim() && styles.sendButtonDisabled,
+                ]}
+                onPress={handleSend}
+                disabled={!inputText.trim()}>
+                <Text style={styles.sendButtonText}>发送</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -376,6 +766,203 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 4,
     // fontFamily: 'monospace',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    zIndex: 1, // 确保header在最上层，避免被遮挡
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 28,
+    color: '#007AFF',
+    fontWeight: '300',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  conversationList: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  conversationItem: {
+    flexDirection: 'row',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  conversationInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  conversationName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    flex: 1,
+    marginRight: 8,
+  },
+  messageTime: {
+    fontSize: 12,
+    color: '#999',
+  },
+  messageInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+    marginRight: 8,
+  },
+  unreadBadge: {
+    backgroundColor: '#ff3b30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadCount: {
+    color: '#fff',
+    fontSize: 12,
+    paddingHorizontal: 4,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  messageList: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+  },
+  messageListContent: {
+    paddingVertical: 10,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    marginVertical: 5,
+    marginHorizontal: 10,
+  },
+  sentMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  receivedMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  messageContentContainer: {
+    maxWidth: '80%',
+    alignItems: 'flex-end',
+  },
+  messageBubble: {
+    borderRadius: 15,
+    padding: 10,
+    marginVertical: 2,
+  },
+  sentMessageBubble: {
+    backgroundColor: '#0084ff',
+    alignSelf: 'flex-end',
+  },
+  receivedMessageBubble: {
+    backgroundColor: '#ffffff',
+    alignSelf: 'flex-start',
+  },
+  messageText: {
+    fontSize: 16,
+  },
+  sentMessageText: {
+    color: '#ffffff',
+  },
+  receivedMessageText: {
+    color: '#000000',
+  },
+  messageTimeText: {
+    fontSize: 12,
+    color: '#999',
+    marginHorizontal: 10,
+    marginTop: 2,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  textInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 18,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginRight: 10,
+    maxHeight: 100,
+    fontSize: 16,
+  },
+  sendButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

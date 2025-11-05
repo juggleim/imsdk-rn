@@ -747,24 +747,26 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     public void sendMessage(ReadableMap messageMap, Promise promise) {
         try {
             Message message = convertMapToMessage(messageMap);
-            JIM.getInstance().getMessageManager().sendMessage(
+            Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
                     message.getContent(),
                     message.getConversation(),
                     new IMessageManager.ISendMessageCallback() {
                         @Override
                         public void onSuccess(Message sentMessage) {
                             WritableMap result = convertMessageToMap(sentMessage);
-                            promise.resolve(result);
+                            sendEvent("onMessageSent", result);
                         }
 
                         @Override
                         public void onError(Message message, int errorCode) {
-                            WritableMap result = convertMessageToMap(message);
-                            result.putInt("errorCode", errorCode);
-                            promise.reject("SEND_MESSAGE_ERROR", "发送消息失败", new Exception("Error code: " + errorCode));
+                            WritableMap error = convertMessageToMap(message);
+                            error.putInt("errorCode", errorCode);
+                            sendEvent("onMessageSentError", error);
                         }
                     }
             );
+            WritableMap result = convertMessageToMap(sendMsg);
+            promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_MESSAGE_ERROR", e.getMessage());
         }
