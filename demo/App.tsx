@@ -29,7 +29,6 @@ import JuggleIM, {
   TextMessageContent,
   Message,
   Conversation,
-  ConversationType,
 } from 'im-rn-sdk';
 
 // 定义会话列表项组件的属性
@@ -92,7 +91,7 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
   const getConversationName = () => {
     // 在实际应用中，这里应该从用户信息或者群组信息中获取
     // 此处简化处理，根据会话ID生成名称
-    return `用户${item.conversation.conversationId.substring(0, 4)}`;
+    return `${item.conversation.conversationId}`;
   };
 
   return (
@@ -458,6 +457,7 @@ function App(): JSX.Element {
       // console.log('消息列表:', result);
       const messages = result.messages || [];
       setMessageList(messages);
+      setMessageModalVisible(true);
     } catch (error) {
       console.error('获取消息列表失败:', error);
       Alert.alert('错误', '获取消息列表失败');
@@ -481,20 +481,34 @@ function App(): JSX.Element {
           content: content,
         },
         (message, errorCode) => {
-          // setMessageList(prev => [...prev, message]);
           console.log('消息发送回调:', message, errorCode);
-          setInputText('');
         },
       )
         .then((msg: Message) => {
           console.log('发送的消息:', msg);
+          // 正确更新消息列表并清空输入框
+          setMessageList(prev => {
+            const newList = [...prev, msg];
+            return newList;
+          });
           setInputText('');
-          setMessageList(prev => [...prev, msg]);
+          
+          // 滚动到底部
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({animated: true});
+          }, 100);
         })
-        .catch(_error => {});
+        .catch((error) => {
+          console.error('发送消息失败:', error);
+          Alert.alert('错误', '发送消息失败');
+          // 即使发送失败也要清空输入框
+          setInputText('');
+        });
     } catch (error) {
       console.error('发送消息失败:', error);
       Alert.alert('错误', '发送消息失败');
+      // 即使发送失败也要清空输入框
+      setInputText('');
     }
   };
 
@@ -504,13 +518,17 @@ function App(): JSX.Element {
       item={item}
       onPress={() => {
         const conv = item.conversation;
-        console.log('点击了会话:', conv);
-        setCurrentConversation({
+        // 修复：正确获取会话属性值，避免Getter/Setter显示问题
+        const conversationData = {
           conversationId: conv.conversationId,
           conversationType: conv.conversationType,
-        });
-        getMessageList(conv);
-        setMessageModalVisible(true);
+        };
+        console.log('点击了会话:', conversationData);
+        setCurrentConversation(conversationData);
+        // 先关闭会话列表Modal
+        setModalVisible(false);
+        // 延迟打开消息列表Modal，确保会话列表Modal已经关闭
+        getMessageList(conversationData);
       }}
     />
   );
@@ -557,7 +575,7 @@ function App(): JSX.Element {
           </View>
 
           {/* 状态历史记录 */}
-          <View style={styles.historyContainer}>
+          {/* <View style={styles.historyContainer}>
             {statusHistory.length === 0 ? (
               <Text style={styles.historyText}>暂无状态记录</Text>
             ) : (
@@ -567,7 +585,7 @@ function App(): JSX.Element {
                 </Text>
               ))
             )}
-          </View>
+          </View> */}
 
           <TouchableOpacity
             style={[
@@ -779,8 +797,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+    marginTop: 55,
+    paddingBottom: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
@@ -934,6 +952,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 10,
+    marginBottom: 20,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
@@ -967,3 +986,5 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+
+
