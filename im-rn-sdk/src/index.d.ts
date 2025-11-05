@@ -102,6 +102,7 @@ declare module "im-rn-sdk" {
     conversation: Conversation;
     content: MessageContent;
     groupMessageReadInfo?: GroupMessageReadInfo;
+    mentionInfo: MessageMentionInfo;
   }
 
   /**
@@ -156,11 +157,28 @@ declare module "im-rn-sdk" {
     mentionMsgList: MentionMsg[];
   }
 
+  export interface MessageMentionInfo {
+    /**
+     *   DEFAULT(0),
+     *   ALL(1),
+     *   SOMEONE(2),
+     *   ALL_AND_SOMEONE(3);
+     */
+    type: number;
+    targetUsers: UserInfo[];
+  }
+
   export interface MentionMsg {
     senderId: string;
     msgId: string;
     msgTime: number;
-    type: number; // MentionType枚举值
+    /**
+     *   DEFAULT(0),
+     *   ALL(1),
+     *   SOMEONE(2),
+     *   ALL_AND_SOMEONE(3);
+     */
+    type: number;
   }
 
   export interface ConversationInfo {
@@ -520,32 +538,16 @@ declare module "im-rn-sdk" {
 
     /**
      * 发送消息
-     * @param {object} message 消息对象
      * @param {number} message.conversationType 会话类型
      * @param {string} message.conversationId 会话ID
      * @param {MessageContent} message.content 消息内容
-     * @param {Message} [message.referMsg] 引用消息
-     * @param {object} [message.mentionInfo] 提及信息
-     * @param {number} [message.mentionInfo.mentionType] 提及类型
-     * @param {string[]} [message.mentionInfo.members] 提及成员列表
-     * @param {number} [message.lifeTime] 消息生命周期，单位秒
-     * @param {number} [message.lifeTimeAfterRead] 消息阅读后生命周期，单位秒
      * @param {SendMessageCallback} [callback] 发送消息回调函数
-     * @returns {Message} 发送的消息对象
+     * @returns {Message} 发送中的消息对象
      */
-    static async sendMessage(
-      message: {
-        conversationType: number;
-        conversationId: string;
-        content: MessageContent;
-        referMsg?: Message;
-        mentionInfo?: {
-          mentionType?: number;
-          members?: string[];
-        };
-        lifeTime?: number;
-        lifeTimeAfterRead?: number;
-      },
+    static sendMessage(
+      conversationType: number,
+      conversationId: string,
+      content: MessageContent,
       callback?: SendMessageCallback
     ): Promise<Message>;
 

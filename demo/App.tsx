@@ -412,12 +412,10 @@ function App(): JSX.Element {
         contentType: 'jg:text',
       };
       const msg = JuggleIM.sendMessage(
-        {
-          conversationType: currentConversation.conversationType,
-          conversationId: currentConversation.conversationId,
-          content: content,
-        },
-        (message: any, error: any) => {
+        currentConversation.conversationType,
+        currentConversation.conversationId,
+        content,
+        (message: Message, error: number) => {
           console.log('发送消息:', message, error);
           // 发送成功 根据消息 clientMsgNo 查找替换 message list
           setMessageList([...messageList, msg]);
@@ -475,11 +473,9 @@ function App(): JSX.Element {
       };
 
       JuggleIM.sendMessage(
-        {
-          conversationType: currentConversation.conversationType,
-          conversationId: currentConversation.conversationId,
-          content: content,
-        },
+        currentConversation.conversationType,
+        currentConversation.conversationId,
+        content,
         (message, errorCode) => {
           console.log('消息发送回调:', message, errorCode);
         },
@@ -492,13 +488,13 @@ function App(): JSX.Element {
             return newList;
           });
           setInputText('');
-          
+
           // 滚动到底部
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({animated: true});
           }, 100);
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('发送消息失败:', error);
           Alert.alert('错误', '发送消息失败');
           // 即使发送失败也要清空输入框
@@ -986,5 +982,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-
-

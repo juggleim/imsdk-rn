@@ -1,7 +1,7 @@
 import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
 const { JuggleIM } = NativeModules;
-const juggleIMEmitter = new NativeEventEmitter();
+const juggleIMEmitter = new NativeEventEmitter(JuggleIM);
 
 /**
  * Juggle IM React Native SDK
