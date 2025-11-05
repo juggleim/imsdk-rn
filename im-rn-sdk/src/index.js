@@ -568,6 +568,264 @@ class JIMClient {
   }
 
   /**
+   * 发送图片消息
+   * @param {number} conversationType - 会话类型
+   * @param {string} conversationId - 会话ID
+   * @param {Object} content - 图片消息内容
+   * @param {Object} callback - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static async sendImageMessage(conversationType, conversationId, content, callback = {}) {
+    // 构造消息对象
+    const message = {
+      conversationType,
+      conversationId,
+      content: {
+        ...content,
+        contentType: "jg:image"
+      }
+    };
+
+    // 添加监听器
+    const progressListener = juggleIMEmitter.addListener(
+      "onMediaMessageProgress",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onProgress?.(event.progress, event.message);
+        }
+      }
+    );
+
+    const successListener = juggleIMEmitter.addListener(
+      "onMediaMessageSent",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onSuccess?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const errorListener = juggleIMEmitter.addListener(
+      "onMediaMessageSentError",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const cancelListener = juggleIMEmitter.addListener(
+      "onMediaMessageCancelled",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onCancel?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    try {
+      const localMsg = await JuggleIM.sendImageMessage(message);
+      console.log("sendImageMessage localMsg:", localMsg);
+      return localMsg;
+    } catch (error) {
+      progressListener.remove();
+      successListener.remove();
+      errorListener.remove();
+      cancelListener.remove();
+      console.error("sendImageMessage error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 发送文件消息
+   * @param {number} conversationType - 会话类型
+   * @param {string} conversationId - 会话ID
+   * @param {Object} content - 文件消息内容
+   * @param {Object} callback - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static async sendFileMessage(conversationType, conversationId, content, callback = {}) {
+    // 构造消息对象
+    const message = {
+      conversationType,
+      conversationId,
+      content: {
+        ...content,
+        contentType: "jg:file"
+      }
+    };
+
+    // 添加监听器
+    const progressListener = juggleIMEmitter.addListener(
+      "onMediaMessageProgress",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onProgress?.(event.progress, event.message);
+        }
+      }
+    );
+
+    const successListener = juggleIMEmitter.addListener(
+      "onMediaMessageSent",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onSuccess?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const errorListener = juggleIMEmitter.addListener(
+      "onMediaMessageSentError",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const cancelListener = juggleIMEmitter.addListener(
+      "onMediaMessageCancelled",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onCancel?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    try {
+      const localMsg = await JuggleIM.sendFileMessage(message);
+      console.log("sendFileMessage localMsg:", localMsg);
+      return localMsg;
+    } catch (error) {
+      progressListener.remove();
+      successListener.remove();
+      errorListener.remove();
+      cancelListener.remove();
+      console.error("sendFileMessage error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 发送语音消息
+   * @param {number} conversationType - 会话类型
+   * @param {string} conversationId - 会话ID
+   * @param {Object} content - 语音消息内容
+   * @param {Object} callback - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static async sendVoiceMessage(conversationType, conversationId, content, callback = {}) {
+    // 构造消息对象
+    const message = {
+      conversationType,
+      conversationId,
+      content: {
+        ...content,
+        contentType: "jg:voice"
+      }
+    };
+
+    // 添加监听器
+    const progressListener = juggleIMEmitter.addListener(
+      "onMediaMessageProgress",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onProgress?.(event.progress, event.message);
+        }
+      }
+    );
+
+    const successListener = juggleIMEmitter.addListener(
+      "onMediaMessageSent",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onSuccess?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const errorListener = juggleIMEmitter.addListener(
+      "onMediaMessageSentError",
+      (event) => {
+        if (event.message.conversation.conversationType === conversationType &&
+            event.message.conversation.conversationId === conversationId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const cancelListener = juggleIMEmitter.addListener(
+      "onMediaMessageCancelled",
+      (msg) => {
+        if (msg.conversation.conversationType === conversationType &&
+            msg.conversation.conversationId === conversationId) {
+          callback.onCancel?.(msg);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    try {
+      const localMsg = await JuggleIM.sendVoiceMessage(message);
+      console.log("sendVoiceMessage localMsg:", localMsg);
+      return localMsg;
+    } catch (error) {
+      progressListener.remove();
+      successListener.remove();
+      errorListener.remove();
+      cancelListener.remove();
+      console.error("sendVoiceMessage error:", error);
+      throw error;
+    }
+  }
+
+  /**
    * 获取历史消息
    * @param {Object} conversation - 会话对象
    * @param {number} direction - 拉取方向

@@ -32,6 +32,8 @@ declare module "im-rn-sdk" {
 
   /**
    * 消息内容基类
+   * @property {string} contentType - 消息内容类型
+   *           枚举：jg:text, jg:image, jg:file, jg:voice
    */
   export interface MessageContent {
     contentType: string;
@@ -46,28 +48,47 @@ declare module "im-rn-sdk" {
 
   /**
    * 图片消息内容
+   * @property {string} localPath - 图片本地路径：支持 file://
+   * @property {string} [thumbnailLocalPath] - 缩略图本地路径：支持 file://
+   * @property {string} [url] - 图片远程URL
+   * @property {string} [thumbnailUrl] - 缩略图远程URL
+   * @property {number} width - 图片宽度
+   * @property {number} height - 图片高度
    */
   export interface ImageMessageContent extends MessageContent {
-    url: string;
-    name: string;
+    localPath: string;
+    thumbnailLocalPath?: string;
+    url?: string;
+    thumbnailUrl?: string;
     width: number;
     height: number;
   }
 
   /**
    * 文件消息内容
+   * @property {string} localPath - 文件本地路径：支持 file://
+   * @property {string} [url] - 文件远程URL
+   * @property {string} name - 文件名称
+   * @property {number} size - 文件大小，单位字节
+   * @property {string} [type] - 文件类型（MIME类型）
    */
   export interface FileMessageContent extends MessageContent {
-    url: string;
+    localPath: string;
+    url?: string;
     name: string;
     size: number;
+    type?: string;
   }
 
   /**
    * 语音消息内容
+   * @property {string} localPath - 语音本地路径：支持 file://
+   * @property {string} [url] - 语音远程URL
+   * @property {number} duration - 语音时长，单位秒
    */
   export interface VoiceMessageContent extends MessageContent {
-    url: string;
+    localPath: string;
+    url?: string;
     duration: number;
   }
 
@@ -318,6 +339,16 @@ declare module "im-rn-sdk" {
   }
 
   /**
+   * 发送媒体消息回调接口
+   */
+  export interface SendMediaMessageCallback {
+    onProgress?: (progress: number, message: Message) => void;
+    onSuccess?: (message: Message) => void;
+    onError?: (message: Message, errorCode: number) => void;
+    onCancel?: (message: Message) => void;
+  }
+
+  /**
    * Juggle IM React Native SDK
    */
   export default class JuggleIM {
@@ -552,6 +583,74 @@ declare module "im-rn-sdk" {
     ): Promise<Message>;
 
     /**
+     * 发送图片消息
+     * 示例
+     * ```javascript
+     * const imageContent = {
+     *  contentType: 'image',
+     *  localPath: 'file://path/to/image',
+     *  width: 800,
+     *  height: 600,
+     * };
+     * @param {number} conversationType 会话类型
+     * @param {string} conversationId 会话ID
+     * @param {ImageMessageContent} content 图片消息内容
+     * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
+     * @returns {Promise<Message>} 发送的消息对象
+     */
+    static sendImageMessage(
+      conversationType: number,
+      conversationId: string,
+      content: ImageMessageContent,
+      callback?: SendMediaMessageCallback
+    ): Promise<Message>;
+
+    /**
+     * 发送文件消息
+     * 示例：
+     * ```javascript
+     * const fileContent = {
+     *  contentType: 'file',
+     *  localPath: 'file://path/to/file',
+     *  name: 'filename.ext',
+     *  size: 123456,
+     * };
+     * @param {number} conversationType 会话类型
+     * @param {string} conversationId 会话ID
+     * @param {FileMessageContent} content 文件消息内容
+     * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
+     * @returns {Promise<Message>} 发送的消息对象
+     */
+    static sendFileMessage(
+      conversationType: number,
+      conversationId: string,
+      content: FileMessageContent,
+      callback?: SendMediaMessageCallback
+    ): Promise<Message>;
+
+    /**
+     * 发送语音消息
+     * 示例
+     * ```javascript
+     * const voiceContent = {
+     *  contentType: 'voice',
+     *  localPath: 'file://path/to/voice',
+     *  duration: 10, // 语音时长，单位秒
+     * };
+     * @param {number} conversationType 会话类型
+     * @param {string} conversationId 会话ID
+     * @param {VoiceMessageContent} content 语音消息内容
+     * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
+     * @returns {Promise<Message>} 发送的消息对象
+     */
+    static sendVoiceMessage(
+      conversationType: number,
+      conversationId: string,
+      content: VoiceMessageContent,
+      callback?: SendMediaMessageCallback
+    ): Promise<Message>;
+
+    /**
      * 获取历史消息
      * @param {Conversation} conversation 会话
      * @param {number} direction 拉取方向，0表示从startTime往后的消息，1表示从startTime往前的消息
@@ -566,7 +665,9 @@ declare module "im-rn-sdk" {
 
     /**
      * 撤回消息
-     * @param message 消息对象
+     * @param messageIds 消息ID列表
+     * @param extras 扩展字段
+     * @returns {Promise<Boolean>} 是否撤回成功
      */
     static recallMessage(
       messageIds: string[],
@@ -577,6 +678,7 @@ declare module "im-rn-sdk" {
      * 添加消息反应
      * @param messageId 消息ID
      * @param reactionId 反应ID
+     * @returns {Promise<Boolean>} 是否添加成功
      */
     static addMessageReaction(
       messageId: string,
@@ -585,6 +687,9 @@ declare module "im-rn-sdk" {
 
     /**
      * 移除消息反应
+     * @param messageId 消息ID
+     * @param reactionId 反应ID
+     * @returns {Promise<Boolean>} 是否移除成功
      */
     static removeMessageReaction(
       messageId: string,

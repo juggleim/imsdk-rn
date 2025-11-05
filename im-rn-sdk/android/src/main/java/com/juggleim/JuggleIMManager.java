@@ -913,6 +913,205 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             promise.reject("REMOVE_REACTION_ERROR", e.getMessage());
         }
     }
+
+    /**
+     * 发送图片消息
+     */
+    @ReactMethod
+    public void sendImageMessage(ReadableMap messageMap, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(messageMap);
+            ImageMessage imageMessage = new ImageMessage();
+            
+            ReadableMap contentMap = messageMap.getMap("content");
+            if (contentMap.hasKey("localPath")) {
+                imageMessage.setLocalPath(contentMap.getString("localPath"));
+            }
+            if (contentMap.hasKey("thumbnailLocalPath")) {
+                imageMessage.setThumbnailLocalPath(contentMap.getString("thumbnailLocalPath"));
+            }
+            if (contentMap.hasKey("url")) {
+                imageMessage.setUrl(contentMap.getString("url"));
+            }
+            if (contentMap.hasKey("thumbnailUrl")) {
+                imageMessage.setThumbnailUrl(contentMap.getString("thumbnailUrl"));
+            }
+            if (contentMap.hasKey("width")) {
+                imageMessage.setWidth(contentMap.getInt("width"));
+            }
+            if (contentMap.hasKey("height")) {
+                imageMessage.setHeight(contentMap.getInt("height"));
+            }
+            
+            Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
+                    imageMessage,
+                    conversation,
+                    new IMessageManager.ISendMediaMessageCallback() {
+                        @Override
+                        public void onProgress(int progress, Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putInt("progress", progress);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageProgress", params);
+                        }
+
+                        @Override
+                        public void onSuccess(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageSent", result);
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putMap("message", convertMessageToMap(message));
+                            params.putInt("errorCode", errorCode);
+                            sendEvent("onMediaMessageSentError", params);
+                        }
+
+                        @Override
+                        public void onCancel(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageCancelled", result);
+                        }
+                    }
+            );
+            
+            WritableMap result = convertMessageToMap(message);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("SEND_IMAGE_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 发送文件消息
+     */
+    @ReactMethod
+    public void sendFileMessage(ReadableMap messageMap, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(messageMap);
+            FileMessage fileMessage = new FileMessage();
+            
+            ReadableMap contentMap = messageMap.getMap("content");
+            if (contentMap.hasKey("localPath")) {
+                fileMessage.setLocalPath(contentMap.getString("localPath"));
+            }
+            if (contentMap.hasKey("url")) {
+                fileMessage.setUrl(contentMap.getString("url"));
+            }
+            if (contentMap.hasKey("name")) {
+                fileMessage.setName(contentMap.getString("name"));
+            }
+            if (contentMap.hasKey("size")) {
+                fileMessage.setSize((long) contentMap.getDouble("size"));
+            }
+            if (contentMap.hasKey("type")) {
+                fileMessage.setType(contentMap.getString("type"));
+            }
+            
+            Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
+                    fileMessage,
+                    conversation,
+                    new IMessageManager.ISendMediaMessageCallback() {
+                        @Override
+                        public void onProgress(int progress, Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putInt("progress", progress);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageProgress", params);
+                        }
+
+                        @Override
+                        public void onSuccess(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageSent", result);
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putMap("message", convertMessageToMap(message));
+                            params.putInt("errorCode", errorCode);
+                            sendEvent("onMediaMessageSentError", params);
+                        }
+
+                        @Override
+                        public void onCancel(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageCancelled", result);
+                        }
+                    }
+            );
+            
+            WritableMap result = convertMessageToMap(message);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("SEND_FILE_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 发送语音消息
+     */
+    @ReactMethod
+    public void sendVoiceMessage(ReadableMap messageMap, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(messageMap);
+            VoiceMessage voiceMessage = new VoiceMessage();
+            
+            ReadableMap contentMap = messageMap.getMap("content");
+            if (contentMap.hasKey("localPath")) {
+                voiceMessage.setLocalPath(contentMap.getString("localPath"));
+            }
+            if (contentMap.hasKey("url")) {
+                voiceMessage.setUrl(contentMap.getString("url"));
+            }
+            if (contentMap.hasKey("duration")) {
+                voiceMessage.setDuration(contentMap.getInt("duration"));
+            }
+            
+            Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
+                    voiceMessage,
+                    conversation,
+                    new IMessageManager.ISendMediaMessageCallback() {
+                        @Override
+                        public void onProgress(int progress, Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putInt("progress", progress);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageProgress", params);
+                        }
+
+                        @Override
+                        public void onSuccess(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageSent", result);
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putMap("message", convertMessageToMap(message));
+                            params.putInt("errorCode", errorCode);
+                            sendEvent("onMediaMessageSentError", params);
+                        }
+
+                        @Override
+                        public void onCancel(Message message) {
+                            WritableMap result = convertMessageToMap(message);
+                            sendEvent("onMediaMessageCancelled", result);
+                        }
+                    }
+            );
+            
+            WritableMap result = convertMessageToMap(message);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("SEND_VOICE_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
     private Message convertMapToMessage(ReadableMap messageMap) {
         Message message = new Message();
         Conversation conversation = convertMapToConversation(messageMap);

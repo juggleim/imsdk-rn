@@ -35,7 +35,9 @@ RCT_EXPORT_METHOD(connectWithToken : (NSString *)token) {
     @"MessageReactionAdded", @"MessageReactionRemoved", @"MessageSetTop",
     @"MessagesRead", @"GroupMessagesRead", @"MessageDestroyTimeUpdated",
     @"ConversationInfoAdded", @"ConversationInfoUpdated",
-    @"ConversationInfoDeleted", @"TotalUnreadMessageCountUpdated"
+    @"ConversationInfoDeleted", @"TotalUnreadMessageCountUpdated",
+    @"onMessageSent", @"onMessageSentError", @"onMediaMessageProgress",
+    @"onMediaMessageSent", @"onMediaMessageSentError", @"onMediaMessageCancelled"
   ];
 }
 
@@ -842,6 +844,165 @@ RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
         resolve(result);
     } @catch (NSException *exception) {
         reject(@"SEND_MESSAGE_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 发送图片消息
+ */
+RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        JImageMessage *imageMessage = [[JImageMessage alloc] init];
+        
+        NSDictionary *contentDict = messageDict[@"content"];
+        if (contentDict[@"localPath"]) {
+            imageMessage.localPath = contentDict[@"localPath"];
+        }
+        if (contentDict[@"thumbnailLocalPath"]) {
+            imageMessage.thumbnailLocalPath = contentDict[@"thumbnailLocalPath"];
+        }
+        if (contentDict[@"url"]) {
+            imageMessage.url = contentDict[@"url"];
+        }
+        if (contentDict[@"thumbnailUrl"]) {
+            imageMessage.thumbnailUrl = contentDict[@"thumbnailUrl"];
+        }
+        if (contentDict[@"width"]) {
+            imageMessage.width = [contentDict[@"width"] integerValue];
+        }
+        if (contentDict[@"height"]) {
+            imageMessage.height = [contentDict[@"height"] integerValue];
+        }
+        
+        JMessage *message = [JIM.shared.messageManager sendMediaMessage:imageMessage
+                                                        inConversation:conversation
+                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"progress"] = @(progress);
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageProgress" body:params];
+        } success:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageSent"
+                             body:[self convertMessageToDictionary:message]];
+        } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"message"] = [self convertMessageToDictionary:message];
+            params[@"errorCode"] = @(errorCode);
+            [self sendEventWithName:@"onMediaMessageSentError" body:params];
+        } cancelled:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageCancelled"
+                             body:[self convertMessageToDictionary:message]];
+        }];
+        
+        NSDictionary *result = [self convertMessageToDictionary:message];
+        resolve(result);
+    } @catch (NSException *exception) {
+        reject(@"SEND_IMAGE_MESSAGE_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 发送文件消息
+ */
+RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        JFileMessage *fileMessage = [[JFileMessage alloc] init];
+        
+        NSDictionary *contentDict = messageDict[@"content"];
+        if (contentDict[@"localPath"]) {
+            fileMessage.localPath = contentDict[@"localPath"];
+        }
+        if (contentDict[@"url"]) {
+            fileMessage.url = contentDict[@"url"];
+        }
+        if (contentDict[@"name"]) {
+            fileMessage.name = contentDict[@"name"];
+        }
+        if (contentDict[@"size"]) {
+            fileMessage.size = [contentDict[@"size"] longLongValue];
+        }
+        if (contentDict[@"type"]) {
+            fileMessage.type = contentDict[@"type"];
+        }
+        
+        JMessage *message = [JIM.shared.messageManager sendMediaMessage:fileMessage
+                                                        inConversation:conversation
+                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"progress"] = @(progress);
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageProgress" body:params];
+        } success:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageSent"
+                             body:[self convertMessageToDictionary:message]];
+        } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"message"] = [self convertMessageToDictionary:message];
+            params[@"errorCode"] = @(errorCode);
+            [self sendEventWithName:@"onMediaMessageSentError" body:params];
+        } cancelled:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageCancelled"
+                             body:[self convertMessageToDictionary:message]];
+        }];
+        
+        NSDictionary *result = [self convertMessageToDictionary:message];
+        resolve(result);
+    } @catch (NSException *exception) {
+        reject(@"SEND_FILE_MESSAGE_ERROR", exception.reason, nil);
+    }
+}
+
+/**
+ * 发送语音消息
+ */
+RCT_EXPORT_METHOD(sendVoiceMessage:(NSDictionary *)messageDict
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        JConversation *conversation = [self convertDictionaryToConversation:messageDict];
+        JVoiceMessage *voiceMessage = [[JVoiceMessage alloc] init];
+        
+        NSDictionary *contentDict = messageDict[@"content"];
+        if (contentDict[@"localPath"]) {
+            voiceMessage.localPath = contentDict[@"localPath"];
+        }
+        if (contentDict[@"url"]) {
+            voiceMessage.url = contentDict[@"url"];
+        }
+        if (contentDict[@"duration"]) {
+            voiceMessage.duration = [contentDict[@"duration"] integerValue];
+        }
+        
+        JMessage *message = [JIM.shared.messageManager sendMediaMessage:voiceMessage
+                                                        inConversation:conversation
+                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"progress"] = @(progress);
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageProgress" body:params];
+        } success:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageSent"
+                             body:[self convertMessageToDictionary:message]];
+        } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"message"] = [self convertMessageToDictionary:message];
+            params[@"errorCode"] = @(errorCode);
+            [self sendEventWithName:@"onMediaMessageSentError" body:params];
+        } cancelled:^(JMessage * _Nonnull message) {
+            [self sendEventWithName:@"onMediaMessageCancelled"
+                             body:[self convertMessageToDictionary:message]];
+        }];
+        
+        NSDictionary *result = [self convertMessageToDictionary:message];
+        resolve(result);
+    } @catch (NSException *exception) {
+        reject(@"SEND_VOICE_MESSAGE_ERROR", exception.reason, nil);
     }
 }
 
