@@ -29,11 +29,9 @@ import JuggleIM, {
   TextMessageContent,
   Message,
   Conversation,
-  ConversationType,
-  ImageMessageContent,
+  FileMessageContent,
 } from 'im-rn-sdk';
 import DocumentPicker from 'react-native-document-picker';
-import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
 
 // 定义会话列表项组件的属性
 interface ConversationListItemProps {
@@ -146,12 +144,11 @@ interface MessageItemProps {
 }
 
 // 消息项组件
-const MessageItem: React.FC<MessageItemProps> = ({item, currentUserId}) => {
+const MessageItem: React.FC<MessageItemProps> = ({item}) => {
   const isSentByMe = item.direction === 1;
 
   // 格式化消息时间
   const formatMessageTime = (timestamp: number) => {
-    if (!timestamp) return '';
     const date = new Date(timestamp);
     return `${date.getHours().toString().padStart(2, '0')}:${date
       .getMinutes()
@@ -555,7 +552,7 @@ function App(): JSX.Element {
           },
           {
             onProgress: (progress: number, message: Message) => {
-              console.log('progress', progress);
+              console.log('progress', progress, message);
             },
             onError: (message, errorCode) => {
               console.log('图片消息发送失败:', message, errorCode);
@@ -615,16 +612,16 @@ function App(): JSX.Element {
           },
           {
             onProgress: (progress: number, message: Message) => {
-              console.log('progress', progress);
+              console.log('progress', progress, message);
             },
-            onError: message => {
-              console.log('success', message);
+            onError: (message, error) => {
+              console.log('onError', error, message);
             },
             onSuccess: message => {
-              console.log('图片消息发送失败:', error);
+              console.log('图片消息发送失败:', message);
             },
             onCancel: message => {
-              console.log('complete');
+              console.log('onCancel', message);
             },
           },
         )
@@ -677,7 +674,7 @@ function App(): JSX.Element {
             },
             {
               onProgress: (progress: number, message: Message) => {
-                console.log('progress', progress);
+                console.log('progress', progress, message);
               },
               onError: (message, errorCode) => {
                 console.log('图片消息发送失败:', message, errorCode);
@@ -700,7 +697,7 @@ function App(): JSX.Element {
             });
         } else {
           // 发送文件消息
-          const fileContent: any = {
+          const fileContent: FileMessageContent = {
             contentType: 'jg:file',
             localPath: file.uri,
             name: file.name || 'file',
@@ -709,9 +706,26 @@ function App(): JSX.Element {
           };
 
           JuggleIM.sendFileMessage(
-            currentConversation.conversationType,
-            currentConversation.conversationId,
-            fileContent,
+            {
+              conversationType: currentConversation.conversationType,
+              conversationId: currentConversation.conversationId,
+              content: fileContent,
+            },
+            {
+              onProgress: progress => {
+                console.log('progress', progress);
+              },
+              onSuccess: message => {
+                console.log('message', message);
+              },
+              onError: (message, errorCode) => {
+                console.log('message', message);
+                console.log('errorCode', errorCode);
+              },
+              onCancel: message => {
+                console.log('message', message);
+              },
+            },
           )
             .then(message => {
               console.log('文件消息发送成功:', message);
@@ -906,6 +920,8 @@ function App(): JSX.Element {
                   <Text style={styles.mediaButtonText}>文件</Text>
                 </TouchableOpacity>
               </View>
+              <View style={styles.input}>
+
               <TextInput
                 style={styles.textInput}
                 value={inputText}
@@ -922,6 +938,7 @@ function App(): JSX.Element {
                 disabled={!inputText.trim()}>
                 <Text style={styles.sendButtonText}>发送</Text>
               </TouchableOpacity>
+              </View>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -1169,6 +1186,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
+  },
+  input: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   mediaButtonContainer: {
     flexDirection: 'row',
