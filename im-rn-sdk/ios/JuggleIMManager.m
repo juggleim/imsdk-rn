@@ -813,6 +813,7 @@ RCT_EXPORT_METHOD(removeConversationsFromTag:(NSArray *)conversationMaps
  * 发送消息
  */
 RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
+                  messageId:(NSString *)messageId
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
@@ -831,16 +832,19 @@ RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
                                                            success:^(JMessage *message) {
         [self sendEventWithName:@"onMessageSent"
                           body:@{
+                            @"messageId" : messageId,
                             @"message" : [self convertMessageToDictionary:message]
                           }];
         } error:^(JErrorCode errorCode, JMessage *message) {
           [self sendEventWithName:@"onMessageSentError"
                             body:@{
+                              @"messageId" : messageId,
                               @"message" : [self convertMessageToDictionary:message],
                               @"errorCode" : @(errorCode)
                             }];
         }];
-        NSDictionary *result = [self convertMessageToDictionary:message];
+        NSMutableDictionary *result = [self convertMessageToDictionary:message];
+        result[@"messageId"] = messageId;
         resolve(result);
     } @catch (NSException *exception) {
         reject(@"SEND_MESSAGE_ERROR", exception.reason, nil);

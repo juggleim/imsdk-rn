@@ -536,7 +536,7 @@ class JIMClient {
   /**
    * 发送消息
    * @param {SendMessageObject} message
-   * @param {Object} callback - 回调对象
+   * @param {import("im-rn-sdk").SendMessageCallback} callback - 回调对象
    * @returns {import("im-rn-sdk").Message} - 消息对象
    */
   static async sendMessage(
@@ -544,28 +544,37 @@ class JIMClient {
     callback = {}
   ) {
     console.log("sendMessage message:", message);
+    
+    // 生成唯一标识符以避免回调冲突
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
+    
     const successListener = juggleIMEmitter.addListener(
       "onMessageSent",
-      (msg) => {
-        callback?.(msg, 0);
-        successListener.remove();
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onSuccess?.(event.message);
+          successListener.remove();
+          errorListener.remove();
+        }
       }
     );
 
     const errorListener = juggleIMEmitter.addListener(
       "onMessageSentError",
-      (msg) => {
-        callback?.(msg, msg.errorCode || -1);
-        errorListener.remove();
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          successListener.remove();
+          errorListener.remove();
+        }
       }
     );
 
     try {
-      const localMsg = await JuggleIM.sendMessage(message);
-      console.log("sendMessage localMsg:", localMsg);
+      const localMsg = await JuggleIM.sendMessage(message, messageId);
       return localMsg;
     } catch (error) {
-      callback?.(null, -1);
+      callback.onError?.(null, -1);
       successListener.remove();
       errorListener.remove();
       console.error("sendMessage error:", error);

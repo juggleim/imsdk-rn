@@ -764,7 +764,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 发送消息
      */
     @ReactMethod
-    public void sendMessage(ReadableMap messageMap, Promise promise) {
+    public void sendMessage(ReadableMap messageMap, String messageId, Promise promise) {
         try {
             Message message = convertMapToMessage(messageMap);
             Log.d("sendMessage", message.toString());
@@ -775,18 +775,25 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onSuccess(Message sentMessage) {
                             WritableMap result = convertMessageToMap(sentMessage);
-                            sendEvent("onMessageSent", result);
+                            WritableMap event = new WritableNativeMap();
+                            event.putString("messageId", messageId);
+                            event.putMap("message", result);
+                            sendEvent("onMessageSent", event);
                         }
 
                         @Override
                         public void onError(Message message, int errorCode) {
-                            WritableMap error = convertMessageToMap(message);
-                            error.putInt("errorCode", errorCode);
-                            sendEvent("onMessageSentError", error);
+                            WritableMap errorResult = convertMessageToMap(message);
+                            WritableMap event = new WritableNativeMap();
+                            event.putString("messageId", messageId);
+                            event.putMap("message", errorResult);
+                            event.putInt("errorCode", errorCode);
+                            sendEvent("onMessageSentError", event);
                         }
                     }
             );
             WritableMap result = convertMessageToMap(sendMsg);
+            result.putString("messageId", messageId);
             promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_MESSAGE_ERROR", e.getMessage());

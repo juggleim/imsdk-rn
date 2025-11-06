@@ -257,7 +257,8 @@ declare module "im-rn-sdk" {
   }
 
   export interface SendMessageCallback {
-    (message: Message, errorCode?: number): void;
+    onSuccess?: (message: Message) => void;
+    onError?: (message: Message, errorCode: number) => void;
   }
 
   // 获取消息相关接口

@@ -274,6 +274,9 @@ function App(): JSX.Element {
   const token2 =
     'ChBud202ZnhxdDJhZWViaGI3GiDAln9OPZcTPWPNIdLzIgze03JIhfPqLPmdqEspQEX6AQ==';
 
+  const t =
+    'ChBud202ZnhxdDJhZWViaGI3GiDu8SYFf8xLMI1XOdyDZ4QCz8xL2QZIvI-etmJ3nqiXVg==';
+
   // 添加状态到历史记录
   const addStatusToHistory = (status: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -389,7 +392,7 @@ function App(): JSX.Element {
     }
 
     try {
-      JuggleIM.connect(token1);
+      JuggleIM.connect(t);
     } catch (error) {
       console.error('连接失败:', error);
       Alert.alert('错误', '连接失败');
@@ -411,32 +414,6 @@ function App(): JSX.Element {
     }
   };
 
-  const sendMsg = (txt: string) => {
-    try {
-      const content: TextMessageContent = {
-        content: txt,
-        contentType: 'jg:text',
-      };
-      const msg = JuggleIM.sendMessage(
-        {
-          conversationType: currentConversation.conversationType,
-          conversationId: currentConversation.conversationId,
-          content: content,
-        },
-        (message: any, error: any) => {
-          console.log('发送消息:', message, error);
-          // 发送成功 根据消息 clientMsgNo 查找替换 message list
-          setMessageList([...messageList, msg]);
-        },
-      );
-      console.log('发送的消息:', msg);
-      setMessageList(prev => [...prev, msg]);
-    } catch (error) {
-      console.error('发送消息失败:', error);
-      Alert.alert('错误', '发送消息失败');
-    }
-  };
-
   const getConversationList = async () => {
     try {
       const conversations = await JuggleIM.getConversationInfoList({
@@ -455,7 +432,7 @@ function App(): JSX.Element {
 
   const getMessageList = async (conv: Conversation) => {
     try {
-      const result = await JuggleIM.getMessageList(conv, 1, {
+      const result = await JuggleIM.getMessageList(conv, 0, {
         count: 20,
         startTime: -1,
       });
@@ -488,8 +465,13 @@ function App(): JSX.Element {
           conversationId: currentConversation.conversationId,
           content: content,
         },
-        (message, errorCode) => {
-          console.log('消息发送回调:', message, errorCode);
+        {
+          onError: (message, errorCode) => {
+            console.log('消息发送失败:', message, errorCode);
+          },
+          onSuccess: message => {
+            console.log('消息发送成功:', message);
+          },
         },
       )
         .then((msg: Message) => {
@@ -546,76 +528,6 @@ function App(): JSX.Element {
     <MessageItem item={item} currentUserId="currentUser" />
   );
 
-  const selectImage = async () => {
-    // 发送图片消息
-    const imageContent: any = {
-      contentType: 'jg:img',
-      localPath:
-        'content://com.android.providers.media.documents/document/image%3A692972',
-      width: 660, // 在实际应用中可以从图片EXIF信息中获取
-      height: 660, // 在实际应用中可以从图片EXIF信息中获取
-    };
-    console.log('图片消息内容:', imageContent);
-    // JuggleIM.sendImageMessage(
-    //   {
-    //     conversationType: currentConversation.conversationType,
-    //     conversationId: currentConversation.conversationId,
-    //     content: imageContent,
-    //   },
-    //   (message, errorCode) => {
-    //     console.log('消息发送回调:', message, errorCode);
-    //   },
-    // )
-    //   .then((msg: Message) => {
-    //     console.log('发送的消息:', msg);
-    //     // 正确更新消息列表并清空输入框
-    //     // setMessageList(prev => {
-    //     //   const newList = [...prev, msg];
-    //     //   return newList;
-    //     // });
-    //     // setInputText('');
-
-    //     // 滚动到底部
-    //     setTimeout(() => {
-    //       flatListRef.current?.scrollToEnd({animated: true});
-    //     }, 100);
-    //   })
-    //   .catch(error => {
-    //     console.error('发送消息失败:', error);
-    //     Alert.alert('错误', '发送消息失败');
-    //     // 即使发送失败也要清空输入框
-    //     // setInputText('');
-    //   });
-
-    try {
-      const message = await JuggleIM.sendImageMessage(
-        {
-          conversationType: currentConversation.conversationType,
-          conversationId: currentConversation.conversationId,
-          content: imageContent,
-        },
-        {
-          onProgress: (progress: number, message: Message) => {
-            console.log('progress', progress);
-          },
-          onError: (message: any, errorCode: any) => {
-            console.log('图片消息发送失败:', message, errorCode);
-          },
-          onSuccess: (message: any) => {
-            console.log('图片消息发送成功:', message);
-          },
-          onCancel: (message: any) => {
-            console.log('图片消息发送取消:', message);
-          },
-        },
-      );
-      console.log('图片消息发送成功:', message);
-      setMessageList(prev => [...prev, message]);
-    } catch (error) {
-      console.error('图片消息发送失败:', error);
-      Alert.alert('错误', '图片消息发送失败');
-    }
-  };
   // 从相册选择图片
   const selectFromGallery = async () => {
     try {
