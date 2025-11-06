@@ -582,17 +582,16 @@ class JIMClient {
     message,
     callback = {}
   ) {
-      console.log("sendImageMessage message...:", message);
-
-    const { conversationType, conversationId } = message.conversation || {};
+    console.log("sendImageMessage message...:", message);
+    
+    // 生成唯一标识符以避免回调冲突
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
+    
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
         console.log("onMediaMessageSent msg:", event);
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -600,13 +599,10 @@ class JIMClient {
 
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
-      (msg) => {
-        console.log("onMediaMessageSent msg:", msg);
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onSuccess?.(msg);
+      (event) => {
+        console.log("onMediaMessageSent msg:", event);
+        if (event.messageId === messageId) {
+          callback.onSuccess?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -618,10 +614,7 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -633,12 +626,9 @@ class JIMClient {
 
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
-      (msg) => {
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onCancel?.(msg);
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onCancel?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -648,8 +638,7 @@ class JIMClient {
     );
 
     try {
-      const localMsg = await JuggleIM.sendImageMessage(message);
-      console.log("sendImageMessage localMsg:", localMsg);
+      const localMsg = await JuggleIM.sendImageMessage(message, messageId);
       return localMsg;
     } catch (error) {
       progressListener.remove();
@@ -671,17 +660,14 @@ class JIMClient {
     message,
     callback = {}
   ) {
-    // Extract conversation info from message
-    const { conversationType, conversationId } = message.conversation || {};
+    // 生成唯一标识符以避免回调冲突
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
     
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -689,12 +675,9 @@ class JIMClient {
 
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
-      (msg) => {
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onSuccess?.(msg);
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onSuccess?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -706,10 +689,7 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -721,12 +701,9 @@ class JIMClient {
 
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
-      (msg) => {
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onCancel?.(msg);
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onCancel?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -737,7 +714,7 @@ class JIMClient {
 
     try {
       console.log("sendFileMessage message...:", message);
-      const localMsg = await JuggleIM.sendFileMessage(message);
+      const localMsg = await JuggleIM.sendFileMessage(message, messageId);
       console.log("sendFileMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {
@@ -760,17 +737,14 @@ class JIMClient {
     message,
     callback = {}
   ) {
-    // Extract conversation info from message
-    const { conversationType, conversationId } = message.conversation || {};
+    // 生成唯一标识符以避免回调冲突
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
     
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -778,12 +752,9 @@ class JIMClient {
 
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
-      (msg) => {
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onSuccess?.(msg);
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onSuccess?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -795,10 +766,7 @@ class JIMClient {
     const errorListener = juggleIMEmitter.addListener(
       "onMediaMessageSentError",
       (event) => {
-        if (
-          event.message.conversation.conversationType === conversationType &&
-          event.message.conversation.conversationId === conversationId
-        ) {
+        if (event.messageId === messageId) {
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -810,12 +778,9 @@ class JIMClient {
 
     const cancelListener = juggleIMEmitter.addListener(
       "onMediaMessageCancelled",
-      (msg) => {
-        if (
-          msg.conversation.conversationType === conversationType &&
-          msg.conversation.conversationId === conversationId
-        ) {
-          callback.onCancel?.(msg);
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onCancel?.(event.message);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -826,7 +791,7 @@ class JIMClient {
 
     try {
       console.log("sendVoiceMessage message...:", message);
-      const localMsg = await JuggleIM.sendVoiceMessage(message);
+      const localMsg = await JuggleIM.sendVoiceMessage(message, messageId);
       console.log("sendVoiceMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {

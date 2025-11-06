@@ -851,6 +851,7 @@ RCT_EXPORT_METHOD(sendMessage:(NSDictionary *)messageDict
  * 发送图片消息
  */
 RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
+                  messageId:(NSString *)messageId
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
@@ -881,23 +882,30 @@ RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
                                                         inConversation:conversation
                                                               progress:^(NSInteger progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
             params[@"message"] = [self convertMessageToDictionary:message];
             [self sendEventWithName:@"onMediaMessageProgress" body:params];
         } success:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageSent"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageSent" body:params];
         } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
         } cancelled:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageCancelled"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageCancelled" body:params];
         }];
         
-        NSDictionary *result = [self convertMessageToDictionary:message];
+        NSMutableDictionary *result = [self convertMessageToDictionary:message];
+        result[@"messageId"] = messageId;
         resolve(result);
     } @catch (NSException *exception) {
         reject(@"SEND_IMAGE_MESSAGE_ERROR", exception.reason, nil);
@@ -908,6 +916,7 @@ RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
  * 发送文件消息
  */
 RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
+                  messageId:(NSString *)messageId
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
@@ -935,23 +944,30 @@ RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
                                                         inConversation:conversation
                                                               progress:^(NSInteger progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
             params[@"message"] = [self convertMessageToDictionary:message];
             [self sendEventWithName:@"onMediaMessageProgress" body:params];
         } success:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageSent"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageSent" body:params];
         } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
         } cancelled:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageCancelled"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageCancelled" body:params];
         }];
         
-        NSDictionary *result = [self convertMessageToDictionary:message];
+        NSMutableDictionary *result = [self convertMessageToDictionary:message];
+        result[@"messageId"] = messageId;
         resolve(result);
     } @catch (NSException *exception) {
         reject(@"SEND_FILE_MESSAGE_ERROR", exception.reason, nil);
@@ -962,6 +978,7 @@ RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
  * 发送语音消息
  */
 RCT_EXPORT_METHOD(sendVoiceMessage:(NSDictionary *)messageDict
+                  messageId:(NSString *)messageId
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
@@ -983,23 +1000,30 @@ RCT_EXPORT_METHOD(sendVoiceMessage:(NSDictionary *)messageDict
                                                         inConversation:conversation
                                                               progress:^(NSInteger progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
             params[@"message"] = [self convertMessageToDictionary:message];
             [self sendEventWithName:@"onMediaMessageProgress" body:params];
         } success:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageSent"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageSent" body:params];
         } error:^(JErrorCode errorCode, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
         } cancelled:^(JMessage * _Nonnull message) {
-            [self sendEventWithName:@"onMediaMessageCancelled"
-                             body:[self convertMessageToDictionary:message]];
+            NSMutableDictionary *params = [NSMutableDictionary dictionary];
+            params[@"messageId"] = messageId;
+            params[@"message"] = [self convertMessageToDictionary:message];
+            [self sendEventWithName:@"onMediaMessageCancelled" body:params];
         }];
         
-        NSDictionary *result = [self convertMessageToDictionary:message];
+        NSMutableDictionary *result = [self convertMessageToDictionary:message];
+        result[@"messageId"] = messageId;
         resolve(result);
     } @catch (NSException *exception) {
         reject(@"SEND_VOICE_MESSAGE_ERROR", exception.reason, nil);

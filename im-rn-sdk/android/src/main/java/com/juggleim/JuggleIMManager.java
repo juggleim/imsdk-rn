@@ -936,18 +936,18 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 发送图片消息
      */
     @ReactMethod
-    public void sendImageMessage(ReadableMap messageMap, Promise promise) {
+    public void sendImageMessage(ReadableMap messageMap, String messageId, Promise promise) {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             ImageMessage imageMessage = new ImageMessage();
             
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
-              String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
-              imageMessage.setLocalPath(path);
+                String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
+                imageMessage.setLocalPath(path);
             }
             if (contentMap.hasKey("thumbnailLocalPath")) {
-              String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("thumbnailLocalPath"));
+                String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
                 imageMessage.setThumbnailLocalPath(path);
             }
             if (contentMap.hasKey("url")) {
@@ -969,25 +969,26 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                     new IMessageManager.ISendMediaMessageCallback() {
                         @Override
                         public void onProgress(int progress, Message message) {
-                          Log.d("JuggleIM", "onMediaMessageProgress: " + progress);
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putInt("progress", progress);
                             params.putMap("message", convertMessageToMap(message));
+                            Log.d("JuggleIM", "onMediaMessageProgress: " + progress);
                             sendEvent("onMediaMessageProgress", params);
                         }
 
                         @Override
                         public void onSuccess(Message message) {
-                          Log.i("JuggleIM", "onSuccess");
-                            WritableMap result = convertMessageToMap(message);
-                            Log.d("JuggleIM", "onSuccess");
-                            sendEvent("onMediaMessageSent", result);
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageSent", params);
                         }
 
                         @Override
                         public void onError(Message message, int errorCode) {
-                          Log.e("JuggleIM", "onError: " + errorCode);
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putMap("message", convertMessageToMap(message));
                             params.putInt("errorCode", errorCode);
                             sendEvent("onMediaMessageSentError", params);
@@ -995,17 +996,18 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
                         @Override
                         public void onCancel(Message message) {
-                          Log.e("JuggleIM", "onCancel");
-                            WritableMap result = convertMessageToMap(message);
-                            sendEvent("onMediaMessageCancelled", result);
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageCancelled", params);
                         }
                     }
             );
             
             WritableMap result = convertMessageToMap(message);
+            result.putString("messageId", messageId);
             promise.resolve(result);
         } catch (Exception e) {
-          Log.e("JuggleIM", "sendImageMessage error: " + e.getMessage());
             promise.reject("SEND_IMAGE_MESSAGE_ERROR", e.getMessage());
         }
     }
@@ -1014,7 +1016,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 发送文件消息
      */
     @ReactMethod
-    public void sendFileMessage(ReadableMap messageMap, Promise promise) {
+    public void sendFileMessage(ReadableMap messageMap, String messageId, Promise promise) {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             FileMessage fileMessage = new FileMessage();
@@ -1044,6 +1046,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onProgress(int progress, Message message) {
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putInt("progress", progress);
                             params.putMap("message", convertMessageToMap(message));
                             sendEvent("onMediaMessageProgress", params);
@@ -1051,13 +1054,16 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
                         @Override
                         public void onSuccess(Message message) {
-                            WritableMap result = convertMessageToMap(message);
-                            sendEvent("onMediaMessageSent", result);
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageSent", params);
                         }
 
                         @Override
                         public void onError(Message message, int errorCode) {
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putMap("message", convertMessageToMap(message));
                             params.putInt("errorCode", errorCode);
                             sendEvent("onMediaMessageSentError", params);
@@ -1065,13 +1071,16 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
                         @Override
                         public void onCancel(Message message) {
-                            WritableMap result = convertMessageToMap(message);
-                            sendEvent("onMediaMessageCancelled", result);
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageCancelled", params);
                         }
                     }
             );
             
             WritableMap result = convertMessageToMap(message);
+            result.putString("messageId", messageId);
             promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_FILE_MESSAGE_ERROR", e.getMessage());
