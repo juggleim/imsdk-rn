@@ -1,7 +1,8 @@
 import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
 const { JuggleIM } = NativeModules;
-const juggleIMEmitter = new NativeEventEmitter(JuggleIM);
+// 为避免警告，仅在Android平台传入JuggleIM参数
+const juggleIMEmitter = Platform.OS === 'android' ? new NativeEventEmitter(JuggleIM) : new NativeEventEmitter();
 
 /**
  * Juggle IM React Native SDK

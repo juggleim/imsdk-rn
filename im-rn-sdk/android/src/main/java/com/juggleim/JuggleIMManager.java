@@ -60,6 +60,17 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     public String getName() {
         return MODULE_NAME;
     }
+    
+    // 添加这两个方法以解决React Native的警告
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+    
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
 
     /**
      * 设置服务器地址列表
