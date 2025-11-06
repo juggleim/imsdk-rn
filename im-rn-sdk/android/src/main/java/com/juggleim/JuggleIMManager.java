@@ -31,6 +31,8 @@ import com.juggle.im.model.GroupMessageReadInfo;
 import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.messages.*;
 import com.juggle.im.JIM;
+import com.juggle.im.internal.logger.JLogConfig;
+import com.juggle.im.internal.logger.JLogLevel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,7 +82,11 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void init(String appKey) {
-        com.juggle.im.JIM.getInstance().init(getCurrentActivity(), appKey);
+        JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
+        JLogConfig.Builder logBuilder = new JLogConfig.Builder(getReactApplicationContext());
+        logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
+        builder.setJLogConfig(new JLogConfig(logBuilder));      
+        JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
     }
 
     /**
@@ -403,7 +409,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         Log.d("convertMessageContentToMap", "contentType: " + content.getContentType());
         if (content.getContentType().equals("jg:text")) {
             map.putString("content", ((TextMessage) content).getContent());
-        } else if (content.getContentType().equals("jg:image")) {
+        } else if (content.getContentType().equals("jg:img")) {
             ImageMessage img = (ImageMessage) content;
             map.putString("url", img.getUrl());
             map.putString("localPath", img.getLocalPath());
@@ -422,6 +428,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("url", voice.getUrl());
             map.putString("localPath", voice.getLocalPath());
             map.putInt("duration", voice.getDuration());
+        } else {
+            Log.d("convertMessageContentToMap", "Unknown contentType: " + content.getContentType());
         }
 
         return map;
@@ -433,7 +441,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             case "jg:text":
                 TextMessage text = new TextMessage(map.getString("content"));
                 return text;
-            case "jg:image":
+            case "jg:img":
                 ImageMessage img = new ImageMessage();
                 img.setUrl(map.getString("url"));
                 img.setLocalPath(map.getString("localPath"));
@@ -456,6 +464,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 voice.setDuration(map.getInt("duration"));
                 return voice;
             default:
+                Log.d("convertMapToMessageContent", "contentType: " + contentType);
                 return null;
         }
     }
@@ -532,11 +541,11 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
             List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager().getConversationInfoList(count, (long)ts, direction);
             Log.d("getConversationInfoList", "conversationInfos: " + conversationInfos.size());
-            // WritableArray result = new WritableNativeArray();
-            // for (ConversationInfo info : conversationInfos) {
-            //     result.pushMap(convertConversationInfoToMap(info));
-            // }
-            promise.resolve(RNTypeConverter.toWritableMap(conversationInfos));
+            WritableArray result = new WritableNativeArray();
+            for (ConversationInfo info : conversationInfos) {
+                result.pushMap(convertConversationInfoToMap(info));
+            }
+            promise.resolve(result);
         } catch (Exception e) {
             e.printStackTrace();
             promise.reject(e);
@@ -746,9 +755,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     @ReactMethod
     public void sendMessage(ReadableMap messageMap, Promise promise) {
         try {
-            // Message message = convertMapToMessage(messageMap);
-            Message message = RNTypeConverter.fromReadableMap(messageMap, Message.class);
-            Log.d("sendMessage", message);
+            Message message = convertMapToMessage(messageMap);
+            Log.d("sendMessage", message.toString());
             Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
                     message.getContent(),
                     message.getConversation(),
@@ -767,7 +775,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         }
                     }
             );
-            WritableMap result = RNTypeConverter.toWritableMap(sendMsg); // = convertMessageToMap(sendMsg);
+            WritableMap result = convertMessageToMap(sendMsg);
             promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_MESSAGE_ERROR", e.getMessage());
@@ -801,7 +809,11 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onGetMessages(List<Message> messages, long timestamp, boolean hasMore, int code) {
                             WritableMap result = new WritableNativeMap();
-                            result.putArray("messages", RNTypeConverter.toWritableMap(messages));
+                            WritableArray messageArray = new WritableNativeArray();
+                            for (Message msg : messages) {
+                                messageArray.pushMap(convertMessageToMap(msg));
+                            }
+                            result.putArray("messages", messageArray);
                             result.putDouble("timestamp", timestamp);
                             result.putBoolean("hasMore", hasMore);
                             result.putInt("code", code);
@@ -920,10 +932,12 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
-                imageMessage.setLocalPath(contentMap.getString("localPath"));
+              String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
+              imageMessage.setLocalPath("file://" + path);
             }
             if (contentMap.hasKey("thumbnailLocalPath")) {
-                imageMessage.setThumbnailLocalPath(contentMap.getString("thumbnailLocalPath"));
+              String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("thumbnailLocalPath"));
+                imageMessage.setThumbnailLocalPath("file://" + path);
             }
             if (contentMap.hasKey("url")) {
                 imageMessage.setUrl(contentMap.getString("url"));
@@ -947,12 +961,14 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                             WritableMap params = new WritableNativeMap();
                             params.putInt("progress", progress);
                             params.putMap("message", convertMessageToMap(message));
+                            Log.d("JuggleIM", "onMediaMessageProgress: " + progress);
                             sendEvent("onMediaMessageProgress", params);
                         }
 
                         @Override
                         public void onSuccess(Message message) {
                             WritableMap result = convertMessageToMap(message);
+                            Log.d("JuggleIM", "onSuccess");
                             sendEvent("onMediaMessageSent", result);
                         }
 
@@ -990,7 +1006,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
-                fileMessage.setLocalPath(contentMap.getString("localPath"));
+                String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
+                fileMessage.setLocalPath("file://" + path);
             }
             if (contentMap.hasKey("url")) {
                 fileMessage.setUrl(contentMap.getString("url"));
@@ -1057,7 +1074,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
-                voiceMessage.setLocalPath(contentMap.getString("localPath"));
+                String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
+                voiceMessage.setLocalPath("file://" + path);
             }
             if (contentMap.hasKey("url")) {
                 voiceMessage.setUrl(contentMap.getString("url"));
@@ -1075,12 +1093,14 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                             WritableMap params = new WritableNativeMap();
                             params.putInt("progress", progress);
                             params.putMap("message", convertMessageToMap(message));
+                            Log.d("JuggleIM", "onMediaMessageProgress: " + progress);
                             sendEvent("onMediaMessageProgress", params);
                         }
 
                         @Override
                         public void onSuccess(Message message) {
                             WritableMap result = convertMessageToMap(message);
+                            Log.d("JuggleIM", "onMediaMessageSent");
                             sendEvent("onMediaMessageSent", result);
                         }
 

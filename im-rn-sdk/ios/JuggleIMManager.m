@@ -1129,7 +1129,7 @@ RCT_EXPORT_METHOD(removeMessageReaction:(NSDictionary *)messageDict
     if ([contentType isEqualToString:@"jg:text"]) {
         JTextMessage *text = [[JTextMessage alloc] initWithContent:messageDict[@"content"] ?: @""];
         return text;
-    } else if ([contentType isEqualToString:@"jg:image"]) {
+    } else if ([contentType isEqualToString:@"jg:img"]) {
         JImageMessage *img = [[JImageMessage alloc] init];
         img.url = messageDict[@"url"];
         img.localPath = messageDict[@"localPath"];

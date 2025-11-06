@@ -573,32 +573,21 @@ class JIMClient {
 
   /**
    * 发送图片消息
-   * @param {number} conversationType - 会话类型
-   * @param {string} conversationId - 会话ID
-   * @param {Object} content - 图片消息内容
+   * @param {Object} message - 图片消息内容
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
   static async sendImageMessage(
-    conversationType,
-    conversationId,
-    content,
+    message,
     callback = {}
   ) {
-    // 构造消息对象
-    const message = {
-      conversationType,
-      conversationId,
-      content: {
-        ...content,
-        contentType: "jg:image",
-      },
-    };
+      console.log("sendImageMessage message...:", message);
 
-    // 添加监听器
+    const { conversationType, conversationId } = message.conversation || {};
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
+        console.log("onMediaMessageSent msg:", event);
         if (
           event.message.conversation.conversationType === conversationType &&
           event.message.conversation.conversationId === conversationId
@@ -611,6 +600,7 @@ class JIMClient {
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
       (msg) => {
+        console.log("onMediaMessageSent msg:", msg);
         if (
           msg.conversation.conversationType === conversationType &&
           msg.conversation.conversationId === conversationId
@@ -672,28 +662,17 @@ class JIMClient {
 
   /**
    * 发送文件消息
-   * @param {number} conversationType - 会话类型
-   * @param {string} conversationId - 会话ID
-   * @param {Object} content - 文件消息内容
+   * @param {Object} message - 文件消息内容
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
   static async sendFileMessage(
-    conversationType,
-    conversationId,
-    content,
+    message,
     callback = {}
   ) {
-    // 构造消息对象
-    const message = {
-      conversationType,
-      conversationId,
-      content: {
-        ...content,
-        contentType: "jg:file",
-      },
-    };
-
+    // Extract conversation info from message
+    const { conversationType, conversationId } = message.conversation || {};
+    
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
@@ -756,6 +735,7 @@ class JIMClient {
     );
 
     try {
+      console.log("sendFileMessage message...:", message);
       const localMsg = await JuggleIM.sendFileMessage(message);
       console.log("sendFileMessage localMsg:", localMsg);
       return localMsg;
@@ -771,28 +751,17 @@ class JIMClient {
 
   /**
    * 发送语音消息
-   * @param {number} conversationType - 会话类型
-   * @param {string} conversationId - 会话ID
-   * @param {Object} content - 语音消息内容
+   * @param {Object} message - 语音消息内容
    * @param {Object} callback - 回调对象
    * @returns {Promise<Message>} - 消息对象
    */
   static async sendVoiceMessage(
-    conversationType,
-    conversationId,
-    content,
+    message,
     callback = {}
   ) {
-    // 构造消息对象
-    const message = {
-      conversationType,
-      conversationId,
-      content: {
-        ...content,
-        contentType: "jg:voice",
-      },
-    };
-
+    // Extract conversation info from message
+    const { conversationType, conversationId } = message.conversation || {};
+    
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
@@ -855,6 +824,7 @@ class JIMClient {
     );
 
     try {
+      console.log("sendVoiceMessage message...:", message);
       const localMsg = await JuggleIM.sendVoiceMessage(message);
       console.log("sendVoiceMessage localMsg:", localMsg);
       return localMsg;

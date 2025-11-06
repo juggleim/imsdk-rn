@@ -33,7 +33,7 @@ declare module "im-rn-sdk" {
   /**
    * 消息内容基类
    * @property {string} contentType - 消息内容类型
-   *           枚举：jg:text, jg:image, jg:file, jg:voice
+   *           枚举：jg:text, jg:img, jg:file, jg:voice
    */
   export interface MessageContent {
     contentType: string;
@@ -592,19 +592,14 @@ declare module "im-rn-sdk" {
      *  width: 800,
      *  height: 600,
      * };
-     * @param {number} conversationType 会话类型
-     * @param {string} conversationId 会话ID
-     * @param {ImageMessageContent} content 图片消息内容
+     * @param {SendMessageObject} message
      * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
      * @returns {Promise<Message>} 发送的消息对象
      */
     static sendImageMessage(
-      conversationType: number,
-      conversationId: string,
-      content: ImageMessageContent,
+      message: SendMessageObject,
       callback?: SendMediaMessageCallback
     ): Promise<Message>;
-
     /**
      * 发送文件消息
      * 示例：
@@ -615,16 +610,12 @@ declare module "im-rn-sdk" {
      *  name: 'filename.ext',
      *  size: 123456,
      * };
-     * @param {number} conversationType 会话类型
-     * @param {string} conversationId 会话ID
-     * @param {FileMessageContent} content 文件消息内容
+     * @param {SendMessageObject} message
      * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
      * @returns {Promise<Message>} 发送的消息对象
      */
     static sendFileMessage(
-      conversationType: number,
-      conversationId: string,
-      content: FileMessageContent,
+      message: SendMessageObject,
       callback?: SendMediaMessageCallback
     ): Promise<Message>;
 

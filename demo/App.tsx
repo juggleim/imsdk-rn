@@ -29,7 +29,11 @@ import JuggleIM, {
   TextMessageContent,
   Message,
   Conversation,
+  ConversationType,
+  ImageMessageContent,
 } from 'im-rn-sdk';
+import DocumentPicker from 'react-native-document-picker';
+import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
 
 // 定义会话列表项组件的属性
 interface ConversationListItemProps {
@@ -63,7 +67,7 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
       switch (content.contentType) {
         case 'jg:text':
           return (content as TextMessageContent).content;
-        case 'jg:image':
+        case 'jg:img':
           return '[图片]';
         case 'jg:voice':
           return '[语音]';
@@ -160,14 +164,15 @@ const MessageItem: React.FC<MessageItemProps> = ({item, currentUserId}) => {
     switch (item.content.contentType) {
       case 'jg:text':
         return (item.content as TextMessageContent).content;
-      case 'jg:image':
-        return '[图片]';
+      case 'jg:img':
+        const imageMsg = (item.content as ImageMessageContent).url;
+        return '[图片]' + imageMsg;
       case 'jg:voice':
         return '[语音]';
       case 'jg:file':
         return '[文件]';
       default:
-        return '[未知消息类型]';
+        return '[未知消息类型]' + item.content.contentType;
     }
   };
 
@@ -455,7 +460,9 @@ function App(): JSX.Element {
         startTime: -1,
       });
 
-      // console.log('消息列表:', result);
+      result.messages?.map(item => {
+        console.log('消息列表项:', item.content);
+      });
       const messages = result.messages || [];
       setMessageList(messages);
       setMessageModalVisible(true);
@@ -493,13 +500,13 @@ function App(): JSX.Element {
             return newList;
           });
           setInputText('');
-          
+
           // 滚动到底部
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({animated: true});
           }, 100);
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('发送消息失败:', error);
           Alert.alert('错误', '发送消息失败');
           // 即使发送失败也要清空输入框
@@ -538,6 +545,282 @@ function App(): JSX.Element {
   const renderMessageItem = ({item}: {item: Message}) => (
     <MessageItem item={item} currentUserId="currentUser" />
   );
+
+  const selectImage = async () => {
+    // 发送图片消息
+    const imageContent: any = {
+      contentType: 'jg:img',
+      localPath:
+        'content://com.android.providers.media.documents/document/image%3A692972',
+      width: 660, // 在实际应用中可以从图片EXIF信息中获取
+      height: 660, // 在实际应用中可以从图片EXIF信息中获取
+    };
+    console.log('图片消息内容:', imageContent);
+    // JuggleIM.sendImageMessage(
+    //   {
+    //     conversationType: currentConversation.conversationType,
+    //     conversationId: currentConversation.conversationId,
+    //     content: imageContent,
+    //   },
+    //   (message, errorCode) => {
+    //     console.log('消息发送回调:', message, errorCode);
+    //   },
+    // )
+    //   .then((msg: Message) => {
+    //     console.log('发送的消息:', msg);
+    //     // 正确更新消息列表并清空输入框
+    //     // setMessageList(prev => {
+    //     //   const newList = [...prev, msg];
+    //     //   return newList;
+    //     // });
+    //     // setInputText('');
+
+    //     // 滚动到底部
+    //     setTimeout(() => {
+    //       flatListRef.current?.scrollToEnd({animated: true});
+    //     }, 100);
+    //   })
+    //   .catch(error => {
+    //     console.error('发送消息失败:', error);
+    //     Alert.alert('错误', '发送消息失败');
+    //     // 即使发送失败也要清空输入框
+    //     // setInputText('');
+    //   });
+
+    try {
+      const message = await JuggleIM.sendImageMessage(
+        {
+          conversationType: currentConversation.conversationType,
+          conversationId: currentConversation.conversationId,
+          content: imageContent,
+        },
+        {
+          onProgress: (progress: number, message: Message) => {
+            console.log('progress', progress);
+          },
+          onError: (message: any, errorCode: any) => {
+            console.log('图片消息发送失败:', message, errorCode);
+          },
+          onSuccess: (message: any) => {
+            console.log('图片消息发送成功:', message);
+          },
+          onCancel: (message: any) => {
+            console.log('图片消息发送取消:', message);
+          },
+        },
+      );
+      console.log('图片消息发送成功:', message);
+      setMessageList(prev => [...prev, message]);
+    } catch (error) {
+      console.error('图片消息发送失败:', error);
+      Alert.alert('错误', '图片消息发送失败');
+    }
+  };
+  // 从相册选择图片
+  const selectFromGallery = async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.images],
+        presentationStyle: 'fullScreen',
+      });
+      console.log('选择的图片:', result);
+      if (result && result.length > 0) {
+        const file = result[0];
+        // 发送图片消息
+        const imageContent: any = {
+          contentType: 'jg:img',
+          localPath: file.uri,
+          thumbnailLocalPath: file.uri,
+          width: 660, // 在实际应用中可以从图片EXIF信息中获取
+          height: 660, // 在实际应用中可以从图片EXIF信息中获取
+        };
+        console.log('图片消息内容:', imageContent);
+        JuggleIM.sendImageMessage(
+          {
+            conversationType: currentConversation.conversationType,
+            conversationId: currentConversation.conversationId,
+            content: imageContent,
+          },
+          {
+            onProgress: (progress: number, message: Message) => {
+              console.log('progress', progress);
+            },
+            onError: (message, errorCode) => {
+              console.log('图片消息发送失败:', message, errorCode);
+            },
+            onSuccess: message => {
+              console.log('图片消息发送成功:', message);
+            },
+            onCancel: message => {
+              console.log('图片消息发送取消:', message);
+            },
+          },
+        )
+          .then(message => {
+            console.log('图片消息发送...:', message);
+            setMessageList(prev => [...prev, message]);
+          })
+          .catch(error => {
+            console.error('图片消息发送失败:', error);
+            Alert.alert('错误', '图片消息发送失败');
+          });
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // 用户取消选择
+        console.log('用户取消选择');
+      } else {
+        console.error('选择文件出错:', err);
+        throw err;
+      }
+    }
+  };
+
+  // 使用相机拍照
+  const selectFromCamera = async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.images],
+        presentationStyle: 'fullScreen',
+      });
+
+      if (result && result.length > 0) {
+        const file = result[0];
+        // 发送图片消息
+        const imageContent: any = {
+          contentType: 'jg:img',
+          localPath: file.uri,
+          thumbnailLocalPath: file.uri,
+          width: 0, // 在实际应用中可以从图片EXIF信息中获取
+          height: 0, // 在实际应用中可以从图片EXIF信息中获取
+        };
+
+        JuggleIM.sendImageMessage(
+          {
+            conversationType: currentConversation.conversationType,
+            conversationId: currentConversation.conversationId,
+            content: imageContent,
+          },
+          {
+            onProgress: (progress: number, message: Message) => {
+              console.log('progress', progress);
+            },
+            onError: message => {
+              console.log('success', message);
+            },
+            onSuccess: message => {
+              console.log('图片消息发送失败:', error);
+            },
+            onCancel: message => {
+              console.log('complete');
+            },
+          },
+        )
+          .then(message => {
+            console.log('图片消息发送成功:', message);
+            setMessageList(prev => [...prev, message]);
+          })
+          .catch(error => {
+            console.error('图片消息发送失败:', error);
+            Alert.alert('错误', '图片消息发送失败');
+          });
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // 用户取消选择
+        console.log('用户取消选择');
+      } else {
+        console.error('拍照出错:', err);
+        Alert.alert('错误', '拍照出错');
+      }
+    }
+  };
+
+  // 从文件系统选择文件
+  const selectFromFile = async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+        presentationStyle: 'fullScreen',
+      });
+
+      if (result && result.length > 0) {
+        const file = result[0];
+
+        // 根据文件类型发送不同类型消息
+        if (file.type?.startsWith('image/')) {
+          // 发送图片消息
+          const imageContent: any = {
+            contentType: 'jg:img',
+            localPath: file.uri,
+            width: 0, // 在实际应用中可以从图片EXIF信息中获取
+            height: 0, // 在实际应用中可以从图片EXIF信息中获取
+          };
+
+          JuggleIM.sendImageMessage(
+            {
+              conversationType: currentConversation.conversationType,
+              conversationId: currentConversation.conversationId,
+              content: imageContent,
+            },
+            {
+              onProgress: (progress: number, message: Message) => {
+                console.log('progress', progress);
+              },
+              onError: (message, errorCode) => {
+                console.log('图片消息发送失败:', message, errorCode);
+              },
+              onSuccess: message => {
+                console.log('图片消息发送成功:', message);
+              },
+              onCancel: message => {
+                console.log('图片消息发送取消:', message);
+              },
+            },
+          )
+            .then(message => {
+              console.log('图片消息发送成功:', message);
+              setMessageList(prev => [...prev, message]);
+            })
+            .catch(error => {
+              console.error('图片消息发送失败:', error);
+              Alert.alert('错误', '图片消息发送失败');
+            });
+        } else {
+          // 发送文件消息
+          const fileContent: any = {
+            contentType: 'jg:file',
+            localPath: file.uri,
+            name: file.name || 'file',
+            size: file.size || 0,
+            type: file.type,
+          };
+
+          JuggleIM.sendFileMessage(
+            currentConversation.conversationType,
+            currentConversation.conversationId,
+            fileContent,
+          )
+            .then(message => {
+              console.log('文件消息发送成功:', message);
+              setMessageList(prev => [...prev, message]);
+            })
+            .catch(error => {
+              console.error('文件消息发送失败:', error);
+              Alert.alert('错误', '文件消息发送失败');
+            });
+        }
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // 用户取消选择
+        console.log('用户取消选择');
+      } else {
+        console.error('选择文件出错:', err);
+        Alert.alert('错误', '选择文件出错');
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -588,7 +871,7 @@ function App(): JSX.Element {
             )}
           </View> */}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.connectButton,
               !isInitialized && styles.disabledButton,
@@ -596,7 +879,7 @@ function App(): JSX.Element {
             onPress={sendMsg.bind(this, '你好，JuggleIM！')}
             disabled={!isInitialized}>
             <Text style={styles.buttonText}>发消息</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             style={[
               styles.connectButton,
@@ -694,6 +977,23 @@ function App(): JSX.Element {
 
             {/* 输入区域 */}
             <View style={styles.inputContainer}>
+              <View style={styles.mediaButtonContainer}>
+                <TouchableOpacity
+                  style={styles.mediaButton}
+                  onPress={selectFromGallery}>
+                  <Text style={styles.mediaButtonText}>相册</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.mediaButton}
+                  onPress={selectFromCamera}>
+                  <Text style={styles.mediaButtonText}>相机</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.mediaButton}
+                  onPress={selectFromFile}>
+                  <Text style={styles.mediaButtonText}>文件</Text>
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={styles.textInput}
                 value={inputText}
@@ -950,13 +1250,29 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     padding: 10,
     marginBottom: 20,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
+  },
+  mediaButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  mediaButton: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  mediaButtonText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   textInput: {
     flex: 1,
@@ -968,6 +1284,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     maxHeight: 100,
     fontSize: 16,
+    marginBottom: 10,
   },
   sendButton: {
     backgroundColor: '#007AFF',
@@ -975,6 +1292,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     justifyContent: 'center',
+    alignSelf: 'flex-end',
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
@@ -987,5 +1305,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-
-
