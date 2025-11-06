@@ -48,8 +48,8 @@ declare module "im-rn-sdk" {
 
   /**
    * 图片消息内容
-   * @property {string} localPath - 图片本地路径：支持 file://
-   * @property {string} [thumbnailLocalPath] - 缩略图本地路径：支持 file://
+   * @property {string} localPath - 图片本地路径：支持 /
+   * @property {string} [thumbnailLocalPath] - 缩略图本地路径：支持 /
    * @property {string} [url] - 图片远程URL
    * @property {string} [thumbnailUrl] - 缩略图远程URL
    * @property {number} width - 图片宽度
@@ -66,7 +66,7 @@ declare module "im-rn-sdk" {
 
   /**
    * 文件消息内容
-   * @property {string} localPath - 文件本地路径：支持 file://
+   * @property {string} localPath - 文件本地路径：支持 /
    * @property {string} [url] - 文件远程URL
    * @property {string} name - 文件名称
    * @property {number} size - 文件大小，单位字节
@@ -82,7 +82,7 @@ declare module "im-rn-sdk" {
 
   /**
    * 语音消息内容
-   * @property {string} localPath - 语音本地路径：支持 file://
+   * @property {string} localPath - 语音本地路径：支持 /
    * @property {string} [url] - 语音远程URL
    * @property {number} duration - 语音时长，单位秒
    */
@@ -589,7 +589,7 @@ declare module "im-rn-sdk" {
      * ```javascript
      * const imageContent = {
      *  contentType: 'image',
-     *  localPath: 'file://path/to/image',
+     *  localPath: '/path/to/image',
      *  width: 800,
      *  height: 600,
      * };
@@ -607,7 +607,7 @@ declare module "im-rn-sdk" {
      * ```javascript
      * const fileContent = {
      *  contentType: 'file',
-     *  localPath: 'file://path/to/file',
+     *  localPath: '/path/to/file',
      *  name: 'filename.ext',
      *  size: 123456,
      * };
@@ -626,7 +626,7 @@ declare module "im-rn-sdk" {
      * ```javascript
      * const voiceContent = {
      *  contentType: 'voice',
-     *  localPath: 'file://path/to/voice',
+     *  localPath: '/path/to/voice',
      *  duration: 10, // 语音时长，单位秒
      * };
      * @param {number} conversationType 会话类型
