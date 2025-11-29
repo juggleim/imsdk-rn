@@ -1,21 +1,21 @@
 import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
-const { JuggleIM } = NativeModules;
-// 为避免警告，仅在Android平台传入JuggleIM参数
-const juggleIMEmitter = Platform.OS === 'android' ? new NativeEventEmitter(JuggleIM) : new NativeEventEmitter();
+const { JuggleIM: JMI } = NativeModules;
+// 为避免警告，仅在Android平台传入JMI参数
+const juggleIMEmitter = Platform.OS === 'android' ? new NativeEventEmitter(JMI) : new NativeEventEmitter();
 
 /**
  * Juggle IM React Native SDK
  * @class JuggleIM
  */
-class JIMClient {
+class JuggleIM {
   /**
    * 设置服务器地址列表
    * @param {string[]} urls - 服务器地址列表
    * @returns {void}
    */
   static setServerUrls(urls) {
-    JuggleIM.setServerUrls(urls);
+    JMI.setServerUrls(urls);
   }
 
   /**
@@ -25,9 +25,9 @@ class JIMClient {
    */
   static init(appKey) {
     if (Platform.OS === "android") {
-      JuggleIM.init(appKey);
+      JMI.init(appKey);
     } else if (Platform.OS === "ios") {
-      JuggleIM.initWithAppKey(appKey);
+      JMI.initWithAppKey(appKey);
     }
   }
 
@@ -38,9 +38,9 @@ class JIMClient {
    */
   static connect(token) {
     if (Platform.OS === "android") {
-      JuggleIM.connect(token);
+      JMI.connect(token);
     } else if (Platform.OS === "ios") {
-      JuggleIM.connectWithToken(token);
+      JMI.connectWithToken(token);
     }
   }
 
@@ -52,9 +52,9 @@ class JIMClient {
    */
   static addConnectionStatusListener(key, listener) {
     if (Platform.OS === "android") {
-      JuggleIM.addConnectionStatusListener(key);
+      JMI.addConnectionStatusListener(key);
     } else if (Platform.OS === "ios") {
-      JuggleIM.addConnectionDelegate();
+      JMI.addConnectionDelegate();
     }
 
     // 监听原生事件
@@ -105,9 +105,9 @@ class JIMClient {
    */
   static addMessageListener(key, listener) {
     if (Platform.OS === "android") {
-      JuggleIM.addMessageListener(key);
+      JMI.addMessageListener(key);
     } else if (Platform.OS === "ios") {
-      JuggleIM.addMessageDelegate();
+      JMI.addMessageDelegate();
     }
 
     const subscriptions = [];
@@ -226,9 +226,9 @@ class JIMClient {
    */
   static addMessageReadReceiptListener(key, listener) {
     if (Platform.OS === "android") {
-      JuggleIM.addMessageReadReceiptListener(key);
+      JMI.addMessageReadReceiptListener(key);
     } else if (Platform.OS === "ios") {
-      JuggleIM.addMessageReadReceiptDelegate();
+      JMI.addMessageReadReceiptDelegate();
     }
 
     const subscriptions = [];
@@ -271,9 +271,9 @@ class JIMClient {
    */
   static addMessageDestroyListener(key, listener) {
     if (Platform.OS === "android") {
-      JuggleIM.addMessageDestroyListener(key);
+      JMI.addMessageDestroyListener(key);
     } else if (Platform.OS === "ios") {
-      JuggleIM.addMessageDestroyDelegate();
+      JMI.addMessageDestroyDelegate();
     }
 
     const subscriptions = [];
@@ -308,9 +308,9 @@ class JIMClient {
    */
   static addConversationListener(key, listener) {
     if (Platform.OS === "android") {
-      JuggleIM.addConversationListener(key);
+      JMI.addConversationListener(key);
     } else if (Platform.OS === "ios") {
-      JuggleIM.addConversationDelegate();
+      JMI.addConversationDelegate();
     }
 
     const subscriptions = [];
@@ -376,7 +376,7 @@ class JIMClient {
    */
   static getConversationInfoList(option) {
     console.log("getConversationInfoList called with option:", option);
-    return JuggleIM.getConversationInfoList(
+    return JMI.getConversationInfoList(
       option.count,
       option.timestamp,
       option.direction
@@ -389,7 +389,7 @@ class JIMClient {
    * @returns {Promise<object>} 会话信息
    */
   static getConversationInfo(conversation) {
-    return JuggleIM.getConversationInfo(conversation);
+    return JMI.getConversationInfo(conversation);
   }
 
   /**
@@ -398,7 +398,7 @@ class JIMClient {
    * @returns {Promise<object>} 创建的会话信息
    */
   static createConversationInfo(conversation) {
-    return JuggleIM.createConversationInfo(conversation);
+    return JMI.createConversationInfo(conversation);
   }
 
   /**
@@ -407,7 +407,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 删除结果
    */
   static deleteConversationInfo(conversation) {
-    return JuggleIM.deleteConversationInfo(conversation);
+    return JMI.deleteConversationInfo(conversation);
   }
 
   /**
@@ -417,7 +417,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setMute(conversation, isMute) {
-    return JuggleIM.setMute(conversation, isMute);
+    return JMI.setMute(conversation, isMute);
   }
 
   /**
@@ -428,9 +428,9 @@ class JIMClient {
    */
   static setTop(conversation, isTop) {
     if (Platform.OS === "android") {
-      return JuggleIM.setTop(conversation, isTop);
+      return JMI.setTop(conversation, isTop);
     } else if (Platform.OS === "ios") {
-      return JuggleIM.setTop(conversation, isTop);
+      return JMI.setTop(conversation, isTop);
     }
   }
 
@@ -441,9 +441,9 @@ class JIMClient {
    */
   static clearUnreadCount(conversation) {
     if (Platform.OS === "android") {
-      return JuggleIM.clearUnreadCount(conversation);
+      return JMI.clearUnreadCount(conversation);
     } else if (Platform.OS === "ios") {
-      return JuggleIM.clearUnreadCount(conversation);
+      return JMI.clearUnreadCount(conversation);
     }
   }
 
@@ -452,7 +452,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearTotalUnreadCount() {
-    return JuggleIM.clearTotalUnreadCount();
+    return JMI.clearTotalUnreadCount();
   }
 
   /**
@@ -460,7 +460,7 @@ class JIMClient {
    * @returns {Promise<number>} 总未读数
    */
   static getTotalUnreadCount() {
-    return JuggleIM.getTotalUnreadCount();
+    return JMI.getTotalUnreadCount();
   }
 
   /**
@@ -470,7 +470,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 设置结果
    */
   static setDraft(conversation, draft) {
-    return JuggleIM.setDraft(conversation, draft);
+    return JMI.setDraft(conversation, draft);
   }
 
   /**
@@ -479,7 +479,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearDraft(conversation) {
-    return JuggleIM.clearDraft(conversation);
+    return JMI.clearDraft(conversation);
   }
 
   /**
@@ -488,7 +488,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 标记结果
    */
   static setUnread(conversation) {
-    return JuggleIM.setUnread(conversation);
+    return JMI.setUnread(conversation);
   }
 
   /**
@@ -499,7 +499,7 @@ class JIMClient {
    * @returns {Promise<Array>} 置顶会话列表
    */
   static getTopConversationInfoList(count = 20, timestamp = 0, direction = 0) {
-    return JuggleIM.getTopConversationInfoList(count, timestamp, direction);
+    return JMI.getTopConversationInfoList(count, timestamp, direction);
   }
 
   /**
@@ -508,7 +508,7 @@ class JIMClient {
    * @returns {Promise<number>} 未读数
    */
   static getUnreadCountWithTypes(conversationTypes) {
-    return JuggleIM.getUnreadCountWithTypes(conversationTypes);
+    return JMI.getUnreadCountWithTypes(conversationTypes);
   }
 
   /**
@@ -518,7 +518,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 添加结果
    */
   static addConversationsToTag(conversations, tagId) {
-    return JuggleIM.addConversationsToTag(conversations, tagId);
+    return JMI.addConversationsToTag(conversations, tagId);
   }
 
   /**
@@ -528,7 +528,7 @@ class JIMClient {
    * @returns {Promise<boolean>} 移除结果
    */
   static removeConversationsFromTag(conversations, tagId) {
-    return JuggleIM.removeConversationsFromTag(conversations, tagId);
+    return JMI.removeConversationsFromTag(conversations, tagId);
   }
 
   //message
@@ -571,7 +571,7 @@ class JIMClient {
     );
 
     try {
-      const localMsg = await JuggleIM.sendMessage(message, messageId);
+      const localMsg = await JMI.sendMessage(message, messageId);
       return localMsg;
     } catch (error) {
       callback.onError?.(null, -1);
@@ -647,7 +647,7 @@ class JIMClient {
     );
 
     try {
-      const localMsg = await JuggleIM.sendImageMessage(message, messageId);
+      const localMsg = await JMI.sendImageMessage(message, messageId);
       return localMsg;
     } catch (error) {
       progressListener.remove();
@@ -723,7 +723,7 @@ class JIMClient {
 
     try {
       console.log("sendFileMessage message...:", message);
-      const localMsg = await JuggleIM.sendFileMessage(message, messageId);
+      const localMsg = await JMI.sendFileMessage(message, messageId);
       console.log("sendFileMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {
@@ -800,7 +800,7 @@ class JIMClient {
 
     try {
       console.log("sendVoiceMessage message...:", message);
-      const localMsg = await JuggleIM.sendVoiceMessage(message, messageId);
+      const localMsg = await JMI.sendVoiceMessage(message, messageId);
       console.log("sendVoiceMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {
@@ -820,7 +820,7 @@ class JIMClient {
    * @param {Object} options - 获取选项
    */
   static getMessageList(conversation, direction, options) {
-    return JuggleIM.getMessages(conversation, direction, options);
+    return JMI.getMessages(conversation, direction, options);
   }
 
   /**
@@ -829,7 +829,7 @@ class JIMClient {
    * @param {Object} extras - kv 扩展信息
    */
   static recallMessage(message, extras = {}) {
-    return JuggleIM.recallMessage(message, extras, callback);
+    return JMI.recallMessage(message, extras, callback);
   }
 
   /**
@@ -838,7 +838,7 @@ class JIMClient {
    * @param {string} reactionId - 反应ID
    */
   static addMessageReaction(message, reactionId) {
-    JuggleIM.addMessageReaction(message, reactionId);
+    JMI.addMessageReaction(message, reactionId);
   }
 
   /**
@@ -847,8 +847,8 @@ class JIMClient {
    * @param {string} reactionId - 反应ID
    */
   static removeMessageReaction(message, reactionId) {
-    JuggleIM.removeMessageReaction(message, reactionId, callback);
+    JMI.removeMessageReaction(message, reactionId, callback);
   }
 }
 
-export default JIMClient;
+export default JuggleIM;
