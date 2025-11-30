@@ -884,7 +884,7 @@ RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
         
         JMessage *message = [JIM.shared.messageManager sendMediaMessage:imageMessage
                                                         inConversation:conversation
-                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+                                                              progress:^(int progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
@@ -901,7 +901,7 @@ RCT_EXPORT_METHOD(sendImageMessage:(NSDictionary *)messageDict
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
-        } cancelled:^(JMessage * _Nonnull message) {
+        } cancel:^(JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
@@ -946,7 +946,7 @@ RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
         
         JMessage *message = [JIM.shared.messageManager sendMediaMessage:fileMessage
                                                         inConversation:conversation
-                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+                                                              progress:^(int progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
@@ -963,7 +963,7 @@ RCT_EXPORT_METHOD(sendFileMessage:(NSDictionary *)messageDict
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
-        } cancelled:^(JMessage * _Nonnull message) {
+        } cancel:^(JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
@@ -1002,7 +1002,7 @@ RCT_EXPORT_METHOD(sendVoiceMessage:(NSDictionary *)messageDict
         
         JMessage *message = [JIM.shared.messageManager sendMediaMessage:voiceMessage
                                                         inConversation:conversation
-                                                              progress:^(NSInteger progress, JMessage * _Nonnull message) {
+                                                              progress:^(int progress, JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"progress"] = @(progress);
@@ -1019,7 +1019,7 @@ RCT_EXPORT_METHOD(sendVoiceMessage:(NSDictionary *)messageDict
             params[@"message"] = [self convertMessageToDictionary:message];
             params[@"errorCode"] = @(errorCode);
             [self sendEventWithName:@"onMediaMessageSentError" body:params];
-        } cancelled:^(JMessage * _Nonnull message) {
+        } cancel:^(JMessage * _Nonnull message) {
             NSMutableDictionary *params = [NSMutableDictionary dictionary];
             params[@"messageId"] = messageId;
             params[@"message"] = [self convertMessageToDictionary:message];
