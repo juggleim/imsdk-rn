@@ -13,24 +13,35 @@ public class RNTypeConverter {
 
     // === 对象 -> WritableMap ===
     public static WritableMap toWritableMap(Object obj) {
+        return toWritableMap(obj, new HashSet<>());
+    }
+
+    private static WritableMap toWritableMap(Object obj, Set<Integer> visited) {
         WritableMap map = new WritableNativeMap();
         if (obj == null) return map;
+
+        int identityHashCode = System.identityHashCode(obj);
+        if (visited.contains(identityHashCode)) {
+            return map;
+        }
+        visited.add(identityHashCode);
 
         try {
             for (Field field : obj.getClass().getDeclaredFields()) {
                 field.setAccessible(true);
                 Object value = field.get(obj);
                 if (value == null) continue;
-                putValue(map, field.getName(), value);
+                putValue(map, field.getName(), value, visited);
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-
+        
+        visited.remove(identityHashCode);
         return map;
     }
 
-    private static void putValue(WritableMap map, String key, Object value) {
+    private static void putValue(WritableMap map, String key, Object value, Set<Integer> visited) {
         if (value instanceof String) {
             map.putString(key, (String) value);
         } else if (value instanceof Integer) {
@@ -50,7 +61,7 @@ public class RNTypeConverter {
                 if (isPrimitive(item)) {
                     putArrayValue(array, item);
                 } else {
-                    array.pushMap(toWritableMap(item));
+                    array.pushMap(toWritableMap(item, visited));
                 }
             }
             map.putArray(key, array);
@@ -59,13 +70,13 @@ public class RNTypeConverter {
             Map<?, ?> vMap = (Map<?, ?>) value;
             for (Map.Entry<?, ?> entry : vMap.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
-                    putValue(nested, entry.getKey().toString(), entry.getValue());
+                    putValue(nested, entry.getKey().toString(), entry.getValue(), visited);
                 }
             }
             map.putMap(key, nested);
         } else {
             // 嵌套对象
-            map.putMap(key, toWritableMap(value));
+            map.putMap(key, toWritableMap(value, visited));
         }
     }
 
