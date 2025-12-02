@@ -544,10 +544,10 @@ class JuggleIM {
     callback = {}
   ) {
     console.log("sendMessage message:", message);
-    
+
     // 生成唯一标识符以避免回调冲突
     const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
-    
+
     const successListener = juggleIMEmitter.addListener(
       "onMessageSent",
       (event) => {
@@ -592,10 +592,10 @@ class JuggleIM {
     callback = {}
   ) {
     console.log("sendImageMessage message...:", message);
-    
+
     // 生成唯一标识符以避免回调冲突
     const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
-    
+
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
       (event) => {
@@ -671,7 +671,7 @@ class JuggleIM {
   ) {
     // 生成唯一标识符以避免回调冲突
     const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
-    
+
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
@@ -748,7 +748,7 @@ class JuggleIM {
   ) {
     // 生成唯一标识符以避免回调冲突
     const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
-    
+
     // 添加监听器
     const progressListener = juggleIMEmitter.addListener(
       "onMediaMessageProgress",
@@ -829,7 +829,7 @@ class JuggleIM {
    * @param {Object} extras - kv 扩展信息
    */
   static recallMessage(message, extras = {}) {
-    return JMI.recallMessage(message, extras, callback);
+    return JMI.recallMessage(message, extras);
   }
 
   /**
