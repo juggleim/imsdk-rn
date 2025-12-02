@@ -833,6 +833,20 @@ class JuggleIM {
   }
 
   /**
+   * 根据clientMsgNo列表删除消息
+   * @param {object} conversation - 会话对象
+   * @param {number[]} clientMsgNos - clientMsgNo列表
+   * @returns {Promise<boolean>} 删除结果
+   */
+  static deleteMessagesByClientMsgNoList(conversation, clientMsgNos) {
+    if (Platform.OS === "android") {
+      return JMI.deleteMessagesByClientMsgNoList(conversation, clientMsgNos);
+    } else if (Platform.OS === "ios") {
+      return JMI.deleteMessagesByClientMsgNoList(conversation, clientMsgNos);
+    }
+  }
+
+  /**
    * 添加消息反应
    * @param {Object} message - 消息对象
    * @param {string} reactionId - 反应ID

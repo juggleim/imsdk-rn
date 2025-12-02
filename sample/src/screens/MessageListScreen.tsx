@@ -196,8 +196,14 @@ const MessageListScreen = () => {
                 }
                 break;
             case 'Delete':
-                // Local delete
-                setMessages(prev => prev.filter(m => m.messageId !== message.messageId));
+                JuggleIM.deleteMessagesByClientMsgNoList(conversation, [message.clientMsgNo])
+                    .then(() => {
+                        setMessages(prev => prev.filter(m => m.messageId !== message.messageId));
+                    })
+                    .catch(e => {
+                        console.error('Failed to delete message:', e);
+                        Alert.alert('Error', 'Failed to delete message');
+                    });
                 break;
             case 'Recall':
                 JuggleIM.recallMessage([message.messageId])

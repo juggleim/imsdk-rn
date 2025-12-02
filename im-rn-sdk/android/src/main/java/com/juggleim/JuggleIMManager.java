@@ -60,13 +60,13 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     public String getName() {
         return MODULE_NAME;
     }
-    
+
     // 添加这两个方法以解决React Native的警告
     @ReactMethod
     public void addListener(String eventName) {
         // Keep: Required for RN built in Event Emitter Calls.
     }
-    
+
     @ReactMethod
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
@@ -96,7 +96,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(getReactApplicationContext());
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
-        builder.setJLogConfig(new JLogConfig(logBuilder));      
+        builder.setJLogConfig(new JLogConfig(logBuilder));
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
     }
 
@@ -550,7 +550,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             JIMConst.PullDirection direction = pullDirection == 0 ?
                     JIMConst.PullDirection.NEWER : JIMConst.PullDirection.OLDER;
 
-            List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager().getConversationInfoList(count, (long)ts, direction);
+            List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager().getConversationInfoList(count, (long) ts, direction);
             Log.d("getConversationInfoList", "conversationInfos: " + conversationInfos.size());
             WritableArray result = new WritableNativeArray();
             for (ConversationInfo info : conversationInfos) {
@@ -765,39 +765,60 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void sendMessage(ReadableMap messageMap, String messageId, Promise promise) {
-        try {
-            Message message = convertMapToMessage(messageMap);
-            Log.d("sendMessage", message.toString());
-            Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
-                    message.getContent(),
-                    message.getConversation(),
-                    new IMessageManager.ISendMessageCallback() {
-                        @Override
-                        public void onSuccess(Message sentMessage) {
-                            WritableMap result = convertMessageToMap(sentMessage);
-                            WritableMap event = new WritableNativeMap();
-                            event.putString("messageId", messageId);
-                            event.putMap("message", result);
-                            sendEvent("onMessageSent", event);
-                        }
-
-                        @Override
-                        public void onError(Message message, int errorCode) {
-                            WritableMap errorResult = convertMessageToMap(message);
-                            WritableMap event = new WritableNativeMap();
-                            event.putString("messageId", messageId);
-                            event.putMap("message", errorResult);
-                            event.putInt("errorCode", errorCode);
-                            sendEvent("onMessageSentError", event);
-                        }
+        Message message = convertMapToMessage(messageMap);
+        Log.d("sendMessage", message.toString());
+        Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
+                message.getContent(),
+                message.getConversation(),
+                new IMessageManager.ISendMessageCallback() {
+                    @Override
+                    public void onSuccess(Message sentMessage) {
+                        WritableMap result = convertMessageToMap(sentMessage);
+                        WritableMap event = new WritableNativeMap();
+                        event.putString("messageId", messageId);
+                        event.putMap("message", result);
+                        sendEvent("onMessageSent", event);
                     }
-            );
-            WritableMap result = convertMessageToMap(sendMsg);
-            result.putString("messageId", messageId);
-            promise.resolve(result);
-        } catch (Exception e) {
-            promise.reject("SEND_MESSAGE_ERROR", e.getMessage());
+
+                    @Override
+                    public void onError(Message message, int errorCode) {
+                        WritableMap errorResult = convertMessageToMap(message);
+                        WritableMap event = new WritableNativeMap();
+                        event.putString("messageId", messageId);
+                        event.putMap("message", errorResult);
+                        event.putInt("errorCode", errorCode);
+                        sendEvent("onMessageSentError", event);
+                    }
+                }
+        );
+        WritableMap result = convertMessageToMap(sendMsg);
+        result.putString("messageId", messageId);
+        promise.resolve(result);
+    }
+
+    /**
+     * 根据clientMsgNo列表删除消息
+     */
+    @ReactMethod
+    public void deleteMessagesByClientMsgNoList(ReadableMap conversationMap, ReadableArray clientMsgNos, Promise promise) {
+        Conversation conversation = convertMapToConversation(conversationMap);
+        List<Long> msgNoList = new ArrayList<>();
+        for (int i = 0; i < clientMsgNos.size(); i++) {
+            msgNoList.add((long) clientMsgNos.getDouble(i));
         }
+
+        JIM.getInstance().getMessageManager()
+                .deleteMessagesByClientMsgNoList(conversation, msgNoList, new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        promise.resolve(true);
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        promise.reject("error", "Error code: " + errorCode);
+                    }
+                });
     }
 
     /**
@@ -947,7 +968,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             ImageMessage imageMessage = new ImageMessage();
-            
+
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
                 String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
@@ -969,7 +990,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("height")) {
                 imageMessage.setHeight(contentMap.getInt("height"));
             }
-            
+
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     imageMessage,
                     conversation,
@@ -1010,7 +1031,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         }
                     }
             );
-            
+
             WritableMap result = convertMessageToMap(message);
             result.putString("messageId", messageId);
             promise.resolve(result);
@@ -1027,7 +1048,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             FileMessage fileMessage = new FileMessage();
-            
+
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
                 String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
@@ -1045,7 +1066,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("type")) {
                 fileMessage.setType(contentMap.getString("type"));
             }
-            
+
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     fileMessage,
                     conversation,
@@ -1085,7 +1106,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         }
                     }
             );
-            
+
             WritableMap result = convertMessageToMap(message);
             result.putString("messageId", messageId);
             promise.resolve(result);
@@ -1102,7 +1123,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             VoiceMessage voiceMessage = new VoiceMessage();
-            
+
             ReadableMap contentMap = messageMap.getMap("content");
             if (contentMap.hasKey("localPath")) {
                 String path = FileUtils.convertContentUriToFile(getReactApplicationContext(), contentMap.getString("localPath"));
@@ -1114,7 +1135,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("duration")) {
                 voiceMessage.setDuration(contentMap.getInt("duration"));
             }
-            
+
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     voiceMessage,
                     conversation,
@@ -1150,7 +1171,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         }
                     }
             );
-            
+
             WritableMap result = convertMessageToMap(message);
             promise.resolve(result);
         } catch (Exception e) {

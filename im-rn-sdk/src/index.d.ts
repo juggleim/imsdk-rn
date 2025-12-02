@@ -667,6 +667,13 @@ declare module "im-rn-sdk" {
     ): Promise<Boolean>;
 
     /**
+     * 根据clientMsgNo列表删除消息
+     * @param conversation 会话
+     * @param clientMsgNos clientMsgNo列表
+     */
+    static deleteMessagesByClientMsgNoList(conversation: Conversation, clientMsgNos: number[]): Promise<boolean>;
+
+    /**
      * 添加消息反应
      * @param messageId 消息ID
      * @param reactionId 反应ID

@@ -1103,6 +1103,28 @@ RCT_EXPORT_METHOD(recallMessage:(NSDictionary *)messageDict
 }
 
 /**
+ * 根据clientMsgNo列表删除消息
+ */
+RCT_EXPORT_METHOD(deleteMessagesByClientMsgNoList:(NSArray<NSNumber *> *)clientMsgNos
+                  conversation:(NSDictionary *)conversationMap
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        JConversation *conversation = [self convertDictionaryToConversation:conversationMap];
+        
+        [JIM.shared.messageManager deleteMessagesByClientMsgNoList:clientMsgNos
+                                                      conversation:conversation
+                                                           success:^{
+            resolve(@YES);
+        } error:^(JErrorCode errorCode) {
+            reject(@"DELETE_MESSAGES_ERROR", @"删除消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+        }];
+    } @catch (NSException *exception) {
+        reject(@"DELETE_MESSAGES_ERROR", exception.reason, nil);
+    }
+}
+
+/**
  * 添加消息反应
  */
 RCT_EXPORT_METHOD(addMessageReaction:(NSDictionary *)messageDict
