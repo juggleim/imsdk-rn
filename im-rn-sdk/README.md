@@ -6,7 +6,7 @@ React Native wrapper for Juggle IM SDK，提供即时通讯功能的React Native
 ## 安装
 
 ```bash
-npm install im-rn-sdk --legacy-peer-deps
+npm install juggleim-rnsdk --legacy-peer-deps
 ```
 
 ## 初始化
@@ -14,7 +14,7 @@ npm install im-rn-sdk --legacy-peer-deps
 在使用Juggle IM SDK之前，需要先进行初始化设置：
 
 ```javascript
-import JuggleIM from 'im-rn-sdk';
+import JuggleIM from 'juggleim-rnsdk';
 
 // 设置服务器地址
 JuggleIM.setServerUrls(['your_server_url']);

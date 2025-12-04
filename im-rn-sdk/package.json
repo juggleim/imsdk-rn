@@ -1,25 +1,25 @@
 {
-  "name": "im-rn-sdk",
-  "version": "0.0.12",
+  "name": "juggleim-rnsdk",
+  "version": "0.0.15",
   "description": "React Native wrapper for Juggle IM SDK",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "react-native": "src/index.js",
-  "homepage": "https://github.com/juggleim/im-rn-sdk",
+  "homepage": "https://github.com/juggleim/imsdk-rn",
   "repository": {
     "type": "git",
-    "url": "https://github.com/juggleim/im-rn-sdk.git"
+    "url": "https://github.com/juggleim/imsdk-rn.git"
   },
   "files": [
     "src",
     "android",
     "ios",
-    "im-rn-sdk.podspec",
+    "juggleim-rnsdk.podspec",
     "README.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "demo": "cd demo && npm start",
+    "app": "cd app && npm start",
     "prepare": "npm run build",
     "build": "echo \"Build completed\""
   },

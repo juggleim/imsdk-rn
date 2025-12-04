@@ -1,0 +1,9 @@
+app/node_modules
+app/vendor/bundle/*
+app/android/.gradle
+app/android/build
+app/android/app/build
+app/ios/app.xcworkspace/xcuserdata
+app/ios/build
+app/ios/Pods
+app/ios/Podfile.lock

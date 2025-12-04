@@ -1,7 +1,18 @@
 import { NativeModules, Platform, NativeEventEmitter } from "react-native";
 
 const { JuggleIM: JMI } = NativeModules;
-const juggleIMEmitter = new NativeEventEmitter(JMI);
+
+// NativeEventEmitter requires a non-null native module. If the native
+// module is not linked (JMI is undefined), create a safe fallback that
+// implements `addListener` and returns a subscription with `remove()` so
+// JS code can call it without crashing during development or in environments
+// where the native module isn't available.
+const juggleIMEmitter = JMI
+  ? new NativeEventEmitter(JMI)
+  : {
+      addListener: () => ({ remove: () => {} }),
+      removeAllListeners: () => {},
+    };
 
 /**
  * Juggle IM React Native SDK
@@ -535,8 +546,8 @@ class JuggleIM {
   /**
    * 发送消息
    * @param {SendMessageObject} message
-   * @param {import("im-rn-sdk").SendMessageCallback} callback - 回调对象
-   * @returns {import("im-rn-sdk").Message} - 消息对象
+   * @param {import("juggleim-rnsdk").SendMessageCallback} callback - 回调对象
+   * @returns {import("juggleim-rnsdk").Message} - 消息对象
    */
   static async sendMessage(
     message,
@@ -810,6 +821,22 @@ class JuggleIM {
       console.error("sendVoiceMessage error:", error);
       throw error;
     }
+  }
+
+  /**
+   * 发送合并消息（构建 MergeMessage 并发送）
+   * @param {MergedMessageContent} mergedMessage - 要合并转发的消息 ID 列表
+   * @param {Conversation} conversation - 目标会话（同时作为 MergeMessage 中的 conversation 字段）
+   * @param {SendMessageCallback} callback - 回调对象，包含 onSuccess/onError
+   */
+  static async sendMergeMessage(mergedMessage, conversation, callback = {}) {
+    const messageObj = {
+      conversationType: conversation && conversation.conversationType,
+      conversationId: conversation && conversation.conversationId,
+      content: mergedMessage,
+    };
+
+    return this.sendMessage(messageObj, callback);
   }
 
   /**

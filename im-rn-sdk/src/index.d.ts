@@ -1,4 +1,4 @@
-declare module "im-rn-sdk" {
+declare module "juggleim-rnsdk" {
   /**
    * 连接状态类型
    */
@@ -40,11 +40,81 @@ declare module "im-rn-sdk" {
   }
 
   /**
+   * 消息内容基类
+   * @property {string} contentType - 消息内容类型
+   *           枚举：jg:text, jg:img, jg:file, jg:voice
+   */
+  export abstract class MessageContent {
+    abstract contentType: string;
+  }
+  
+  /**
    * 文本消息内容
    */
-  export interface TextMessageContent extends MessageContent {
+  export class TextMessageContent extends MessageContent {
+    contentType = 'jg:text';
     content: string;
+    constructor(content: string) {
+      super();
+      this.content = content;
+    }
   }
+
+  /**
+   * 撤回消息内容
+   */
+  export class RecallInfoMessageContent extends MessageContent {
+    contentType = 'jg:recallinfo';
+  }
+
+  /**
+   * 合并消息内容
+   */
+  export class MergeMessageContent extends MessageContent {
+    contentType = 'jg:merge';
+
+    constructor(
+      title?: string,
+      conversation?: Conversation,
+      messageIdList?: string[],
+      previewList?: MergeMessagePreviewUnit[]
+    );
+
+    // 对应 Java 字段
+    title?: string;
+    containerMsgId?: string;
+    conversation?: Conversation;
+    messageIdList?: string[];
+    previewList?: MergeMessagePreviewUnit[];
+    extra?: string;
+
+    conversationDigest?(): string;
+    getTitle?(): string | undefined;
+    getContainerMsgId?(): string | undefined;
+    setContainerMsgId?(containerMsgId: string): void;
+    getConversation?(): Conversation | undefined;
+    setConversation?(conversation: Conversation): void;
+    getMessageIdList?(): string[] | undefined;
+    getPreviewList?(): MergeMessagePreviewUnit[] | undefined;
+    getExtra?(): string | undefined;
+    setExtra?(extra: string): void;
+  }
+
+  /**
+   * 合并消息预览单元
+   */
+  export class MergeMessagePreviewUnit {
+    constructor(previewContent?: string, sender?: UserInfo);
+
+    previewContent?: string;
+    sender?: UserInfo;
+
+    getPreviewContent?(): string | undefined;
+    setPreviewContent?(previewContent: string): void;
+    getSender?(): UserInfo | undefined;
+    setSender?(sender: UserInfo): void;
+  }
+
 
   /**
    * 图片消息内容
@@ -55,13 +125,15 @@ declare module "im-rn-sdk" {
    * @property {number} width - 图片宽度
    * @property {number} height - 图片高度
    */
-  export interface ImageMessageContent extends MessageContent {
+  export class ImageMessageContent extends MessageContent {
     localPath: string;
     thumbnailLocalPath?: string;
     url?: string;
     thumbnailUrl?: string;
     width: number;
     height: number;
+
+    contentType = 'jg:img';
   }
 
   /**
@@ -72,12 +144,14 @@ declare module "im-rn-sdk" {
    * @property {number} size - 文件大小，单位字节
    * @property {string} [type] - 文件类型（MIME类型）
    */
-  export interface FileMessageContent extends MessageContent {
+  export class FileMessageContent extends MessageContent {
     localPath: string;
     url?: string;
     name: string;
     size: number;
     type?: string;
+
+    contentType = 'jg:file';
   }
 
   /**
@@ -86,11 +160,14 @@ declare module "im-rn-sdk" {
    * @property {string} [url] - 语音远程URL
    * @property {number} duration - 语音时长，单位秒
    */
-  export interface VoiceMessageContent extends MessageContent {
+  export class VoiceMessageContent extends MessageContent {
     localPath: string;
     url?: string;
     duration: number;
+
+    contentType = 'jg:voice';
   }
+
 
   /**
    * 消息对象
@@ -576,10 +653,25 @@ declare module "im-rn-sdk" {
      * 发送消息
      * @param {SendMessageObject} message  发送消息对象
      * @param {SendMessageCallback} [callback] 发送消息回调函数
-     * @returns {Message} 发送中的消息对象
+     * @returns {Promise<Message>} 发送的消息对象
      */
     static sendMessage(
       message: SendMessageObject,
+      callback?: SendMessageCallback
+    ): Promise<Message>;
+
+
+    /**
+     * 发送合并消息
+     * @param {string} title 合并消息的标题
+     * @param {string[]} messageIds 要合并的消息ID列表
+     * @param {Conversation} conversation 目标会话对象
+     * @param {SendMessageCallback} [callback] 发送消息回调函数
+     * @returns {Promise<Message>} 发送的消息对象
+     */
+    static sendMergeMessage(
+      message: MergeMessageContent,
+      conversation: Conversation,
       callback?: SendMessageCallback
     ): Promise<Message>;
 
