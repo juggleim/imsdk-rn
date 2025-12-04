@@ -6,7 +6,7 @@ React Native wrapper for Juggle IM SDK，提供即时通讯功能的React Native
 ## 安装
 
 ```bash
-npm install im-rn-sdk --registry=https://repo.juggle.im/repository/npm-hosted/ --legacy-peer-deps
+npm install im-rn-sdk --legacy-peer-deps
 ```
 
 ## 初始化
