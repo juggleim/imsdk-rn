@@ -824,11 +824,11 @@ class JuggleIM {
 
   /**
    * 撤回消息
-   * @param {Object} message - 消息对象
+   * @param {String} messageId - 消息ID
    * @param {Object} extras - kv 扩展信息
    */
-  static recallMessage(message, extras = {}) {
-    return JMI.recallMessage(message, extras);
+  static recallMessage(messageId, extras = {}) {
+    return JMI.recallMessage(messageId, extras);
   }
 
   /**
@@ -838,11 +838,10 @@ class JuggleIM {
    * @returns {Promise<boolean>} 删除结果
    */
   static deleteMessagesByClientMsgNoList(conversation, clientMsgNos) {
-    if (Platform.OS === "android") {
-      return JMI.deleteMessagesByClientMsgNoList(conversation, clientMsgNos);
-    } else if (Platform.OS === "ios") {
-      return JMI.deleteMessagesByClientMsgNoList(conversation, clientMsgNos);
-    }
+    const nums = (clientMsgNos || [])
+                .map(n => Number(n))
+                .filter(n => !isNaN(n)); 
+    return JMI.deleteMessagesByClientMsgNoList(conversation, nums);
   }
 
   /**

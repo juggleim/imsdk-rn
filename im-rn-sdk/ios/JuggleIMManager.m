@@ -1082,12 +1082,11 @@ RCT_EXPORT_METHOD(getMessages:(NSDictionary *)conversationDict
 /**
  * 撤回消息
  */
-RCT_EXPORT_METHOD(recallMessage:(NSDictionary *)messageDict
+RCT_EXPORT_METHOD(recallMessage:(NSString *)messageId
                   extras:(NSDictionary *)extras
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
-        NSString *messageId = messageDict[@"messageId"];
         NSDictionary *extrasDict = extras ?: @{};
         
         [JIM.shared.messageManager recallMessage:messageId
@@ -1095,7 +1094,7 @@ RCT_EXPORT_METHOD(recallMessage:(NSDictionary *)messageDict
                                           success:^(JMessage *message){
             resolve(@YES);
         } error:^(JErrorCode errorCode) {
-            reject(@"RECALL_MESSAGE_ERROR", @"撤回消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+            reject(@"RECALL_MESSAGE_ERROR", [NSString stringWithFormat:@"Error code: %ld", (long)errorCode], nil);
         }];
     } @catch (NSException *exception) {
         reject(@"RECALL_MESSAGE_ERROR", exception.reason, nil);
@@ -1105,8 +1104,8 @@ RCT_EXPORT_METHOD(recallMessage:(NSDictionary *)messageDict
 /**
  * 根据clientMsgNo列表删除消息
  */
-RCT_EXPORT_METHOD(deleteMessagesByClientMsgNoList:(NSArray<NSNumber *> *)clientMsgNos
-                  conversation:(NSDictionary *)conversationMap
+RCT_EXPORT_METHOD(deleteMessagesByClientMsgNoList:(NSDictionary *)conversationMap
+                  clientMsgNos:(NSArray<NSNumber *> *)clientMsgNos
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject) {
     @try {
@@ -1117,7 +1116,7 @@ RCT_EXPORT_METHOD(deleteMessagesByClientMsgNoList:(NSArray<NSNumber *> *)clientM
                                                            success:^{
             resolve(@YES);
         } error:^(JErrorCode errorCode) {
-            reject(@"DELETE_MESSAGES_ERROR", @"删除消息失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+            reject(@"DELETE_MESSAGES_ERROR", [NSString stringWithFormat:@"Error code: %ld", (long)errorCode], nil);
         }];
     } @catch (NSException *exception) {
         reject(@"DELETE_MESSAGES_ERROR", exception.reason, nil);
@@ -1141,7 +1140,7 @@ RCT_EXPORT_METHOD(addMessageReaction:(NSDictionary *)messageDict
                                                success:^{
             resolve(@YES);
         } error:^(JErrorCode errorCode) {
-            reject(@"ADD_REACTION_ERROR", @"添加反应失败", [NSError errorWithDomain:@"JuggleIM" code:errorCode userInfo:nil]);
+            reject(@"ADD_REACTION_ERROR", [NSString stringWithFormat:@"Error code: %ld", (long)errorCode], nil);
         }];
     } @catch (NSException *exception) {
         reject(@"ADD_REACTION_ERROR", exception.reason, nil);

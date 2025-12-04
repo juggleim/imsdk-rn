@@ -1,6 +1,6 @@
 {
-  "name": "juggleim-rnsdk",
-  "version": "0.0.11",
+  "name": "im-rn-sdk",
+  "version": "0.0.12",
   "description": "React Native wrapper for Juggle IM SDK",
   "main": "src/index.js",
   "types": "src/index.d.ts",

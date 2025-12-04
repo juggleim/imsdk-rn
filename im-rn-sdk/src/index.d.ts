@@ -657,12 +657,12 @@ declare module "im-rn-sdk" {
 
     /**
      * 撤回消息
-     * @param messageIds 消息ID列表
+     * @param messageId 消息ID列表
      * @param extras 扩展字段
      * @returns {Promise<Boolean>} 是否撤回成功
      */
     static recallMessage(
-      messageIds: string[],
+      messageId: string,
       extras?: { [key: string]: any }
     ): Promise<Boolean>;
 
