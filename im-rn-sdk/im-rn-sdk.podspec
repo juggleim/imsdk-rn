@@ -16,5 +16,5 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React-Core"
-  s.dependency "JuggleIM", "~> 1.8.25"
+  s.dependency "JuggleIM", "~> 1.8.29"
 end

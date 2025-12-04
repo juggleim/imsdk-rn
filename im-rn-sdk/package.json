@@ -1,6 +1,6 @@
 {
   "name": "im-rn-sdk",
-  "version": "0.0.5",
+  "version": "0.0.11",
   "description": "React Native wrapper for Juggle IM SDK",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -41,9 +41,5 @@
   "devDependencies": {
     "@types/react": "^18.2.45",
     "@types/react-native": "^0.73.0"
-  },
-  "publishConfig": {
-    "registry": "https://repo.juggle.im/repository/npm-hosted/",
-    "access": "public"
   }
 }
