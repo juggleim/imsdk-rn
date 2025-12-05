@@ -1,12 +1,14 @@
 import React from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import LoginScreen from '../screens/LoginScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
 import MessageListScreen from '../screens/MessageListScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import {Image, Text} from 'react-native';
+import SearchFriendsScreen from '../screens/SearchFriendsScreen';
+import NewFriendsScreen from '../screens/NewFriendsScreen';
+import { Image, Text } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -14,8 +16,8 @@ const Tab = createBottomTabNavigator();
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({route}) => ({
-        tabBarIcon: ({focused, color, size}) => {
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           // You can replace these with actual icons or images
           if (route.name === 'Chats') {
@@ -36,18 +38,20 @@ const MainTabNavigator = () => {
   );
 };
 
-const TextIcon = ({text, color}: {text: string; color: string}) => (
-  <Text style={{color, fontSize: 24}}>{text}</Text>
+const TextIcon = ({ text, color }: { text: string; color: string }) => (
+  <Text style={{ color, fontSize: 24 }}>{text}</Text>
 );
 
-const AppNavigator = ({initialRouteName}: {initialRouteName: string}) => {
+const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="MessageList" component={MessageListScreen} />
+      <Stack.Screen name="SearchFriends" component={SearchFriendsScreen} options={{ headerShown: true, title: 'Search Friends' }} />
+      <Stack.Screen name="NewFriends" component={NewFriendsScreen} options={{ headerShown: true, title: 'New Friends' }} />
     </Stack.Navigator>
   );
 };
