@@ -35,43 +35,31 @@ declare module "juggleim-rnsdk" {
    * @property {string} contentType - 消息内容类型
    *           枚举：jg:text, jg:img, jg:file, jg:voice
    */
-  export interface MessageContent {
-    contentType: string;
-  }
-
-  /**
-   * 消息内容基类
-   * @property {string} contentType - 消息内容类型
-   *           枚举：jg:text, jg:img, jg:file, jg:voice
-   */
   export abstract class MessageContent {
     abstract contentType: string;
   }
-  
+
   /**
    * 文本消息内容
    */
   export class TextMessageContent extends MessageContent {
-    contentType = 'jg:text';
+    contentType: string;
     content: string;
-    constructor(content: string) {
-      super();
-      this.content = content;
-    }
+    constructor(content: string);
   }
 
   /**
-   * 撤回消息内容
+   * 撤回消息内容: 'jg:recallinfo';
    */
   export class RecallInfoMessageContent extends MessageContent {
-    contentType = 'jg:recallinfo';
+    contentType: string;
   }
 
   /**
    * 合并消息内容
    */
   export class MergeMessageContent extends MessageContent {
-    contentType = 'jg:merge';
+    contentType: string;
 
     constructor(
       title?: string,
@@ -133,7 +121,7 @@ declare module "juggleim-rnsdk" {
     width: number;
     height: number;
 
-    contentType = 'jg:img';
+    contentType: string;
   }
 
   /**
@@ -151,7 +139,7 @@ declare module "juggleim-rnsdk" {
     size: number;
     type?: string;
 
-    contentType = 'jg:file';
+    contentType: string;
   }
 
   /**
@@ -165,7 +153,7 @@ declare module "juggleim-rnsdk" {
     url?: string;
     duration: number;
 
-    contentType = 'jg:voice';
+    contentType: string;
   }
 
 
@@ -214,6 +202,7 @@ declare module "juggleim-rnsdk" {
     messages: Message[];
     timestamp: number;
     hasMore: boolean;
+    code: number;
   }
 
   /**

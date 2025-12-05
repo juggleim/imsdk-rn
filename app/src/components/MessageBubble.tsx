@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import {
   Message,
   TextMessageContent,
@@ -20,7 +20,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onLongPress,
 }) => {
   const renderContent = () => {
-    const {contentType} = message.content;
+    const { contentType } = message.content;
 
     switch (contentType) {
       case 'jg:text':
@@ -47,6 +47,30 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </Text>
           </View>
         );
+      case 'jg:callfinishntf':
+        return (
+          <View style={styles.textRow}>
+            <Text
+              style={[
+                styles.text,
+                isOutgoing ? styles.outgoingText : styles.incomingText,
+              ]}>
+              {"通话结束"}
+            </Text>
+            <Text
+              style={[
+                styles.timestamp,
+                isOutgoing
+                  ? styles.outgoingTimestamp
+                  : styles.incomingTimestamp,
+              ]}>
+              {new Date(message.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
+        );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
         const uri =
@@ -54,12 +78,40 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           imgContent.localPath ||
           imgContent.thumbnailUrl ||
           imgContent.url;
+
+        const originalWidth = imgContent.width || 0;
+        const originalHeight = imgContent.height || 0;
+
+        const maxWidth = 200;
+        const maxHeight = 300;
+
+        let width = originalWidth;
+        let height = originalHeight;
+
+        if (width > 0 && height > 0) {
+          const aspectRatio = width / height;
+          if (width > maxWidth || height > maxHeight) {
+            if (width / maxWidth > height / maxHeight) {
+              width = maxWidth;
+              height = width / aspectRatio;
+            } else {
+              height = maxHeight;
+              width = height * aspectRatio;
+            }
+          }
+        } else {
+          width = 150;
+          height = 200;
+        }
+
         return (
-          <Image
-            source={{uri}}
-            style={{width: 150, height: 200, borderRadius: 8}}
-            resizeMode="contain"
-          />
+          <View style={{ width: width + 52, height }}>
+            <Image
+              source={{ uri }}
+              style={{ width, height, borderRadius: 8 }}
+              resizeMode="cover"
+            />
+          </View>
         );
       case 'jg:voice':
         const voiceContent = message.content as VoiceMessageContent;

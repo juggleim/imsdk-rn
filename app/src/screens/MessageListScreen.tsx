@@ -188,7 +188,8 @@ const MessageListScreen = () => {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
       });
-      if (result && result.messages) {
+      console.log('Loaded messages:', result);
+      if (result && result.code === 0 && result.messages) {
         // Ensure messages are ordered newest -> oldest for inverted list
         const sorted = result.messages
           .slice()
