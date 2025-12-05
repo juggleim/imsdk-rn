@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Text,
+  RefreshControl,
   ActionSheetIOS,
   Clipboard,
   Alert,
@@ -37,12 +38,17 @@ const MessageListScreen = () => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  // loading older messages (when scrolling to top)
+  const [loadingMore, setLoadingMore] = useState(false);
+  // refreshing to fetch newer messages (pull-to-refresh at bottom when inverted)
+  const [refreshingNew, setRefreshingNew] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [voiceRecorderVisible, setVoiceRecorderVisible] = useState(false);
+  const flatListRef = useRef<FlatList<Message> | null>(null);
+  const didInitialScroll = useRef(false);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -87,17 +93,21 @@ const MessageListScreen = () => {
     return () => {
       listener();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation]);
 
   const loadMessages = async () => {
+    console.log('Loading messages for', conversation.conversationId);
     setIsLoading(true);
     try {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
       });
       if (result && result.messages) {
-        // Ensure messages are ordered from oldest -> newest for non-inverted list
-        const sorted = result.messages.slice().sort((a, b) => a.timestamp - b.timestamp);
+        // Ensure messages are ordered newest -> oldest for inverted list
+        const sorted = result.messages
+          .slice()
+          .sort((a, b) => b.timestamp - a.timestamp);
         setMessages(sorted);
       }
     } catch (error) {
@@ -108,32 +118,72 @@ const MessageListScreen = () => {
   };
 
   const loadMoreMessages = async () => {
-    if (messages.length === 0) return;
-    setRefreshing(true);
+    if (messages.length === 0) {
+      return;
+    }
+    if (loadingMore) {
+      return;
+    }
+    setLoadingMore(true);
     try {
-      // messages state is ordered oldest->newest, so first element is the oldest
-      const oldestMessage = messages[0];
+      // messages state is newest->oldest, so last element is the oldest
+      const oldestMessage = messages[messages.length - 1];
       // Request messages older than the oldestMessage timestamp (exclusive)
-      const startTime = Math.max(0, oldestMessage.timestamp);
+      const startTime = Math.max(0, oldestMessage.timestamp - 1);
       console.log('Requesting messages older than', startTime);
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
         startTime,
       });
       if (result && result.messages && result.messages.length > 0) {
-        // Merge and dedupe by `clientMsgNo` to avoid duplicate keys
-        const combined = [...result.messages, ...messages];
+        // Append older messages to the end (since we keep newest->oldest)
+        const combined = [...messages, ...result.messages];
         const map = new Map<number, Message>();
         combined.forEach(m => {
           map.set(m.clientMsgNo, m);
         });
-        const merged = Array.from(map.values()).slice().sort((a, b) => a.timestamp - b.timestamp);
+        // Ensure newest->oldest order
+        const merged = Array.from(map.values()).sort(
+          (a, b) => b.timestamp - a.timestamp,
+        );
         setMessages(merged);
       }
     } catch (error) {
       console.error('Failed to load more messages:', error);
     } finally {
-      setRefreshing(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadNewMessages = async () => {
+    if (messages.length === 0) {
+      return;
+    }
+    if (refreshingNew) {
+      return;
+    }
+    setRefreshingNew(true);
+    try {
+      // messages[0] is newest
+      const newest = messages[0];
+      const startTime = newest ? newest.timestamp + 1 : 0;
+      const result = await JuggleIM.getMessageList(conversation, 0, {
+        count: 20,
+        startTime,
+      });
+      if (result && result.messages && result.messages.length > 0) {
+        const combined = [...result.messages, ...messages];
+        const map = new Map<number, Message>();
+        combined.forEach(m => map.set(m.clientMsgNo, m));
+        const merged = Array.from(map.values()).sort(
+          (a, b) => b.timestamp - a.timestamp,
+        );
+        setMessages(merged);
+      }
+    } catch (e) {
+      console.error('Failed to load new messages:', e);
+    } finally {
+      setRefreshingNew(false);
     }
   };
 
@@ -151,6 +201,7 @@ const MessageListScreen = () => {
 
     try {
       const sentMessage = await JuggleIM.sendMessage(messageToSend);
+      // Insert newest message at the start (we keep newest->oldest)
       setMessages(prev => [sentMessage, ...prev]);
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -229,7 +280,9 @@ const MessageListScreen = () => {
   };
 
   const getMenuOptions = () => {
-    if (!selectedMessage) return [];
+    if (!selectedMessage) {
+      return [];
+    }
 
     const options = [];
     const isOutgoing = selectedMessage.direction === 1;
@@ -391,6 +444,16 @@ const MessageListScreen = () => {
     }
   };
 
+  // Auto-scroll to newest (index 0) after initial load
+  useEffect(() => {
+    if (!isLoading && messages.length > 0 && !didInitialScroll.current) {
+      didInitialScroll.current = true;
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({index: 0, animated: false});
+      }, 50);
+    }
+  }, [isLoading, messages]);
+
   return (
     <SafeAreaView style={styles.container}>
       <MessageHeader
@@ -403,18 +466,32 @@ const MessageListScreen = () => {
       />
 
       <FlatList
+        ref={flatListRef}
         data={messages}
         renderItem={renderMessageItem}
         keyExtractor={item => item.clientMsgNo.toString()}
-        inverted={false}
+        inverted={true}
         contentContainerStyle={styles.listContent}
-        onRefresh={loadMoreMessages}
-        scrollEventThrottle={16}
-        refreshing={refreshing}
-        keyboardShouldPersistTaps={Platform.OS === 'ios' ? 'handled' : 'always'}
-        ListFooterComponent={
-          isLoading ? <ActivityIndicator style={{marginVertical: 10}} /> : null
+        // Pull-to-refresh (fetch newer messages). For inverted list this appears at the bottom.
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshingNew}
+            onRefresh={loadNewMessages}
+          />
         }
+        // When user scrolls to the top (older messages), load more
+        onEndReached={loadMoreMessages}
+        onEndReachedThreshold={0}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps={Platform.OS === 'ios' ? 'handled' : 'always'}
+        // Show initial loading indicator at the top (since list is inverted)
+        ListHeaderComponent={
+          loadingMore ? (
+            <ActivityIndicator style={styles.spinner} />
+          ) : null
+        }
+        // Show overall loading when first loading messages at the bottom
+        ListFooterComponent={isLoading ? <ActivityIndicator style={styles.spinner} /> : null}
       />
 
       <MessageComposer
@@ -474,6 +551,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  spinner: {
+    marginVertical: 10,
   },
 });
 
