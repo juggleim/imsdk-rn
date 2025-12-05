@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,98 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
-import JuggleIM from 'juggleim-rnsdk';
-import {useNavigation} from '@react-navigation/native';
+import JuggleIM, { ConversationInfo } from 'juggleim-rnsdk';
+import { useNavigation } from '@react-navigation/native';
+import UserInfoManager from '../manager/UserInfoManager';
+
+const ConversationItem = ({ item, onPress }: { item: ConversationInfo, onPress: (name: string) => void }) => {
+  const conversationId = item.conversation.conversationId;
+  const conversationType = item.conversation.conversationType;
+  const lastMsgContent = (item.lastMessage?.content as any)?.content || '[Message]';
+  const time = new Date(item.lastMessage?.timestamp || Date.now()).toLocaleTimeString();
+
+  const [name, setName] = useState(conversationId);
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadInfo = async () => {
+      if (conversationType === 1) { // Private
+        const user = await UserInfoManager.getUserInfo(conversationId);
+        if (isMounted && user) {
+          setName(user.nickname || user.user_id);
+          setAvatar(user.avatar);
+        }
+      } else if (conversationType === 2) { // Group
+        const group = await UserInfoManager.getGroupInfo(conversationId);
+        if (isMounted && group) {
+          setName(group.group_name || group.group_id);
+          setAvatar(group.group_portrait);
+        }
+      }
+    };
+
+    // Try sync first to avoid flicker
+    if (conversationType === 1) {
+      const user = UserInfoManager.getUserInfoSync(conversationId);
+      if (user) {
+        setName(user.nickname || user.user_id);
+        setAvatar(user.avatar);
+      } else {
+        loadInfo();
+      }
+    } else if (conversationType === 2) {
+      const group = UserInfoManager.getGroupInfoSync(conversationId);
+      if (group) {
+        setName(group.group_name || group.group_id);
+        setAvatar(group.group_portrait);
+      } else {
+        loadInfo();
+      }
+    } else {
+      loadInfo();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [conversationId, conversationType]);
+
+  return (
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={() => onPress(name)}>
+      <View style={styles.avatar}>
+        {avatar ? (
+          <Image source={{ uri: avatar }} style={styles.avatarImage} />
+        ) : (
+          <Text style={styles.avatarText}>
+            {name.substring(0, 1).toUpperCase()}
+          </Text>
+        )}
+      </View>
+      <View style={styles.contentContainer}>
+        <View style={styles.topRow}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.time}>{time}</Text>
+        </View>
+        <View style={styles.bottomRow}>
+          <Text style={styles.message} numberOfLines={1}>
+            {lastMsgContent}
+          </Text>
+          {(item as any).unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{(item as any).unreadCount}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const ConversationListScreen = () => {
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<ConversationInfo[]>([]);
   const navigation = useNavigation<any>();
 
   useEffect(() => {
@@ -29,9 +116,9 @@ const ConversationListScreen = () => {
               const index = updated.findIndex(
                 c =>
                   c.conversation.conversationId ===
-                    updatedConv.conversation.conversationId &&
+                  updatedConv.conversation.conversationId &&
                   c.conversation.conversationType ===
-                    updatedConv.conversation.conversationType,
+                  updatedConv.conversation.conversationType,
               );
               if (index !== -1) {
                 updated[index] = updatedConv;
@@ -47,9 +134,9 @@ const ConversationListScreen = () => {
                 !deletedConversations.some(
                   dc =>
                     dc.conversation.conversationId ===
-                      c.conversation.conversationId &&
+                    c.conversation.conversationId &&
                     dc.conversation.conversationType ===
-                      c.conversation.conversationType,
+                    c.conversation.conversationType,
                 ),
             ),
           );
@@ -81,52 +168,14 @@ const ConversationListScreen = () => {
     }
   };
 
-  const renderItem = ({item}: {item: any}) => {
-    // item is ConversationInfo
-    // We need to extract name, last message, timestamp, unread count
-    // For now, let's assume item structure based on SDK usually
-    // item.conversation.conversationId
-    // item.conversation.conversationType
-    // item.lastMessage
-    // item.unreadCount
-
-    // We need to resolve user name from ID if it's private chat.
-    // For this sample, we'll just show ID.
-
-    const conversationId = item.conversation?.conversationId || 'Unknown';
-    const lastMsgContent = item.lastMessage?.content?.content || '[Message]';
-    const time = new Date(
-      item.lastMessage?.timestamp || Date.now(),
-    ).toLocaleTimeString();
-
+  const renderItem = ({ item }: { item: ConversationInfo }) => {
     return (
-      <TouchableOpacity
-        style={styles.itemContainer}
-        onPress={() => {
-          navigation.navigate('MessageList', {conversation: item.conversation});
-        }}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {conversationId.substring(0, 1).toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.contentContainer}>
-          <View style={styles.topRow}>
-            <Text style={styles.name}>{conversationId}</Text>
-            <Text style={styles.time}>{time}</Text>
-          </View>
-          <View style={styles.bottomRow}>
-            <Text style={styles.message} numberOfLines={1}>
-              {lastMsgContent}
-            </Text>
-            {item.unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{item.unreadCount}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
+      <ConversationItem
+        item={item}
+        onPress={(name) => {
+          navigation.navigate('MessageList', { conversation: item.conversation, title: name });
+        }}
+      />
     );
   };
 
@@ -168,6 +217,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
   },
   avatarText: {
     color: '#fff',

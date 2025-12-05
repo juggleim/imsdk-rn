@@ -1,7 +1,7 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Conversation, UserInfo} from 'juggleim-rnsdk';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Conversation, UserInfo } from 'juggleim-rnsdk';
 
 interface MessageHeaderProps {
   conversation: Conversation;
@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 18,

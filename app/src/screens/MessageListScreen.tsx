@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   Clipboard,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import JuggleIM, {
   Conversation,
@@ -23,18 +24,100 @@ import JuggleIM, {
   SendMessageObject,
   MergeMessagePreviewUnit,
 } from 'juggleim-rnsdk';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {getToken} from '../utils/auth';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { getToken } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer from '../components/MessageComposer';
 import MessageBubble from '../components/MessageBubble';
 import CustomMenu from '../components/CustomMenu';
 import VoiceRecorder from '../components/VoiceRecorder';
 
+import UserInfoManager from '../manager/UserInfoManager';
+
+const MessageItem = ({
+  item,
+  currentUserId,
+  onLongPress,
+}: {
+  item: Message;
+  currentUserId: string;
+  onLongPress: (message: Message, event?: any) => void;
+}) => {
+  const isOutgoing = item.direction === 1;
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const [name, setName] = useState<string>(item.senderUserId || '');
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadUserInfo = async () => {
+      if (item.senderUserId) {
+        const user = await UserInfoManager.getUserInfo(item.senderUserId);
+        if (isMounted && user) {
+          setAvatar(user.avatar);
+          setName(user.nickname || user.user_id);
+        }
+      }
+    };
+
+    if (item.senderUserId) {
+      const user = UserInfoManager.getUserInfoSync(item.senderUserId);
+      if (user) {
+        setAvatar(user.avatar);
+        setName(user.nickname || user.user_id);
+      } else {
+        loadUserInfo();
+      }
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [item.senderUserId]);
+
+  return (
+    <View
+      style={[
+        styles.messageRow,
+        isOutgoing ? styles.outgoingRow : styles.incomingRow,
+      ]}>
+      {!isOutgoing && (
+        <View style={styles.avatarContainer}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>
+              {name.substring(0, 1).toUpperCase() || '?'}
+            </Text>
+          )}
+        </View>
+      )}
+
+      <MessageBubble
+        message={item}
+        isOutgoing={isOutgoing}
+        onLongPress={() => onLongPress(item)}
+      />
+
+      {isOutgoing && (
+        <View style={styles.avatarContainer}>
+          {/* For current user we might also want to show avatar, but usually it's from profile. 
+               For consistency let's try to load it too or just keep it simple. 
+               The prompt asked to cache user info and use it. 
+               Let's use the same logic for current user if available, or fallback to simple.
+           */}
+          <Text style={styles.avatarText}>
+            {currentUserId?.substring(0, 1).toUpperCase() || 'Me'}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
 const MessageListScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const {conversation} = route.params;
+  const { conversation, title } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +127,10 @@ const MessageListScreen = () => {
   const [refreshingNew, setRefreshingNew] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [voiceRecorderVisible, setVoiceRecorderVisible] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const flatListRef = useRef<FlatList<Message> | null>(null);
   const didInitialScroll = useRef(false);
 
@@ -99,6 +183,7 @@ const MessageListScreen = () => {
   const loadMessages = async () => {
     console.log('Loading messages for', conversation.conversationId);
     setIsLoading(true);
+    setHasMore(true);
     try {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
@@ -109,6 +194,11 @@ const MessageListScreen = () => {
           .slice()
           .sort((a, b) => b.timestamp - a.timestamp);
         setMessages(sorted);
+        if (result.messages.length < 20) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
       }
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -118,7 +208,7 @@ const MessageListScreen = () => {
   };
 
   const loadMoreMessages = async () => {
-    if (messages.length === 0) {
+    if (messages.length === 0 || !hasMore) {
       return;
     }
     if (loadingMore) {
@@ -147,6 +237,11 @@ const MessageListScreen = () => {
           (a, b) => b.timestamp - a.timestamp,
         );
         setMessages(merged);
+        if (result.messages.length < 20) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
       }
     } catch (error) {
       console.error('Failed to load more messages:', error);
@@ -215,7 +310,7 @@ const MessageListScreen = () => {
 
   const handleCameraPress = async () => {
     Alert.alert('Camera', 'Sending mock image...', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Send Mock Image',
         onPress: async () => {
@@ -243,7 +338,7 @@ const MessageListScreen = () => {
 
   const handleVoicePress = async () => {
     Alert.alert('Voice', 'Sending mock voice message...', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Send Mock Voice',
         onPress: async () => {
@@ -342,37 +437,13 @@ const MessageListScreen = () => {
     return options;
   };
 
-  const renderMessageItem = ({item}: {item: Message}) => {
-    const isOutgoing = item.direction === 1;
-
+  const renderMessageItem = ({ item }: { item: Message }) => {
     return (
-      <View
-        style={[
-          styles.messageRow,
-          isOutgoing ? styles.outgoingRow : styles.incomingRow,
-        ]}>
-        {!isOutgoing && (
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {item.senderUserId?.substring(0, 1).toUpperCase() || '?'}
-            </Text>
-          </View>
-        )}
-
-        <MessageBubble
-          message={item}
-          isOutgoing={isOutgoing}
-          onLongPress={() => handleMessageLongPress(item)}
-        />
-
-        {isOutgoing && (
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {currentUserId?.substring(0, 1).toUpperCase() || 'Me'}
-            </Text>
-          </View>
-        )}
-      </View>
+      <MessageItem
+        item={item}
+        currentUserId={currentUserId}
+        onLongPress={handleMessageLongPress}
+      />
     );
   };
 
@@ -426,7 +497,7 @@ const MessageListScreen = () => {
     }
   };
 
-  const handleSendVoice = async (file: {uri: string; duration: number}) => {
+  const handleSendVoice = async (file: { uri: string; duration: number }) => {
     const voiceContent: VoiceMessageContent = {
       contentType: 'jg:voice',
       localPath: file.uri,
@@ -449,7 +520,7 @@ const MessageListScreen = () => {
     if (!isLoading && messages.length > 0 && !didInitialScroll.current) {
       didInitialScroll.current = true;
       setTimeout(() => {
-        flatListRef.current?.scrollToIndex({index: 0, animated: false});
+        flatListRef.current?.scrollToIndex({ index: 0, animated: false });
       }, 50);
     }
   }, [isLoading, messages]);
@@ -458,7 +529,7 @@ const MessageListScreen = () => {
     <SafeAreaView style={styles.container}>
       <MessageHeader
         conversation={conversation}
-        title={conversation.conversationId}
+        title={title || conversation.conversationId}
         subtitle={
           conversation.conversationType === 1 ? 'Private Chat' : 'Group Chat'
         }
@@ -546,6 +617,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 8,
     marginBottom: 4,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 32,
+    height: 32,
   },
   avatarText: {
     color: '#fff',
