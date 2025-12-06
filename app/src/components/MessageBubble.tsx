@@ -100,15 +100,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }
           }
         } else {
-          width = 150;
-          height = 200;
+          width = 200;
+          height = 300;
         }
 
         return (
           <View style={{ width: width + 52, height }}>
             <Image
               source={{ uri }}
-              style={{ width, height, borderRadius: 8 }}
+              style={{ width: width, height, borderRadius: 8 }}
               resizeMode="cover"
             />
           </View>

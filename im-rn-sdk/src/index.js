@@ -10,9 +10,9 @@ const { JuggleIM: JMI } = NativeModules;
 const juggleIMEmitter = JMI
   ? new NativeEventEmitter(JMI)
   : {
-      addListener: () => ({ remove: () => {} }),
-      removeAllListeners: () => {},
-    };
+    addListener: () => ({ remove: () => { } }),
+    removeAllListeners: () => { },
+  };
 
 /**
  * Juggle IM React Native SDK
@@ -52,6 +52,15 @@ class JuggleIM {
     } else if (Platform.OS === "ios") {
       JMI.connectWithToken(token);
     }
+  }
+
+  /**
+   *  断开连接
+   * @param {boolean} pushable - 是否继续接收推送
+   * @returns {void}
+   */
+  static disconnect(pushable) {
+    JMI.disconnect(pushable);
   }
 
   /**
@@ -866,8 +875,8 @@ class JuggleIM {
    */
   static deleteMessagesByClientMsgNoList(conversation, clientMsgNos) {
     const nums = (clientMsgNos || [])
-                .map(n => Number(n))
-                .filter(n => !isNaN(n)); 
+      .map(n => Number(n))
+      .filter(n => !isNaN(n));
     return JMI.deleteMessagesByClientMsgNoList(conversation, nums);
   }
 

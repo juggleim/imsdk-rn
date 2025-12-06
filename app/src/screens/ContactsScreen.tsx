@@ -54,7 +54,7 @@ const ContactsScreen = () => {
 
     const renderItem = ({ item }: { item: Friend }) => (
         <View style={styles.itemContainer}>
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <Image source={item.avatar ? { uri: item.avatar } : require('../assets/icons/avatar.png')} style={styles.avatar} />
             <Text style={styles.nickname}>{item.nickname}</Text>
         </View>
     );

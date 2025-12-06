@@ -1,8 +1,8 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Alert} from 'react-native';
-import {clearToken} from '../utils/auth';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { clearToken } from '../utils/auth';
 import JuggleIM from 'juggleim-rnsdk';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
@@ -12,11 +12,12 @@ const ProfileScreen = () => {
       // Disconnect SDK
       // JuggleIM.disconnect(); // If available
       // Clear token
+      JuggleIM.disconnect(false);
       await clearToken();
       // Navigate to Login
       navigation.reset({
         index: 0,
-        routes: [{name: 'Login'}],
+        routes: [{ name: 'Login' }],
       });
     } catch (e) {
       console.error('Logout failed', e);

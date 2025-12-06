@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
@@ -14,12 +14,12 @@ import {
   MediaType,
 } from 'react-native-image-picker';
 import DocumentPicker from 'react-native-document-picker';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 interface MessageComposerProps {
   onSend: (text: string) => void;
-  onSendImage?: (file: {uri: string; type: string; name: string}) => void;
-  onSendVoice?: (file: {uri: string; duration: number}) => void;
+  onSendImage?: (file: { uri: string; type: string; name: string }) => void;
+  onSendVoice?: (file: { uri: string; duration: number }) => void;
   onSendFile?: (file: {
     uri: string;
     type: string;
@@ -110,7 +110,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       style={styles.container}>
       <View style={styles.composer}>
         <TouchableOpacity
@@ -145,7 +145,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
             <TouchableOpacity onPress={handleCamera} style={styles.iconButton}>
               <Image
                 source={require('../assets/icons/camera.png')}
-                style={[styles.icon, {tintColor: '#FF9500'}]}
+                style={[styles.icon, { tintColor: '#FF9500' }]}
               />
             </TouchableOpacity>
             <TouchableOpacity

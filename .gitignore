@@ -7,3 +7,5 @@ app/ios/app.xcworkspace/xcuserdata
 app/ios/build
 app/ios/Pods
 app/ios/Podfile.lock
+app/node_modules_trash
+app/android/.idea

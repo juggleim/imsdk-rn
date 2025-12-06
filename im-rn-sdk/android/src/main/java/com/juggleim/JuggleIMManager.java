@@ -107,7 +107,17 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void connect(String token) {
-        com.juggle.im.JIM.getInstance().getConnectionManager().connect(token);
+        JIM.getInstance().getConnectionManager().connect(token);
+    }
+
+    /**
+     * // true 表示断开连接后还继续接收推送
+     * // false 表示断开连接之后不再接收推送
+     * @param pushable
+     */
+    @ReactMethod
+    public void disconnect(boolean pushable) {
+        JIM.getInstance().getConnectionManager().disconnect(pushable);
     }
 
     /**
@@ -347,6 +357,30 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
         conversationListeners.put(key, listener);
         com.juggle.im.JIM.getInstance().getConversationManager().addListener(key, listener);
+    }
+
+    /**
+     * 消息销毁相关监听
+     */
+    @ReactMethod
+    public void addMessageDestroyListener(String key) {
+        JIM.getInstance().getMessageManager().addDestroyListener(key, new IMessageManager.IMessageDestroyListener() {
+        /**
+            * 消息销毁时间更新回调（一般发生在阅后即焚之类的场景）
+            * @param messageId 消息 id
+            * @param conversation 所在会话
+            * @param destroyTime 更新后的销毁时间
+            */
+            @Override
+            public void onMessageDestroyTimeUpdate(String messageId, Conversation conversation, long destroyTime) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putString("messageId", messageId);
+                params.putMap("conversation", convertConversationToMap(conversation));
+                params.putDouble("destroyTime", destroyTime);
+                sendEvent("MessageDestroyTimeUpdated", params);
+            }
+        });
     }
 
     /**

@@ -255,6 +255,14 @@ declare module "juggleim-rnsdk" {
     targetUsers: UserInfo[];
   }
 
+  /**
+   * 推送数据
+   */
+  export interface PushData {
+    content: string;
+    extra: string;
+  }
+
   export interface MentionMsg {
     senderId: string;
     msgId: string;
@@ -336,6 +344,8 @@ declare module "juggleim-rnsdk" {
     conversationType: number;
     conversationId: string;
     content: MessageContent;
+    mentionInfo?: MessageMentionInfo;
+    pushData?: PushData;
   }
   /**
    * 连接状态监听器回调函数
@@ -440,6 +450,12 @@ declare module "juggleim-rnsdk" {
      * @param token 用户token
      */
     static connect(token: string): void;
+
+    /**
+     * 断开连接
+     * @param pushable 是否继续接收推送
+     */
+    static disconnect(pushable: boolean): void;
 
     /**
      * 添加连接状态监听器

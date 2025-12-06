@@ -43,6 +43,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.facebook.react:react-native:+'
-    api 'com.juggle.im:juggle:1.8.13.2'
+    implementation 'com.facebook.react:react-native:0.71.1'
+    implementation 'com.juggle.im:juggle:1.8.27.1'
 }

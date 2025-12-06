@@ -80,7 +80,15 @@ const ConversationItem = ({ item, onPress }: { item: ConversationInfo, onPress: 
       <View style={styles.contentContainer}>
         <View style={styles.topRow}>
           <Text style={styles.name}>{name}</Text>
-          <Text style={styles.time}>{time}</Text>
+          <View style={styles.timeContainer}>
+            <Text style={styles.time}>{time}</Text>
+            {item.isMute && (
+              <Image
+                source={require('../assets/icons/mute.png')}
+                style={styles.muteIcon}
+              />
+            )}
+          </View>
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.message} numberOfLines={1}>
@@ -244,6 +252,15 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 12,
     color: '#999',
+  },
+  timeContainer: {
+    alignItems: 'flex-end',
+  },
+  muteIcon: {
+    width: 12,
+    height: 12,
+    marginTop: 6,
+    tintColor: '#999',
   },
   bottomRow: {
     flexDirection: 'row',
