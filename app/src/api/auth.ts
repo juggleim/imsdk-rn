@@ -1,4 +1,4 @@
-import {APP_KEY, APP_SERVER_URL} from './config';
+import { APP_KEY, APP_SERVER_URL } from './config';
 
 export interface LoginRequest {
   account: string;
@@ -50,7 +50,6 @@ async function fetchData<T = any>(data: {
     console.log('req', url, options);
     const res = await fetch(url, options);
     const json: ApiResponse<T> = await res.json();
-    console.log('xxx', json);
     if (json.code !== 0) {
       throw new Error(json.msg || '接口返回错误');
     }

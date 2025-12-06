@@ -425,8 +425,18 @@ class JuggleIM {
    * @param {object} conversation - 会话对象
    * @returns {Promise<boolean>} 删除结果
    */
-  static deleteConversationInfo(conversation) {
-    return JMI.deleteConversationInfo(conversation);
+  static async deleteConversationInfo(conversation, callback) {
+    try {
+      const result = await JMI.deleteConversationInfo(conversation);
+      if (callback && callback.onSuccess) {
+        callback.onSuccess();
+      }
+      return result;
+    } catch (error) {
+      if (callback && callback.onError) {
+        callback.onError(error.code || -1);
+      }
+    }
   }
 
   /**
@@ -435,8 +445,18 @@ class JuggleIM {
    * @param {boolean} isMute - 是否免打扰
    * @returns {Promise<boolean>} 设置结果
    */
-  static setMute(conversation, isMute) {
-    return JMI.setMute(conversation, isMute);
+  static async setMute(conversation, isMute, callback) {
+    try {
+      const result = await JMI.setMute(conversation, isMute);
+      if (callback && callback.onSuccess) {
+        callback.onSuccess();
+      }
+      return result;
+    } catch (error) {
+      if (callback && callback.onError) {
+        callback.onError(error.code || -1);
+      }
+    }
   }
 
   /**
@@ -445,11 +465,17 @@ class JuggleIM {
    * @param {boolean} isTop - 是否置顶
    * @returns {Promise<boolean>} 设置结果
    */
-  static setTop(conversation, isTop) {
-    if (Platform.OS === "android") {
-      return JMI.setTop(conversation, isTop);
-    } else if (Platform.OS === "ios") {
-      return JMI.setTop(conversation, isTop);
+  static async setTop(conversation, isTop, callback) {
+    try {
+      const result = await JMI.setTop(conversation, isTop);
+      if (callback && callback.onSuccess) {
+        callback.onSuccess();
+      }
+      return result;
+    } catch (error) {
+      if (callback && callback.onError) {
+        callback.onError(error.code || -1);
+      }
     }
   }
 

@@ -147,7 +147,7 @@ const MessageListScreen = () => {
     JuggleIM.clearUnreadCount(conversation);
 
     loadMessages();
-    const listener = JuggleIM.addMessageListener('MessageListScreen', {
+    const msgUpdateListener = JuggleIM.addMessageListener('MessageListScreen', {
       onMessageReceive: (message: Message) => {
         if (
           message.conversation.conversationId === conversation.conversationId
@@ -174,10 +174,16 @@ const MessageListScreen = () => {
         }
       },
     });
+
+    const msgDestoryLisener = JuggleIM.addMessageDestroyListener('MessageListScreen', {
+      onMessageDestroyTimeUpdate: (messageId, conversation, destroyTiem) => {
+        console.log('onMessageDestroyTimeUpdate', messageId, conversation, destroyTiem);
+      }
+    })
     return () => {
-      listener();
+      msgUpdateListener();
+      msgDestoryLisener();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation]);
 
   const loadMessages = async () => {
@@ -188,7 +194,7 @@ const MessageListScreen = () => {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
       });
-      console.log('Loaded messages:', result);
+      console.log('Loaded messages:', result.code, result.messages.length);
       if (result && result.code === 0 && result.messages) {
         // Ensure messages are ordered newest -> oldest for inverted list
         const sorted = result.messages

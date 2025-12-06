@@ -6,12 +6,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import JuggleIM, { ConversationInfo } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import UserInfoManager from '../manager/UserInfoManager';
 
-const ConversationItem = ({ item, onPress }: { item: ConversationInfo, onPress: (name: string) => void }) => {
+const ConversationItem = ({
+  item,
+  onPress,
+  onLongPress,
+}: {
+  item: ConversationInfo;
+  onPress: (name: string) => void;
+  onLongPress: (item: ConversationInfo) => void;
+}) => {
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
   const lastMsgContent = (item.lastMessage?.content as any)?.content || '[Message]';
@@ -66,8 +77,12 @@ const ConversationItem = ({ item, onPress }: { item: ConversationInfo, onPress: 
 
   return (
     <TouchableOpacity
-      style={styles.itemContainer}
-      onPress={() => onPress(name)}>
+      style={[
+        styles.itemContainer,
+        item.isTop && { backgroundColor: '#f2f2f2' },
+      ]}
+      onPress={() => onPress(name)}
+      onLongPress={() => onLongPress(item)}>
       <View style={styles.avatar}>
         {avatar ? (
           <Image source={{ uri: avatar }} style={styles.avatarImage} />
@@ -109,13 +124,91 @@ const ConversationListScreen = () => {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
   const navigation = useNavigation<any>();
 
+  const sortConversations = (list: ConversationInfo[]) => {
+    return list.sort((a, b) => {
+      if (a.isTop !== b.isTop) {
+        return a.isTop ? -1 : 1;
+      }
+      if (a.isTop) {
+        return b.topTime - a.topTime;
+      }
+      return b.sortTime - a.sortTime;
+    });
+  };
+
+  const handleLongPress = (item: ConversationInfo) => {
+    const options = [
+      '删除会话',
+      item.isTop ? '取消置顶' : '置顶',
+      item.isMute ? '取消免打扰' : '免打扰',
+      'Cancel',
+    ];
+    const destructiveButtonIndex = 0;
+    const cancelButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+          destructiveButtonIndex,
+        },
+        buttonIndex => {
+          if (buttonIndex === 0) {
+            // Delete
+            JuggleIM.deleteConversationInfo(item.conversation, {
+              onSuccess: () => { },
+              onError: () => { },
+            });
+          } else if (buttonIndex === 1) {
+            // Top
+            JuggleIM.setTop(item.conversation, !item.isTop);
+          } else if (buttonIndex === 2) {
+            // Mute
+            JuggleIM.setMute(item.conversation, !item.isMute);
+          }
+        },
+      );
+    } else {
+      Alert.alert(
+        'Options',
+        undefined,
+        [
+          {
+            text: '删除会话',
+            style: 'destructive',
+            onPress: () => {
+              JuggleIM.deleteConversationInfo(item.conversation, {
+                onSuccess: () => { },
+                onError: () => { },
+              });
+            },
+          },
+          {
+            text: item.isTop ? '取消置顶' : '置顶',
+            onPress: () => JuggleIM.setTop(item.conversation, !item.isTop),
+          },
+          {
+            text: item.isMute ? '取消免打扰' : '免打扰',
+            onPress: () => JuggleIM.setMute(item.conversation, !item.isMute),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ],
+        { cancelable: true },
+      );
+    }
+  };
+
   useEffect(() => {
     loadConversations();
     const removeListener = JuggleIM.addConversationListener(
       'ConversationListScreen',
       {
         onConversationInfoAdd: newConversations => {
-          setConversations(prev => [...newConversations, ...prev]);
+          setConversations(prev => sortConversations([...newConversations, ...prev]));
         },
         onConversationInfoUpdate: updatedConversations => {
           setConversations(prev => {
@@ -132,7 +225,7 @@ const ConversationListScreen = () => {
                 updated[index] = updatedConv;
               }
             });
-            return updated;
+            return sortConversations(updated);
           });
         },
         onConversationInfoDelete: deletedConversations => {
@@ -170,7 +263,7 @@ const ConversationListScreen = () => {
         direction: 0,
       });
       console.log('会话列表:', list);
-      setConversations(list || []);
+      setConversations(sortConversations(list || []));
     } catch (e) {
       console.error('Failed to load conversations', e);
     }
@@ -183,6 +276,7 @@ const ConversationListScreen = () => {
         onPress={(name) => {
           navigation.navigate('MessageList', { conversation: item.conversation, title: name });
         }}
+        onLongPress={handleLongPress}
       />
     );
   };

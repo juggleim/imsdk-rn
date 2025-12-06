@@ -257,6 +257,15 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 sendEvent("MessageReactionRemoved", params);
             }
 
+            @Override
+            public void onMessageSetTop(Message message, UserInfo userInfo, boolean b) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                params.putMap("operator", convertUserInfoToMap(userInfo));
+                params.putBoolean("isTop", b);
+                sendEvent("MessageSetTop", params);
+            }
         };
 
         messageListeners.put(key, listener);
