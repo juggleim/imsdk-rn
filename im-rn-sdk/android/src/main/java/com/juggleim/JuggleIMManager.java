@@ -912,9 +912,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 撤回消息
      */
     @ReactMethod
-    public void recallMessage(ReadableMap messageMap, ReadableMap extras, Promise promise) {
+    public void recallMessage(String messageId, ReadableMap extras, Promise promise) {
         try {
-            String messageId = messageMap.getString("messageId");
             Map<String, String> extrasMap = new HashMap<>();
             if (extras != null) {
                 ReadableMapKeySetIterator it = extras.keySetIterator();
