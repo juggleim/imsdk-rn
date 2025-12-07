@@ -9,3 +9,11 @@ app/ios/Pods
 app/ios/Podfile.lock
 app/node_modules_trash
 app/android/.idea
+node_modules
+DEMO/android/.gradle
+**/build/**
+DEMO/ios/Pods
+DEMO/vendor
+DEMO/android/app/.cxx
+DEMO/android/.kotlin
+DEMO/.bundle
