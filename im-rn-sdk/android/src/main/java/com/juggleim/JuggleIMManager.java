@@ -1362,7 +1362,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         try {
             Conversation conversation = convertMapToConversation(conversationMap);
 
-            JIM.getInstance().getConversationManager().setTop(messageId, conversation, isTop, new IConversationManager.ISimpleCallback() {
+            JIM.getInstance().getMessageManager().setTop(messageId, conversation, isTop, new IMessageManager.ISimpleCallback() {
                 @Override
                 public void onSuccess() {
                     promise.resolve(true);
