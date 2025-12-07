@@ -97,22 +97,22 @@ const ConversationItem = ({
           <Text style={styles.name}>{name}</Text>
           <View style={styles.timeContainer}>
             <Text style={styles.time}>{time}</Text>
-            {item.isMute && (
-              <Image
-                source={require('../assets/icons/mute.png')}
-                style={styles.muteIcon}
-              />
-            )}
           </View>
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.message} numberOfLines={1}>
             {lastMsgContent}
           </Text>
-          {(item as any).unreadCount > 0 && (
+          {!item.isMute && (item as any).unreadCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{(item as any).unreadCount}</Text>
             </View>
+          )}
+          {item.isMute && (
+            <Image
+              source={require('../assets/icons/mute.png')}
+              style={styles.muteIcon}
+            />
           )}
         </View>
       </View>

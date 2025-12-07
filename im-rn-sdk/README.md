@@ -395,6 +395,51 @@ const addResult = await JuggleIM.addMessageReaction('message_id', 'thumbs_up');
 const removeResult = await JuggleIM.removeMessageReaction('message_id', 'thumbs_up');
 ```
 
+### 发送消息已读回执
+
+发送消息已读回执，通知对方消息已被阅读。
+
+```javascript
+const conversation = {
+  conversationType: 1, // ConversationType.PRIVATE
+  conversationId: 'user123'
+};
+
+const messageIds = ['messageId1', 'messageId2'];
+
+await JuggleIM.sendReadReceipt(conversation, messageIds, {
+  onSuccess: () => {
+    console.log('发送已读回执成功');
+  },
+  onError: (errorCode) => {
+    console.log('发送已读回执失败, 错误码:', errorCode);
+  }
+});
+```
+
+### 设置消息置顶
+
+设置或取消消息置顶状态。
+
+```javascript
+const conversation = {
+  conversationType: 2, // ConversationType.GROUP
+  conversationId: 'group123'
+};
+
+const messageId = 'messageId1';
+const isTop = true; // true 表示置顶，false 表示取消置顶
+
+await JuggleIM.setMessageTop(messageId, conversation, isTop, {
+  onSuccess: () => {
+    console.log('设置消息置顶成功');
+  },
+  onError: (errorCode) => {
+    console.log('设置消息置顶失败, 错误码:', errorCode);
+  }
+});
+```
+
 ## 类型定义
 
 ### 会话类型

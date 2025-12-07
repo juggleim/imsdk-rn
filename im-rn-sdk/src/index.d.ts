@@ -791,5 +791,33 @@ declare module "juggleim-rnsdk" {
       messageId: string,
       reactionId: string
     ): Promise<Boolean>;
+
+    /**
+     * 发送消息已读回执
+     * @param conversation 会话对象
+     * @param messageIds 消息ID列表
+     * @param callback 回调函数
+     * @returns {Promise<Boolean>} 是否发送成功
+     */
+    static sendReadReceipt(
+      conversation: Conversation,
+      messageIds: string[],
+      callback?: SimpleCallback
+    ): Promise<Boolean>;
+
+    /**
+     * 设置消息置顶
+     * @param messageId 消息ID
+     * @param conversation 会话对象
+     * @param isTop 是否置顶
+     * @param callback 回调函数
+     * @returns {Promise<Boolean>} 是否设置成功
+     */
+    static setMessageTop(
+      messageId: string,
+      conversation: Conversation,
+      isTop: boolean,
+      callback?: SimpleCallback
+    ): Promise<Boolean>;
   }
 }

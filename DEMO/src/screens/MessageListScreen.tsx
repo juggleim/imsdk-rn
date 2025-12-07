@@ -204,6 +204,24 @@ const MessageListScreen = () => {
         if (result.messages.length < 20) {
           setHasMore(false);
         }
+
+        // Send read receipt for loaded messages if there are any
+        if (sorted.length > 0) {
+          const messageIds = sorted
+            .map(msg => msg.messageId)
+            .filter(id => id && id.length > 0);
+
+          if (messageIds.length > 0) {
+            JuggleIM.sendReadReceipt(conversation, messageIds, {
+              onSuccess: () => {
+                console.log('Sent read receipt for', messageIds.length, 'messages');
+              },
+              onError: (errorCode: number) => {
+                console.log('Failed to send read receipt, error code:', errorCode);
+              }
+            });
+          }
+        }
       } else {
         setHasMore(false);
       }

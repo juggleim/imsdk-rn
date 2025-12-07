@@ -1317,4 +1317,65 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
         return userInfo;
     }
+
+    /**
+     * 发送消息已读回执
+     * @param conversationMap 会话对象
+     * @param messageIds 消息ID列表
+     * @param promise Promise对象
+     */
+    @ReactMethod
+    public void sendReadReceipt(ReadableMap conversationMap, ReadableArray messageIds, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(conversationMap);
+            List<String> msgIdList = new ArrayList<>();
+            for (int i = 0; i < messageIds.size(); i++) {
+                msgIdList.add(messageIds.getString(i));
+            }
+
+            JIM.getInstance().getMessageManager().sendReadReceipt(conversation, msgIdList, new IMessageManager.ISendReadReceiptCallback() {
+                @Override
+                public void onSuccess() {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            promise.reject(e);
+        }
+    }
+
+    /**
+     * 设置消息置顶
+     * @param messageId 消息ID
+     * @param conversationMap 会话对象
+     * @param isTop 是否置顶
+     * @param promise Promise对象
+     */
+    @ReactMethod
+    public void setMessageTop(String messageId, ReadableMap conversationMap, boolean isTop, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(conversationMap);
+
+            JIM.getInstance().getConversationManager().setTop(messageId, conversation, isTop, new IConversationManager.ISimpleCallback() {
+                @Override
+                public void onSuccess() {
+                    promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            promise.reject(e);
+        }
+    }
 }

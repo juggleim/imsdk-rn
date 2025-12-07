@@ -1406,4 +1406,47 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
   return userInfo;
 }
 
+/**
+ * 发送消息已读回执
+ */
+RCT_EXPORT_METHOD(
+    sendReadReceipt : (NSDictionary *)conversationMap messageIds : (NSArray *)
+        messageIds resolver : (RCTPromiseResolveBlock)
+            resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JConversation *conversation =
+      [self convertDictionaryToConversation:conversationMap];
+
+  [JIM.shared.messageManager sendReadReceipt:messageIds
+      inConversation:conversation
+      success:^{
+        resolve(@YES);
+      }
+      error:^(JErrorCode code) {
+        reject(@"error",
+               [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+      }];
+}
+
+/**
+ * 设置消息置顶
+ */
+RCT_EXPORT_METHOD(
+    setMessageTop : (NSString *)messageId conversation : (NSDictionary *)
+        conversationMap isTop : (BOOL)isTop resolver : (RCTPromiseResolveBlock)
+            resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JConversation *conversation =
+      [self convertDictionaryToConversation:conversationMap];
+
+  [JIM.shared.conversationManager setTop:isTop
+      messageId:messageId
+      conversation:conversation
+      success:^{
+        resolve(@YES);
+      }
+      error:^(JErrorCode code) {
+        reject(@"error",
+               [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
+      }];
+}
+
 @end

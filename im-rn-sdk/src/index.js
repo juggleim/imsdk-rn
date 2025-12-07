@@ -923,6 +923,51 @@ class JuggleIM {
   static removeMessageReaction(message, reactionId) {
     JMI.removeMessageReaction(message, reactionId, callback);
   }
+
+  /**
+   * 发送消息已读回执
+   * @param {object} conversation - 会话对象
+   * @param {string[]} messageIds - 消息ID列表
+   * @param {object} callback - 回调对象
+   * @returns {Promise<boolean>} 发送结果
+   */
+  static async sendReadReceipt(conversation, messageIds, callback) {
+    try {
+      const result = await JMI.sendReadReceipt(conversation, messageIds);
+      if (callback && callback.onSuccess) {
+        callback.onSuccess();
+      }
+      return result;
+    } catch (error) {
+      if (callback && callback.onError) {
+        callback.onError(error.code || -1);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 设置消息置顶
+   * @param {string} messageId - 消息ID
+   * @param {object} conversation - 会话对象
+   * @param {boolean} isTop - 是否置顶
+   * @param {object} callback - 回调对象
+   * @returns {Promise<boolean>} 设置结果
+   */
+  static async setMessageTop(messageId, conversation, isTop, callback) {
+    try {
+      const result = await JMI.setMessageTop(messageId, conversation, isTop);
+      if (callback && callback.onSuccess) {
+        callback.onSuccess();
+      }
+      return result;
+    } catch (error) {
+      if (callback && callback.onError) {
+        callback.onError(error.code || -1);
+      }
+      throw error;
+    }
+  }
 }
 
 export default JuggleIM;
