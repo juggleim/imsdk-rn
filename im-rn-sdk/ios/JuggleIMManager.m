@@ -875,20 +875,15 @@ RCT_EXPORT_METHOD(sendMessage : (NSDictionary *)messageDict messageId : (
     NSString *)messageId resolver : (RCTPromiseResolveBlock)
                       resolve rejecter : (RCTPromiseRejectBlock)reject) {
   @try {
-    // 构建消息内容和会话对象
-    JMessageContent *content = [self
-        convertDictToMessageContent:[messageDict objectForKey:@"content"]];
-    JConversation *conversation =
-        [self convertDictionaryToConversation:messageDict];
-
-    if (!content) {
+    JMessage *msg = [self convertDictToMessage:messageDict];
+    if (!msg.content) {
       reject(@"SEND_MESSAGE_ERROR", @"无效的消息内容", nil);
       return;
     }
 
     // 发送消息
-    JMessage *message = [JIM.shared.messageManager sendMessage:content
-        inConversation:conversation
+    JMessage *message = [JIM.shared.messageManager sendMessage:msg.content
+        inConversation:msg.conversation
         success:^(JMessage *message) {
           [self sendEventWithName:@"onMessageSent"
                              body:@{
@@ -1300,4 +1295,115 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
 
   return nil;
 }
+
+- (JMessage *)convertDictToMessage:(NSDictionary *)messageDict {
+  if (![messageDict isKindOfClass:[NSDictionary class]]) {
+    return nil;
+  }
+
+  JMessage *message = [[JMessage alloc] init];
+
+  // 1. Conversation
+  JConversation *conversation =
+      [self convertDictionaryToConversation:messageDict];
+  message.conversation = conversation;
+
+  // 2. messageId
+  if (messageDict[@"messageId"]) {
+    message.messageId = messageDict[@"messageId"];
+  }
+
+  // 3. clientMsgNo
+  if (messageDict[@"clientMsgNo"]) {
+    message.clientMsgNo = [messageDict[@"clientMsgNo"] longLongValue];
+  }
+
+  // 4. timestamp
+  if (messageDict[@"timestamp"]) {
+    message.timestamp = [messageDict[@"timestamp"] longLongValue];
+  }
+
+  // 5. senderUserId
+  if (messageDict[@"senderUserId"]) {
+    message.senderUserId = messageDict[@"senderUserId"];
+  }
+
+  // 6. content
+  NSDictionary *contentDict = messageDict[@"content"];
+  if ([contentDict isKindOfClass:[NSDictionary class]]) {
+    JMessageContent *content = [self convertDictToMessageContent:contentDict];
+    message.content = content;
+  }
+
+  // 7. direction
+  if (messageDict[@"direction"]) {
+    NSInteger directionValue = [messageDict[@"direction"] integerValue];
+    message.direction = directionValue;
+  }
+
+  // 8. state
+  if (messageDict[@"state"]) {
+    NSInteger stateValue = [messageDict[@"state"] integerValue];
+    message.messageState = stateValue;
+  }
+
+  // 9. hasRead
+  if (messageDict[@"hasRead"]) {
+    message.hasRead = [messageDict[@"hasRead"] boolValue];
+  }
+
+  // 10. localAttribute
+  if (messageDict[@"localAttribute"]) {
+    message.localAttribute = messageDict[@"localAttribute"];
+  }
+
+  // 11. isDelete
+  if (messageDict[@"isDelete"]) {
+    message.isDeleted = [messageDict[@"isDelete"] boolValue];
+  }
+
+  // 12. isEdit
+  if (messageDict[@"isEdit"]) {
+    message.isEdit = [messageDict[@"isEdit"] boolValue];
+  }
+
+  if (messageDict[@"mentionInfo"]) {
+    NSDictionary *mentionInfoDict = messageDict[@"mentionInfo"];
+    if ([mentionInfoDict isKindOfClass:[NSDictionary class]]) {
+      JMessageMentionInfo *mentionInfo =
+          [self convertDictToMessageMentionInfo:mentionInfoDict];
+      message.mentionInfo = mentionInfo;
+    }
+  }
+
+  return message;
+}
+
+- (JMessageMentionInfo *)convertDictToMessageMentionInfo:(NSDictionary *)dict {
+  JMessageMentionInfo *mentionInfo = [[JMessageMentionInfo alloc] init];
+  if (dict[@"type"]) {
+    mentionInfo.type = [dict[@"type"] intValue];
+  }
+  if (dict[@"targetUsers"]) {
+    NSDictionary *mentionedUsers = dict[@"targetUsers"];
+    // convert dict userinfo
+    NSMutableArray *userArray = [NSMutableArray array];
+    for (NSDictionary *userDict in mentionedUsers) {
+      if ([userDict isKindOfClass:[NSDictionary class]] &&
+          userDict[@"userId"]) {
+        JUserInfo *userInfo = [self convertDictToUserInfo:userDict[@"userId"]];
+        [userArray addObject:userInfo];
+      }
+    }
+  }
+
+  return mentionInfo;
+}
+// convert dict userinfo
+- (JUserInfo *)convertDictToUserInfo:(NSString *)userId {
+  JUserInfo *userInfo = [[JUserInfo alloc] init];
+  userInfo.userId = userId;
+  return userInfo;
+}
+
 @end

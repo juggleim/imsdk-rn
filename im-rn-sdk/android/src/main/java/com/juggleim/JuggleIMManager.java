@@ -1279,6 +1279,43 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         if (messageMap.hasKey("isEdit")) {
             message.setEdit(messageMap.getBoolean("isEdit"));
         }
+
+        if (messageMap.hasKey("mentionInfo")) {
+            ReadableMap mentionInfoMap = messageMap.getMap("mentionInfo");
+            MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+            message.setMentionInfo(mentionInfo);
+        }
         return message;
+    }
+
+    private MessageMentionInfo convertMapToMentionInfo(ReadableMap mentionInfoMap) {
+        MessageMentionInfo mentionInfo = new MessageMentionInfo();
+        if (mentionInfoMap.hasKey("type")) {
+            MessageMentionInfo.MentionType type = MessageMentionInfo.MentionType.setValue(mentionInfoMap.getInt("type"));
+            mentionInfo.setType(type);
+        }
+        if (mentionInfoMap.hasKey("targetUsers")) {
+            ReadableArray targetUsers = mentionInfoMap.getArray("targetUsers");
+            for (int i = 0; i < targetUsers.size(); i++) {
+                ReadableMap userMap = targetUsers.getMap(i);
+                UserInfo userInfo = convertMapToUserInfo(userMap);
+                mentionInfo.getTargetUsers().add(userInfo);
+            }
+        }
+        return mentionInfo;
+    }
+
+    private UserInfo convertMapToUserInfo(ReadableMap userMap) {
+        UserInfo userInfo = new UserInfo();
+        if (userMap.hasKey("userId")) {
+            userInfo.setUserId(userMap.getString("userId"));
+        }
+        if (userMap.hasKey("nickname")) {
+            userInfo.setUserName(userMap.getString("nickname"));
+        }
+        if (userMap.hasKey("avatar")) {
+            userInfo.setPortrait(userMap.getString("avatar"));
+        }
+        return userInfo;
     }
 }
