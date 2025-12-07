@@ -482,7 +482,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("localPath", voice.getLocalPath());
             map.putInt("duration", voice.getDuration());
         } else {
-            Log.e("convertMessageContentToMap", "Unknown contentType: " + content.getContentType());
+            Log.e("JuggleIM", "Unknown contentType: " + content.getContentType());
             return RNTypeConverter.toWritableMap(content);
         }
 
@@ -518,7 +518,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 voice.setDuration(map.getInt("duration"));
                 return voice;
             default:
-                Log.e("convertMapToMessageContent", "contentType: " + contentType);
+                Log.e("JuggleIM", "contentType: " + contentType);
                 return RNTypeConverter.fromReadableMap(map, MessageContent.class);
         }
     }
@@ -594,7 +594,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                     JIMConst.PullDirection.NEWER : JIMConst.PullDirection.OLDER;
 
             List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager().getConversationInfoList(count, (long) ts, direction);
-            Log.d("getConversationInfoList", "conversationInfos: " + conversationInfos.size());
+            Log.d("JuggleIM", "conversationInfos: " + conversationInfos.size());
             WritableArray result = new WritableNativeArray();
             for (ConversationInfo info : conversationInfos) {
                 result.pushMap(convertConversationInfoToMap(info));
@@ -809,7 +809,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     @ReactMethod
     public void sendMessage(ReadableMap messageMap, String messageId, Promise promise) {
         Message message = convertMapToMessage(messageMap);
-        Log.d("sendMessage", message.toString());
+        Log.d("JuggleIM", "sendMessage: " + messageId);
         Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
                 message.getContent(),
                 message.getConversation(),
