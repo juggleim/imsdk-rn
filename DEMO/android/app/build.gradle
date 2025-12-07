@@ -121,4 +121,7 @@ dependencies {
     }
 
     implementation 'com.facebook.fresco:animated-gif:3.6.0' //gif android
+
+    implementation project(':juggleim-rnsdk')
+
 }

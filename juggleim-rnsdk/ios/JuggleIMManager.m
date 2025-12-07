@@ -1437,7 +1437,7 @@ RCT_EXPORT_METHOD(
   JConversation *conversation =
       [self convertDictionaryToConversation:conversationMap];
 
-  [JIM.shared.conversationManager setTop:isTop
+  [JIM.shared.messageManager setTop:isTop
       messageId:messageId
       conversation:conversation
       success:^{

@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "outDir": "lib",
+        "module": "commonjs",
+        "target": "ES2017",
+        "declaration": true,
+        "jsx": "react",
+        "allowJs": true
+    },
+    "include": [
+        "src"
+    ]
+}
