@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   TextInput,
@@ -13,11 +13,21 @@ import {
   launchCamera,
   MediaType,
 } from 'react-native-image-picker';
+import { GroupMember } from '../api/groups';
 // import DocumentPicker from 'react-native-document-picker';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
+export interface MentionInfo {
+  userId: string;
+  nickname: string;
+  startIndex: number;
+  endIndex: number;
+}
+
 interface MessageComposerProps {
-  onSend: (text: string) => void;
+  conversationType: number;
+  conversationId: string;
+  onSend: (text: string, mentions: MentionInfo[]) => void;
   onSendImage?: (file: { uri: string; type: string; name: string }) => void;
   onSendVoice?: (file: { uri: string; duration: number }) => void;
   onSendFile?: (file: {
@@ -29,23 +39,104 @@ interface MessageComposerProps {
   onAttachmentPress?: () => void;
   onCameraPress?: () => void;
   onVoicePress?: () => void;
+  onAtPress?: () => void; // Callback to trigger member selection
 }
 
-const MessageComposer: React.FC<MessageComposerProps> = ({
-  onSend,
-  onSendImage,
-  onSendVoice,
-  onSendFile,
-  onAttachmentPress,
-  onCameraPress,
-  onVoicePress,
-}) => {
+export interface MessageComposerRef {
+  addMention: (userId: string, nickname: string) => void;
+}
+
+const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((props, ref) => {
+  const {
+    conversationType,
+    conversationId,
+    onSend,
+    onSendImage,
+    onSendVoice,
+    onSendFile,
+    onAttachmentPress,
+    onCameraPress,
+    onVoicePress,
+    onAtPress,
+  } = props;
   const [text, setText] = useState('');
+  const [mentions, setMentions] = useState<MentionInfo[]>([]);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  // Expose addMention method to parent via ref
+  useImperativeHandle(ref, () => ({
+    addMention: (userId: string, nickname: string) => {
+      addMentionInternal(userId, nickname);
+    },
+  }));
+
+
+  const handleTextChange = (newText: string) => {
+    setText(newText);
+
+    // Detect @ character for group conversations
+    if (conversationType === 2 && onAtPress) { // 2 = GROUP
+      const lastChar = newText[cursorPosition - 1];
+      const charBeforeLast = cursorPosition >= 2 ? newText[cursorPosition - 2] : '';
+      const currentChar = newText[cursorPosition];
+
+      // Trigger @ selection if @ is typed and it's at start or after a space
+      if (currentChar === '@') {
+        onAtPress();
+      }
+    }
+
+    // Update mentions based on text changes (handle deletion)
+    updateMentionsAfterTextChange(newText);
+  };
+
+  const updateMentionsAfterTextChange = (newText: string) => {
+    // Filter out mentions that are no longer in the text
+    const updatedMentions = mentions.filter(mention => {
+      const mentionText = `@${mention.nickname}`;
+      const textSegment = newText.substring(mention.startIndex, mention.endIndex);
+      return textSegment === mentionText;
+    });
+
+    if (updatedMentions.length !== mentions.length) {
+      setMentions(updatedMentions);
+    }
+  };
+
+  const addMentionInternal = (userId: string, nickname: string) => {
+    // Find the last @ position before cursor
+    let atPosition = -1;
+    for (let i = cursorPosition - 1; i >= 0; i--) {
+      if (text[i] === '@') {
+        atPosition = i;
+        break;
+      }
+    }
+
+    if (atPosition === -1) return;
+
+    const mentionText = `@${nickname} `;
+    const beforeAt = text.substring(0, atPosition);
+    const afterCursor = text.substring(cursorPosition);
+    const newText = beforeAt + mentionText + afterCursor;
+
+    const newMention: MentionInfo = {
+      userId,
+      nickname,
+      startIndex: atPosition,
+      endIndex: atPosition + mentionText.length - 1, // -1 to exclude the trailing space
+    };
+
+    setText(newText);
+    setMentions([...mentions, newMention]);
+    setCursorPosition(atPosition + mentionText.length);
+  };
 
   const handleSend = () => {
     if (text.trim()) {
-      onSend(text);
+      onSend(text, mentions);
       setText('');
+      setMentions([]);
     }
   };
 
@@ -126,7 +217,10 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
           <TextInput
             style={styles.input}
             value={text}
-            onChangeText={setText}
+            onChangeText={handleTextChange}
+            onSelectionChange={(event) => {
+              setCursorPosition(event.nativeEvent.selection.start);
+            }}
             placeholder="Type a message..."
             placeholderTextColor="#999"
             multiline
@@ -167,7 +261,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
       </View>
     </KeyboardAvoidingView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

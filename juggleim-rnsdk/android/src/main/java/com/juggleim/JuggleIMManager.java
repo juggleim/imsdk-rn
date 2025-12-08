@@ -1295,11 +1295,13 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
         if (mentionInfoMap.hasKey("targetUsers")) {
             ReadableArray targetUsers = mentionInfoMap.getArray("targetUsers");
+            List<UserInfo> targetUsersList = new ArrayList<>();
             for (int i = 0; i < targetUsers.size(); i++) {
                 ReadableMap userMap = targetUsers.getMap(i);
                 UserInfo userInfo = convertMapToUserInfo(userMap);
-                mentionInfo.getTargetUsers().add(userInfo);
+                targetUsersList.add(userInfo);
             }
+            mentionInfo.setTargetUsers(targetUsersList);
         }
         return mentionInfo;
     }

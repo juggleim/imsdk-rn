@@ -20,6 +20,7 @@
     "react": "19.1.1",
     "react-native": "0.82.1",
     "react-native-image-picker": "^5.4.0",
+    "react-native-modal": "^14.0.0-rc.1",
     "react-native-permissions": "^3.9.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.16.0"

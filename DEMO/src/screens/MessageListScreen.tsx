@@ -23,16 +23,20 @@ import JuggleIM, {
   FileMessageContent,
   SendMessageObject,
   MergeMessagePreviewUnit,
+  MessageMentionInfo,
+  UserInfo,
 } from 'juggleim-rnsdk';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getToken } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
-import MessageComposer from '../components/MessageComposer';
+import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
 import MessageBubble from '../components/MessageBubble';
 import CustomMenu from '../components/CustomMenu';
 import VoiceRecorder from '../components/VoiceRecorder';
+import MemberSelectionSheet from '../components/MemberSelectionSheet';
 
 import UserInfoManager from '../manager/UserInfoManager';
+import { GroupMember } from '../api/groups';
 
 const MessageItem = ({
   item,
@@ -131,8 +135,11 @@ const MessageListScreen = () => {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [voiceRecorderVisible, setVoiceRecorderVisible] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const flatListRef = useRef<FlatList<Message> | null>(null);
   const didInitialScroll = useRef(false);
+  const [memberSheetVisible, setMemberSheetVisible] = useState(false);
+  const messageComposerRef = useRef<MessageComposerRef>(null);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -142,6 +149,17 @@ const MessageListScreen = () => {
       }
     };
     fetchUserId();
+
+    // Load group members if this is a group conversation
+    const loadGroupMembers = async () => {
+      if (conversation.conversationType === 2) { // GROUP
+        const groupInfo = await UserInfoManager.getGroupInfo(conversation.conversationId);
+        if (groupInfo && groupInfo.members) {
+          setGroupMembers(groupInfo.members);
+        }
+      }
+    };
+    loadGroupMembers();
 
     // Clear unread count on entry
     JuggleIM.clearUnreadCount(conversation);
@@ -307,16 +325,45 @@ const MessageListScreen = () => {
     }
   };
 
-  const handleSendText = async (text: string) => {
+  const handleSendText = async (text: string, mentions: MentionInfo[]) => {
     const textContent: TextMessageContent = {
       contentType: 'jg:text',
       content: text,
     };
 
-    const messageToSend = {
+    // Build mention info if there are mentions
+    let mentionInfo: MessageMentionInfo | undefined;
+    if (mentions.length > 0) {
+      const hasAtAll = mentions.some(m => m.userId === 'all');
+      const targetUsers: UserInfo[] = mentions
+        .filter(m => m.userId !== 'all')
+        .map(m => ({
+          userId: m.userId,
+          nickname: m.nickname,
+          avatar: '',
+        }));
+
+      // Determine mention type
+      let mentionType = 0; // DEFAULT
+      if (hasAtAll && targetUsers.length > 0) {
+        mentionType = 3; // ALL_AND_SOMEONE
+      } else if (hasAtAll) {
+        mentionType = 1; // ALL
+      } else if (targetUsers.length > 0) {
+        mentionType = 2; // SOMEONE
+      }
+
+      mentionInfo = {
+        type: mentionType,
+        targetUsers,
+      };
+    }
+
+    const messageToSend: SendMessageObject = {
       conversationType: conversation.conversationType,
       conversationId: conversation.conversationId,
       content: textContent,
+      mentionInfo,
     };
 
     try {
@@ -326,6 +373,18 @@ const MessageListScreen = () => {
     } catch (error) {
       console.error('Failed to send message:', error);
       Alert.alert('Error', 'Failed to send message');
+    }
+  };
+
+  const handleAtPress = () => {
+    setMemberSheetVisible(true);
+  };
+
+  const handleMemberSelect = (member: GroupMember | 'all') => {
+    if (member === 'all') {
+      messageComposerRef.current?.addMention('all', '所有人');
+    } else {
+      messageComposerRef.current?.addMention(member.user_id, member.nickname || member.user_id);
     }
   };
 
@@ -565,7 +624,7 @@ const MessageListScreen = () => {
         ref={flatListRef}
         data={messages}
         renderItem={renderMessageItem}
-        keyExtractor={item => item.clientMsgNo.toString()}
+        keyExtractor={item => item.clientMsgNo?.toString()}
         inverted={true}
         contentContainerStyle={styles.listContent}
         // Pull-to-refresh (fetch newer messages). For inverted list this appears at the bottom.
@@ -591,10 +650,14 @@ const MessageListScreen = () => {
       />
 
       <MessageComposer
+        ref={messageComposerRef}
+        conversationType={conversation.conversationType}
+        conversationId={conversation.conversationId}
         onSend={handleSendText}
         onSendImage={handleSendImage}
         onSendFile={handleSendFile}
         onVoicePress={() => setVoiceRecorderVisible(true)}
+        onAtPress={handleAtPress}
       />
 
       <CustomMenu
@@ -608,6 +671,13 @@ const MessageListScreen = () => {
         visible={voiceRecorderVisible}
         onClose={() => setVoiceRecorderVisible(false)}
         onSend={handleSendVoice}
+      />
+
+      <MemberSelectionSheet
+        visible={memberSheetVisible}
+        members={groupMembers}
+        onClose={() => setMemberSheetVisible(false)}
+        onSelectMember={handleMemberSelect}
       />
     </SafeAreaView>
   );
