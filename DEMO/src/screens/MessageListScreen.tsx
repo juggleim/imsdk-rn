@@ -212,7 +212,7 @@ const MessageListScreen = () => {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
       });
-      console.log('Loaded messages:', result.code, result.messages.length);
+      console.log('Loaded messages:', result.code, result.messages);
       if (result && result.code === 0 && result.messages) {
         // Ensure messages are ordered newest -> oldest for inverted list
         const sorted = result.messages
@@ -402,7 +402,7 @@ const MessageListScreen = () => {
             contentType: 'jg:img',
             localPath: 'https://via.placeholder.com/300',
             width: 300,
-            height: 300,
+            height: 600,
           };
           const messageToSend = {
             conversationType: conversation.conversationType,
@@ -539,8 +539,8 @@ const MessageListScreen = () => {
     const imageContent: ImageMessageContent = {
       contentType: 'jg:img',
       localPath: file.uri,
-      width: 0, // SDK will handle this or we need to get it
-      height: 0,
+      width: 300,
+      height: 600,
     };
     const message: SendMessageObject = {
       conversationType: conversation.conversationType,

@@ -73,11 +73,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        const uri =
-          imgContent.thumbnailLocalPath ||
-          imgContent.localPath ||
-          imgContent.thumbnailUrl ||
-          imgContent.url;
+        const uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
 
         const originalWidth = imgContent.width || 0;
         const originalHeight = imgContent.height || 0;
@@ -105,7 +101,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }
 
         return (
-          <View style={{ width: width + 52, height }}>
+          <View style={{ width: width + 45, height }}>
             <Image
               source={{ uri }}
               style={{ width: width, height, borderRadius: 8 }}

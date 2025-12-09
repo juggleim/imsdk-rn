@@ -25,11 +25,38 @@ const ConversationItem = ({
 }) => {
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
-  const lastMsgContent = (item.lastMessage?.content as any)?.content || '[Message]';
   const time = new Date(item.lastMessage?.timestamp || Date.now()).toLocaleTimeString();
 
   const [name, setName] = useState(conversationId);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
+
+  // Get display content based on message type
+  const getMessageDisplay = () => {
+    if (!item.lastMessage?.content) {
+      return '[Message]';
+    }
+
+    const contentType = item.lastMessage.content.contentType;
+    const content = (item.lastMessage.content as any)?.content;
+
+    switch (contentType) {
+      case 'jg:text':
+        return content || '[Message]';
+      case 'jg:img':
+        return '[Image]';
+      case 'jg:file':
+        return '[File]';
+      case 'jg:video':
+        return '[Video]';
+      case 'jg:voice':
+        return '[Voice]';
+      default:
+        return '[Message]';
+    }
+  };
+
+  const lastMsgContent = getMessageDisplay();
+  const hasMention = item.mentionInfo && item.mentionInfo.mentionMsgList && item.mentionInfo.mentionMsgList.length > 0;
 
   useEffect(() => {
     let isMounted = true;
@@ -101,6 +128,7 @@ const ConversationItem = ({
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.message} numberOfLines={1}>
+            {hasMention && <Text style={styles.mentionIndicator}>[You were mentioned] </Text>}
             {lastMsgContent}
           </Text>
           {!item.isMute && (item as any).unreadCount > 0 && (
@@ -366,6 +394,10 @@ const styles = StyleSheet.create({
     color: '#666',
     flex: 1,
     marginRight: 8,
+  },
+  mentionIndicator: {
+    color: '#FF3B30',
+    fontWeight: '600',
   },
   badge: {
     backgroundColor: '#FF3B30',

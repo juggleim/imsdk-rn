@@ -148,9 +148,10 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
 
     if (result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
+      console.log('asset', asset);
       if (asset.uri && onSendImage) {
         onSendImage({
-          uri: asset.uri,
+          uri: asset.uri.replace('file://', ''),
           type: asset.type || 'image/jpeg',
           name: asset.fileName || 'image.jpg',
         });
