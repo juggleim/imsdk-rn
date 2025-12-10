@@ -15,27 +15,28 @@ import { login } from '../api/auth';
 import CryptoJS from 'crypto-js';
 
 const LoginScreen = () => {
-  const [userId, setUserId] = useState('opopop');
+  const [account, setAccount] = useState('opopop');
   const [password, setPassword] = useState('123456');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<any>();
 
-  const handleLogin = async (userId: string, password: string) => {
-    if (!userId) {
+  const handleLogin = async (account: string, password: string) => {
+    if (!account) {
       Alert.alert('Error', 'Please enter a User ID');
       return;
     }
 
     setLoading(true);
     try {
-      console.log('Logging in with', userId, password);
+      console.log('Logging in with', password);
       const hash = CryptoJS.MD5(password).toString();
-      const response = await login(userId, hash);
+      const response = await login(account, hash);
       console.log('Login response:', response);
       const token = response.im_token;
       const userName = response.nickname;
       const userAvatar = response.avatar;
-      saveUserInfo(userName, userAvatar);
+      const userId = response.user_id;
+      saveUserInfo(userName, userAvatar, userId);
       onConnect(token, userId);
     } catch (error) {
       console.error(error);
@@ -45,11 +46,11 @@ const LoginScreen = () => {
     }
   };
 
-  const onConnect = async (token: string, uid: string) => {
+  const onConnect = async (token: string, account: string) => {
     setLoading(true);
     try {
       JuggleIM.connect(token);
-      await saveToken(token, uid);
+      await saveToken(token, account);
       navigation.replace('Main');
     } catch (e) {
       Alert.alert('Error', 'Connection failed');
@@ -66,8 +67,8 @@ const LoginScreen = () => {
         <TextInput
           style={styles.input}
           placeholder="Enter User ID"
-          value={userId}
-          onChangeText={setUserId}
+          value={account}
+          onChangeText={setAccount}
           autoCapitalize="none"
         />
 
@@ -87,7 +88,7 @@ const LoginScreen = () => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => handleLogin(userId, password)}>
+        onPress={() => handleLogin(account, password)}>
         {/* Using userId as token for now, assuming test env or user inputs token as ID */}
         {loading ? (
           <ActivityIndicator color="#fff" />

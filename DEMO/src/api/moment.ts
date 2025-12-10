@@ -60,6 +60,12 @@ export interface AddCommentResponse {
     user_info: UserInfo;
 }
 
+export interface AddMomentResponse {
+    moment_id: string;
+    moment_time: number;
+    user_info: UserInfo;
+}
+
 // API Functions
 
 /**
@@ -174,6 +180,22 @@ export async function deleteReaction(
             reaction: {
                 key: reactionKey,
             },
+        },
+    });
+}
+
+/**
+ * Add a new moment
+ * @param content - Moment content with text and medias
+ */
+export async function addMoment(
+    content: MomentContent
+): Promise<AddMomentResponse> {
+    return fetchData<AddMomentResponse>({
+        url: '/momentgateway/moments/add',
+        method: 'POST',
+        data: {
+            content,
         },
     });
 }

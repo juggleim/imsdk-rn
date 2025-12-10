@@ -10,6 +10,7 @@ import SearchFriendsScreen from '../screens/SearchFriendsScreen';
 import NewFriendsScreen from '../screens/NewFriendsScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
 import MomentScreen from '../screens/MomentScreen';
+import PublishMomentScreen from '../screens/PublishMomentScreen';
 import { Image } from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -54,6 +55,7 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="SearchFriends" component={SearchFriendsScreen} options={{ headerShown: true, title: 'Search Friends' }} />
       <Stack.Screen name="NewFriends" component={NewFriendsScreen} options={{ headerShown: true, title: 'New Friends' }} />
       <Stack.Screen name="Moment" component={MomentScreen} options={{ headerShown: true, title: 'Moments' }} />
+      <Stack.Screen name="PublishMoment" component={PublishMomentScreen} options={{ headerShown: true, title: '发朋友圈' }} />
     </Stack.Navigator>
   );
 };

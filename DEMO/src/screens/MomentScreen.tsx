@@ -14,6 +14,8 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
     getMomentList,
     deleteMoment,
@@ -25,11 +27,38 @@ import {
     Comment,
 } from '../api/moment';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { USER_AVATAR_KEY, USER_ID_KEY, USER_NAME_KEY } from '../utils/auth';
+
+type RootStackParamList = {
+    PublishMoment: { mode: 'text' | 'media' };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width } = Dimensions.get('window');
-const HEADER_HEIGHT = 280;
+const HEADER_HEIGHT = 250;
+
+// Format relative time
+const formatRelativeTime = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) {
+        return `${minutes < 0 ? 0 : minutes}分钟前`;
+    } else if (hours < 24) {
+        return `${hours}小时前`;
+    } else {
+        return `${days}天前`;
+    }
+};
 
 const MomentScreen = () => {
+    const navigation = useNavigation<NavigationProp>();
+    const isFocused = useIsFocused();
+
     const [moments, setMoments] = useState<MomentItem[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -37,6 +66,9 @@ const MomentScreen = () => {
     const [currentUserId, setCurrentUserId] = useState<string>('');
     const [currentUserName, setCurrentUserName] = useState<string>('User');
     const [currentUserAvatar, setCurrentUserAvatar] = useState<string>('');
+
+    // Bubble menu state
+    const [activeBubbleMomentId, setActiveBubbleMomentId] = useState<string | null>(null);
 
     // Comment modal state
     const [commentModalVisible, setCommentModalVisible] = useState(false);
@@ -46,15 +78,20 @@ const MomentScreen = () => {
 
     useEffect(() => {
         loadCurrentUser();
-        loadMoments();
     }, []);
+
+    useEffect(() => {
+        if (isFocused) {
+            loadMoments(true);
+        }
+    }, [isFocused]);
 
     const loadCurrentUser = async () => {
         try {
-            const userId = await AsyncStorage.getItem('user_id');
-            const userName = await AsyncStorage.getItem('user_name');
-            const userAvatar = await AsyncStorage.getItem('user_avatar');
-
+            const userId = await AsyncStorage.getItem(USER_ID_KEY);
+            const userName = await AsyncStorage.getItem(USER_NAME_KEY);
+            const userAvatar = await AsyncStorage.getItem(USER_AVATAR_KEY);
+            console.log('User info:', userId, userName, userAvatar);
             if (userId) setCurrentUserId(userId);
             if (userName) setCurrentUserName(userName);
             if (userAvatar) setCurrentUserAvatar(userAvatar);
@@ -68,7 +105,7 @@ const MomentScreen = () => {
 
         try {
             setLoading(true);
-            const start = isRefresh ? Date.now() : (moments[moments.length - 1]?.moment_time || Date.now());
+            const start = isRefresh ? 0 : (moments[moments.length - 1]?.moment_time || 0);
             const response = await getMomentList(20, start);
 
             if (isRefresh) {
@@ -103,7 +140,7 @@ const MomentScreen = () => {
             if (isLiked) {
                 await deleteReaction(momentId, 'like');
             } else {
-                await addReaction(momentId, { key: 'like', value: '👍' });
+                await addReaction(momentId, { key: 'like', value: 'like_v' });
             }
 
             // Update local state
@@ -246,7 +283,10 @@ const MomentScreen = () => {
                     style={styles.userAvatar}
                 />
             </View>
-            <TouchableOpacity style={styles.publishButton}>
+            <TouchableOpacity
+                style={styles.publishButton}
+                onPress={() => navigation.navigate('PublishMoment', { mode: 'media' })}
+                onLongPress={() => navigation.navigate('PublishMoment', { mode: 'text' })}>
                 <Image
                     source={require('../assets/icons/camera.png')}
                     style={styles.publishIcon}
@@ -293,22 +333,9 @@ const MomentScreen = () => {
         return (
             <View style={styles.reactionsContainer}>
                 <Image
-                    source={require('../assets/icons/heart.png')}
+                    source={require('../assets/icons/like.png')}
                     style={styles.reactionIcon}
                 />
-                <View style={styles.reactionAvatars}>
-                    {reactions.slice(0, 5).map((reaction, index) => (
-                        <Image
-                            key={index}
-                            source={
-                                reaction.user_info.avatar
-                                    ? { uri: reaction.user_info.avatar }
-                                    : require('../assets/icons/avatar.png')
-                            }
-                            style={[styles.reactionAvatar, { marginLeft: index > 0 ? -8 : 0 }]}
-                        />
-                    ))}
-                </View>
                 <Text style={styles.reactionText}>
                     {reactions.map(r => r.user_info.nickname).join(', ')}
                 </Text>
@@ -350,6 +377,7 @@ const MomentScreen = () => {
     const renderMomentItem = ({ item }: { item: MomentItem }) => {
         const isLiked = item.reactions.some(r => r.user_info.user_id === currentUserId);
         const isOwnMoment = item.user_info.user_id === currentUserId;
+        const showBubble = activeBubbleMomentId === item.moment_id;
 
         return (
             <View style={styles.momentItem}>
@@ -367,9 +395,61 @@ const MomentScreen = () => {
                         <Text style={styles.momentText}>{item.content.text}</Text>
                     ) : null}
                     {renderMediaGrid(item.content.medias)}
-                    <Text style={styles.momentTime}>
-                        {new Date(item.moment_time).toLocaleString()}
-                    </Text>
+
+                    {/* Time and action bubble on same line */}
+                    <View style={styles.timeActionRow}>
+                        <View style={styles.timeDeleteRow}>
+                            <Text style={styles.momentTime}>
+                                {formatRelativeTime(item.moment_time)}
+                            </Text>
+                            {isOwnMoment && (
+                                <TouchableOpacity
+                                    style={styles.deleteIconButton}
+                                    onPress={() => handleDeleteMoment(item.moment_id)}>
+                                    <Image
+                                        source={require('../assets/icons/delete.png')}
+                                        style={styles.deleteIcon}
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <View style={styles.actionButtonsContainer}>
+                            {showBubble && (
+                                <View style={styles.bubbleMenu}>
+                                    <TouchableOpacity
+                                        style={styles.bubbleButton}
+                                        onPress={() => {
+                                            handleLike(item.moment_id, isLiked);
+                                            setActiveBubbleMomentId(null);
+                                        }}>
+                                        <Image
+                                            source={require('../assets/icons/like.png')}
+                                            style={styles.bubbleIcon}
+                                        />
+                                        <Text style={styles.bubbleText}>赞</Text>
+                                    </TouchableOpacity>
+                                    <View style={styles.bubbleDivider} />
+                                    <TouchableOpacity
+                                        style={styles.bubbleButton}
+                                        onPress={() => {
+                                            handleCommentPress(item.moment_id);
+                                            setActiveBubbleMomentId(null);
+                                        }}>
+                                        <Image
+                                            source={require('../assets/icons/comment.png')}
+                                            style={styles.bubbleIcon}
+                                        />
+                                        <Text style={styles.bubbleText}>评论</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                            <TouchableOpacity
+                                style={styles.moreButton}
+                                onPress={() => setActiveBubbleMomentId(showBubble ? null : item.moment_id)}>
+                                <Text style={styles.moreButtonText}>•••</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
 
                     {(item.reactions.length > 0 || item.top_comments.length > 0) && (
                         <View style={styles.interactionsContainer}>
@@ -377,38 +457,6 @@ const MomentScreen = () => {
                             {renderComments(item.top_comments, item.moment_id)}
                         </View>
                     )}
-
-                    <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => handleLike(item.moment_id, isLiked)}>
-                            <Image
-                                source={require('../assets/icons/heart.png')}
-                                style={[
-                                    styles.actionIcon,
-                                    isLiked && { tintColor: '#FF6B6B' },
-                                ]}
-                            />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => handleCommentPress(item.moment_id)}>
-                            <Image
-                                source={require('../assets/icons/send_message.png')}
-                                style={styles.actionIcon}
-                            />
-                        </TouchableOpacity>
-                        {isOwnMoment && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleDeleteMoment(item.moment_id)}>
-                                <Image
-                                    source={require('../assets/icons/close.png')}
-                                    style={styles.actionIcon}
-                                />
-                            </TouchableOpacity>
-                        )}
-                    </View>
                 </View>
             </View>
         );
@@ -572,10 +620,91 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         marginBottom: 8,
     },
+    timeActionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    timeDeleteRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     momentTime: {
         fontSize: 13,
         color: '#999999',
+    },
+    deleteIconButton: {
+        padding: 2,
+    },
+    deleteIcon: {
+        width: 14,
+        height: 14,
+        tintColor: '#999999',
+    },
+    actionButtonsContainer: {
+        position: 'relative',
+        alignItems: 'flex-end',
+        flexDirection: 'row',
+    },
+    moreButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 3,
+    },
+    moreButtonText: {
+        fontSize: 16,
+        color: '#666666',
+        letterSpacing: 1,
+    },
+    bubbleMenu: {
+        position: 'absolute',
+        top: 0,
+        right: '100%',
+        marginRight: 8,
+        flexDirection: 'row',
+        backgroundColor: '#5A5A5A',
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        paddingVertical: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    bubbleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        gap: 6,
+    },
+    bubbleIcon: {
+        width: 18,
+        height: 18,
+        tintColor: '#FFFFFF',
+    },
+    bubbleText: {
+        fontSize: 13,
+        color: '#FFFFFF',
+    },
+    bubbleDivider: {
+        width: 1,
+        backgroundColor: '#7A7A7A',
+        marginVertical: 4,
+    },
+    deleteButton: {
+        alignSelf: 'flex-start',
         marginTop: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+    },
+    deleteButtonText: {
+        fontSize: 13,
+        color: '#576B95',
     },
     mediaGrid: {
         flexDirection: 'row',
@@ -624,9 +753,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     reactionIcon: {
-        width: 16,
-        height: 16,
-        tintColor: '#FF6B6B',
+        width: 18,
+        height: 18,
         marginRight: 8,
     },
     reactionAvatars: {
@@ -662,19 +790,6 @@ const styles = StyleSheet.create({
     },
     commentReply: {
         color: '#999999',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        marginTop: 12,
-        gap: 16,
-    },
-    actionButton: {
-        padding: 4,
-    },
-    actionIcon: {
-        width: 20,
-        height: 20,
-        tintColor: '#999999',
     },
     modalContainer: {
         flex: 1,
