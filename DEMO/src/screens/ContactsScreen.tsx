@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getFriendList, Friend } from '../api/friends';
 
@@ -66,8 +66,16 @@ const ContactsScreen = () => {
                 renderItem={renderItem}
                 keyExtractor={(item) => item.user_id}
                 ListHeaderComponent={renderHeader}
-                refreshing={loading}
-                onRefresh={fetchFriends}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={fetchFriends}
+                        tintColor="#999"
+                    />
+                }
+                automaticallyAdjustContentInsets={false}
+                contentInsetAdjustmentBehavior="never"
+                contentContainerStyle={{ paddingTop: 0 }}
             />
         </View>
     );

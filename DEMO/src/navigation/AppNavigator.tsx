@@ -8,7 +8,9 @@ import ContactsScreen from '../screens/ContactsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SearchFriendsScreen from '../screens/SearchFriendsScreen';
 import NewFriendsScreen from '../screens/NewFriendsScreen';
-import { Image, Text } from 'react-native';
+import DiscoverScreen from '../screens/DiscoverScreen';
+import MomentScreen from '../screens/MomentScreen';
+import { Image } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -18,29 +20,28 @@ const MainTabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          // You can replace these with actual icons or images
+          let iconSource;
           if (route.name === 'Chats') {
-            return <TextIcon text="💬" color={color} />;
+            iconSource = require('../assets/icons/chat.png');
           } else if (route.name === 'Contacts') {
-            return <TextIcon text="👥" color={color} />;
+            iconSource = require('../assets/icons/avatar.png');
+          } else if (route.name === 'Discover') {
+            iconSource = require('../assets/icons/discover.png');
           } else if (route.name === 'Me') {
-            return <TextIcon text="👤" color={color} />;
+            iconSource = require('../assets/icons/me.png');
           }
+          return <Image source={iconSource} style={{ width: size, height: size, tintColor: color }} />;
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
       })}>
       <Tab.Screen name="Chats" component={ConversationListScreen} />
       <Tab.Screen name="Contacts" component={ContactsScreen} />
+      <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Me" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
-
-const TextIcon = ({ text, color }: { text: string; color: string }) => (
-  <Text style={{ color, fontSize: 24 }}>{text}</Text>
-);
 
 const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
   return (
@@ -52,6 +53,7 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="MessageList" component={MessageListScreen} />
       <Stack.Screen name="SearchFriends" component={SearchFriendsScreen} options={{ headerShown: true, title: 'Search Friends' }} />
       <Stack.Screen name="NewFriends" component={NewFriendsScreen} options={{ headerShown: true, title: 'New Friends' }} />
+      <Stack.Screen name="Moment" component={MomentScreen} options={{ headerShown: true, title: 'Moments' }} />
     </Stack.Navigator>
   );
 };

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import JuggleIM from 'juggleim-rnsdk';
-import {saveToken} from '../utils/auth';
-import {useNavigation} from '@react-navigation/native';
-import {login} from '../api/auth';
+import { saveToken, saveUserInfo } from '../utils/auth';
+import { useNavigation } from '@react-navigation/native';
+import { login } from '../api/auth';
 import CryptoJS from 'crypto-js';
 
 const LoginScreen = () => {
@@ -33,6 +33,9 @@ const LoginScreen = () => {
       const response = await login(userId, hash);
       console.log('Login response:', response);
       const token = response.im_token;
+      const userName = response.nickname;
+      const userAvatar = response.avatar;
+      saveUserInfo(userName, userAvatar);
       onConnect(token, userId);
     } catch (error) {
       console.error(error);
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     shadowColor: '#007AFF',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,

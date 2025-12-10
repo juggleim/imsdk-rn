@@ -83,6 +83,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         let width = originalWidth;
         let height = originalHeight;
+        let w = width, h = height;
 
         if (width > 0 && height > 0) {
           const aspectRatio = width / height;
@@ -90,18 +91,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             if (width / maxWidth > height / maxHeight) {
               width = maxWidth;
               height = width / aspectRatio;
+              w = width + width * 0.26
             } else {
               height = maxHeight;
               width = height * aspectRatio;
+              w = width + width * 0.26
             }
           }
         } else {
           width = 200;
           height = 300;
         }
-
         return (
-          <View style={{ width: width + 45, height }}>
+          <View style={{ width: w, height }}>
             <Image
               source={{ uri }}
               style={{ width: width, height, borderRadius: 8 }}
