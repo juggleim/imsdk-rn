@@ -47,7 +47,7 @@ const NewFriendsScreen = () => {
         const isPending = item.status === 0;
         return (
             <View style={styles.itemContainer}>
-                <Image source={{ uri: item.target_user.avatar }} style={styles.avatar} />
+                <Image source={item.target_user.avatar ? { uri: item.target_user.avatar } : require('../assets/icons/avatar.png')} style={styles.avatar} />
                 <View style={styles.info}>
                     <Text style={styles.nickname}>{item.target_user.nickname}</Text>
                     <Text style={styles.message}>{item.is_sponsor ? 'Applied to add you' : 'You applied'}</Text>

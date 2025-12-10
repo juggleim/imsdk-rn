@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { clearToken } from '../utils/auth';
 import JuggleIM from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
@@ -24,6 +25,7 @@ const ProfileScreen = () => {
       Alert.alert('Error', 'Logout failed');
     }
   };
+  const nickname = AsyncStorage.getItem('user_name');
 
   return (
     <View style={styles.container}>
@@ -31,7 +33,7 @@ const ProfileScreen = () => {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>Me</Text>
         </View>
-        <Text style={styles.name}>My Profile</Text>
+        <Text style={styles.name}>{nickname}</Text>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
