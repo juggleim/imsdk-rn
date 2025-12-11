@@ -231,7 +231,6 @@ const ConversationListScreen = () => {
   };
 
   useEffect(() => {
-    loadConversations();
     const removeListener = JuggleIM.addConversationListener(
       'ConversationListScreen',
       {
@@ -276,9 +275,19 @@ const ConversationListScreen = () => {
         },
       },
     );
+    const connectionListener = JuggleIM.addConnectionStatusListener(
+      'connectionStatusListener',
+      status => {
+        console.log('Connection status:', status);
+        if (status === 'dbOpen') {
+          loadConversations();
+        }
+      },
+    );
 
     return () => {
       removeListener();
+      connectionListener();
     };
   }, []);
 

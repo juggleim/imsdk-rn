@@ -13,20 +13,10 @@ const App = () => {
 
   useEffect(() => {
     const init = async () => {
-      // Initialize SDK
       JuggleIM.setServerUrls(SERVER_URLS);
       JuggleIM.init(APP_KEY);
-      JuggleIM.addConnectionStatusListener(
-        'connectionStatusListener',
-        status => {
-          console.log('Connection status:', status);
-        },
-      );
-
-      // Check for cached token
       const session = await getToken();
       if (session) {
-        // Connect if token exists
         JuggleIM.connect(session.token);
         setInitialRoute('Main');
       }
