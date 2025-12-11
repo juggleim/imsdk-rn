@@ -36,8 +36,38 @@ declare module "juggleim-rnsdk" {
    *           枚举：jg:text, jg:img, jg:file, jg:voice
    */
   export abstract class MessageContent {
-    abstract contentType: string;
+    contentType: string;
   }
+
+  /**
+   * 自定义消息内容
+   * 实现示例：
+   * ```
+   * export class TextCardMessage extends CustomMessageContent {
+   *  title: string = '';
+   *  description: string = '';
+   *  url: string = '';
+   *  constructor(title?: string, description?: string, url?: string) {
+   *     super('demo:textcard');
+   *     this.title = title || '';
+   *     this.description = description || '';
+   *     this.url = url || '';
+   * }
+   * ```
+   * 
+   * 自定义消息注册
+   * ```
+   * JuggleIM.registerCustomMessageType('demo:textcard', TextCardMessage);
+   * ```
+   */
+  export class CustomMessageContent extends MessageContent {
+    constructor(contentType: string);
+  }
+
+  /**
+   * 自定义消息类构造函数类型
+   */
+  export type CustomMessageConstructor = new () => MessageContent;
 
   /**
    * 文本消息内容
@@ -68,7 +98,6 @@ declare module "juggleim-rnsdk" {
       previewList?: MergeMessagePreviewUnit[]
     );
 
-    // 对应 Java 字段
     title?: string;
     containerMsgId?: string;
     conversation?: Conversation;
@@ -340,6 +369,8 @@ declare module "juggleim-rnsdk" {
     count?: number;
     startTime?: number;
   }
+
+  // 发送消息实体对象
   export interface SendMessageObject {
     conversationType: number;
     conversationId: string;
@@ -444,6 +475,25 @@ declare module "juggleim-rnsdk" {
      * @param appKey 应用唯一标识
      */
     static init(appKey: string): void;
+
+    /**
+     * 注册自定义消息类型
+     * @param contentType 消息类型标识符(不能以 "jg:" 开头)
+     * @param messageClass 自定义消息类的构造函数
+     * @example
+     * ```typescript
+     * class CustomMessage implements CustomMessageContent {
+     *   contentType = 'my:custom';
+     *   value: string = '';
+     * }
+     * 
+     * JuggleIM.registerCustomMessageType('my:custom', CustomMessage);
+     * ```
+     */
+    static registerCustomMessageType(
+      contentType: string,
+      messageClass: CustomMessageConstructor
+    ): void;
 
     /**
      * 连接到服务器
@@ -796,13 +846,11 @@ declare module "juggleim-rnsdk" {
      * 发送消息已读回执
      * @param conversation 会话对象
      * @param messageIds 消息ID列表
-     * @param callback 回调函数
      * @returns {Promise<Boolean>} 是否发送成功
      */
     static sendReadReceipt(
       conversation: Conversation,
       messageIds: string[],
-      callback?: SimpleCallback
     ): Promise<Boolean>;
 
     /**
@@ -817,7 +865,6 @@ declare module "juggleim-rnsdk" {
       messageId: string,
       conversation: Conversation,
       isTop: boolean,
-      callback?: SimpleCallback
     ): Promise<Boolean>;
   }
 }

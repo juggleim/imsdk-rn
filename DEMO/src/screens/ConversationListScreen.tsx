@@ -32,12 +32,8 @@ const ConversationItem = ({
 
   // Get display content based on message type
   const getMessageDisplay = () => {
-    if (!item.lastMessage?.content) {
-      return '[Message]';
-    }
-
-    const contentType = item.lastMessage.content.contentType;
-    const content = (item.lastMessage.content as any)?.content;
+    const contentType = item.lastMessage?.content?.contentType;
+    const content = (item.lastMessage?.content as any)?.content;
 
     switch (contentType) {
       case 'jg:text':
@@ -50,6 +46,8 @@ const ConversationItem = ({
         return '[Video]';
       case 'jg:voice':
         return '[Voice]';
+      case 'demo:textcard':
+        return '[TextCard]';
       default:
         return '[Message]';
     }
@@ -279,15 +277,13 @@ const ConversationListScreen = () => {
       'connectionStatusListener',
       status => {
         console.log('Connection status:', status);
-        if (status === 'dbOpen') {
-          loadConversations();
-        }
+        loadConversations();
       },
     );
 
     return () => {
       removeListener();
-      connectionListener();
+      // connectionListener();
     };
   }, []);
 

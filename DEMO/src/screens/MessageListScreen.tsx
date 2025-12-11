@@ -27,16 +27,19 @@ import JuggleIM, {
   UserInfo,
 } from 'juggleim-rnsdk';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getToken } from '../utils/auth';
+import { getToken, USER_ID_KEY } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
 import MessageBubble from '../components/MessageBubble';
 import CustomMenu from '../components/CustomMenu';
 import VoiceRecorder from '../components/VoiceRecorder';
 import MemberSelectionSheet from '../components/MemberSelectionSheet';
+import CardMessageBubble from '../components/CardMessageBubble';
 
 import UserInfoManager from '../manager/UserInfoManager';
 import { GroupMember } from '../api/groups';
+import { TextCardMessage } from '../messages/TextCardMessage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MessageItem = ({
   item,
@@ -143,9 +146,9 @@ const MessageListScreen = () => {
 
   useEffect(() => {
     const fetchUserId = async () => {
-      const session = await getToken();
-      if (session) {
-        setCurrentUserId(session.userId);
+      const userId = await AsyncStorage.getItem(USER_ID_KEY);
+      if (userId) {
+        setCurrentUserId(userId);
       }
     };
     fetchUserId();
@@ -212,7 +215,7 @@ const MessageListScreen = () => {
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
       });
-      console.log('Loaded messages:', result.code, result.messages);
+      // console.log('Loaded messages:', result.code, result.messages);
       if (result && result.code === 0 && result.messages) {
         // Ensure messages are ordered newest -> oldest for inverted list
         const sorted = result.messages
@@ -230,14 +233,7 @@ const MessageListScreen = () => {
             .filter(id => id && id.length > 0);
 
           if (messageIds.length > 0) {
-            JuggleIM.sendReadReceipt(conversation, messageIds, {
-              onSuccess: () => {
-                console.log('Sent read receipt for', messageIds.length, 'messages');
-              },
-              onError: (errorCode: number) => {
-                console.log('Failed to send read receipt, error code:', errorCode);
-              }
-            });
+            JuggleIM.sendReadReceipt(conversation, messageIds);
           }
         }
       } else {
@@ -599,6 +595,23 @@ const MessageListScreen = () => {
     }
   };
 
+  const handleSendCard = async (title: string, description: string, url: string) => {
+    const cardMsg = new TextCardMessage(title, description, url);
+    const messageToSend: SendMessageObject = {
+      conversationType: conversation.conversationType,
+      conversationId: conversation.conversationId,
+      content: cardMsg as any,
+    };
+
+    try {
+      const sentMessage = await JuggleIM.sendMessage(messageToSend);
+      setMessages(prev => [sentMessage, ...prev]);
+    } catch (error) {
+      console.error('Failed to send card message:', error);
+      Alert.alert('Error', 'Failed to send card message');
+    }
+  };
+
   // Auto-scroll to newest (index 0) after initial load
   useEffect(() => {
     if (!isLoading && messages.length > 0 && !didInitialScroll.current) {
@@ -656,6 +669,7 @@ const MessageListScreen = () => {
         onSend={handleSendText}
         onSendImage={handleSendImage}
         onSendFile={handleSendFile}
+        onSendCard={handleSendCard}
         onVoicePress={() => setVoiceRecorderVisible(true)}
         onAtPress={handleAtPress}
       />

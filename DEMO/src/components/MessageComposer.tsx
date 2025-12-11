@@ -1,6 +1,7 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
+  Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -16,6 +17,8 @@ import {
 import { GroupMember } from '../api/groups';
 // import DocumentPicker from 'react-native-document-picker';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import MoreMenu from './MoreMenu';
+import CardMessageInput from './CardMessageInput';
 
 export interface MentionInfo {
   userId: string;
@@ -36,6 +39,7 @@ interface MessageComposerProps {
     name: string;
     size: number;
   }) => void;
+  onSendCard?: (title: string, description: string, url: string) => void;
   onAttachmentPress?: () => void;
   onCameraPress?: () => void;
   onVoicePress?: () => void;
@@ -54,6 +58,7 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
     onSendImage,
     onSendVoice,
     onSendFile,
+    onSendCard,
     onAttachmentPress,
     onCameraPress,
     onVoicePress,
@@ -62,6 +67,8 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
   const [text, setText] = useState('');
   const [mentions, setMentions] = useState<MentionInfo[]>([]);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showCardInput, setShowCardInput] = useState(false);
 
   // Expose addMention method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -199,6 +206,12 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
     // }
   };
 
+  const handleSendCard = (title: string, description: string, url: string) => {
+    if (onSendCard) {
+      onSendCard(title, description, url);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -206,12 +219,11 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
       style={styles.container}>
       <View style={styles.composer}>
         <TouchableOpacity
-          onPress={handleFileSelection}
+          onPress={() => setShowMoreMenu(true)}
           style={styles.iconButton}>
           <Image
-            source={require('../assets/icons/attachment.png')}
-            style={styles.icon}
-          />
+            source={require('../assets/icons/more.png')}
+            style={styles.icon} />
         </TouchableOpacity>
 
         <View style={styles.inputContainer}>
@@ -260,6 +272,21 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
           </>
         )}
       </View>
+
+      <MoreMenu
+        visible={showMoreMenu}
+        onClose={() => setShowMoreMenu(false)}
+        onCamera={handleCamera}
+        onImage={handleImageSelection}
+        onFile={handleFileSelection}
+        onCard={() => setShowCardInput(true)}
+      />
+
+      <CardMessageInput
+        visible={showCardInput}
+        onClose={() => setShowCardInput(false)}
+        onSend={handleSendCard}
+      />
     </KeyboardAvoidingView>
   );
 });
@@ -311,6 +338,10 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: '#3399ff',
+  },
+  moreIcon: {
+    fontSize: 24,
+    color: '#3399ff',
   },
 });
 

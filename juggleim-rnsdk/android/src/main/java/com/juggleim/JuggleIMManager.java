@@ -36,8 +36,14 @@ import com.juggle.im.internal.logger.JLogLevel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
+
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import javax.annotation.Nonnull;
 
@@ -50,6 +56,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     private Map<String, IMessageManager.IMessageListener> messageListeners = new HashMap<>();
     private Map<String, IMessageManager.IMessageReadReceiptListener> readReceiptListeners = new HashMap<>();
     private Map<String, IConversationManager.IConversationListener> conversationListeners = new HashMap<>();
+    
+    // 自定义消息类型注册表
+    private Map<String, String> customMessageTypes = new HashMap<>();
 
     public JuggleIMManager(@Nonnull ReactApplicationContext reactContext) {
         super(reactContext);
@@ -98,6 +107,22 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
+        JIM.getInstance().getMessageManager().registerContentType(GenericCustomMessage.class);
+    }
+
+    /**
+     * 注册自定义消息类型
+     *
+     * @param contentType 消息类型标识符
+     */
+    @ReactMethod
+    public void registerCustomMessageType(String contentType) {
+        if (contentType.startsWith("jg:")) {
+            Log.e("JuggleIM", "contentType 不能以 'jg:' 开头");
+            return;
+        }
+        customMessageTypes.put(contentType, contentType);
+        Log.d("JuggleIM", "注册自定义消息类型: " + contentType);
     }
 
     /**
@@ -459,10 +484,12 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      */
     private WritableMap convertMessageContentToMap(MessageContent content) {
         WritableMap map = new WritableNativeMap();
-        map.putString("contentType", content.getContentType());
-        if (content.getContentType().equals("jg:text")) {
+        String contentType = content.getContentType();
+        map.putString("contentType", contentType);
+        
+        if (contentType.equals("jg:text")) {
             map.putString("content", ((TextMessage) content).getContent());
-        } else if (content.getContentType().equals("jg:img")) {
+        } else if (contentType.equals("jg:img")) {
             ImageMessage img = (ImageMessage) content;
             map.putString("url", img.getUrl());
             map.putString("localPath", img.getLocalPath());
@@ -470,19 +497,31 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("thumbnailUrl", img.getThumbnailUrl());
             map.putInt("width", img.getWidth());
             map.putInt("height", img.getHeight());
-        } else if (content.getContentType().equals("jg:file")) {
+        } else if (contentType.equals("jg:file")) {
             FileMessage file = (FileMessage) content;
             map.putString("url", file.getUrl());
             map.putString("type", file.getType());
             map.putString("name", file.getName());
             map.putDouble("size", file.getSize());
-        } else if (content.getContentType().equals("jg:voice")) {
+        } else if (contentType.equals("jg:voice")) {
             VoiceMessage voice = (VoiceMessage) content;
             map.putString("url", voice.getUrl());
             map.putString("localPath", voice.getLocalPath());
             map.putInt("duration", voice.getDuration());
+        } else if (contentType.equals("jgrn:custom")) {
+            GenericCustomMessage genericCustomMessage = (GenericCustomMessage) content;
+            byte[] data = genericCustomMessage.encode();
+            if (data != null) {
+                try {
+                    String jsonStr = new String(data, StandardCharsets.UTF_8);
+                    JSONObject jsonObject = new JSONObject(jsonStr);
+                    map = convertJSONToWritableMap(jsonObject);
+                } catch (JSONException e) {
+                    Log.e("JuggleIM", "解析自定义消息失败: " + e.getMessage());
+                }
+            }
         } else {
-            Log.e("JuggleIM", "Unknown contentType: " + content.getContentType());
+            Log.e("JuggleIM", "Unknown contentType: " + contentType);
             return RNTypeConverter.toWritableMap(content);
         }
 
@@ -518,9 +557,160 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 voice.setDuration(map.getInt("duration"));
                 return voice;
             default:
+                // 检查是否是自定义消息
+                if (customMessageTypes.containsKey(contentType)) {
+                    return createCustomMessage(map);
+                }
                 Log.e("JuggleIM", "contentType: " + contentType);
                 return RNTypeConverter.fromReadableMap(map, MessageContent.class);
         }
+    }
+
+    /**
+     * 创建自定义消息对象
+     */
+    private MessageContent createCustomMessage(ReadableMap map) {
+        try {
+            // 将 ReadableMap 转换为 JSON
+            JSONObject jsonObject = convertReadableMapToJSON(map);
+            String jsonStr = jsonObject.toString();
+            
+            // 创建通用自定义消息对象
+            GenericCustomMessage customMsg = new GenericCustomMessage();
+            customMsg.setData(jsonStr.getBytes(StandardCharsets.UTF_8));
+            
+            return customMsg;
+        } catch (JSONException e) {
+            Log.e("JuggleIM", "创建自定义消息失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 将 ReadableMap 转换为 JSONObject
+     */
+    private JSONObject convertReadableMapToJSON(ReadableMap map) throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        ReadableMapKeySetIterator iterator = map.keySetIterator();
+        
+        while (iterator.hasNextKey()) {
+            String key = iterator.nextKey();
+            switch (map.getType(key)) {
+                case Null:
+                    jsonObject.put(key, JSONObject.NULL);
+                    break;
+                case Boolean:
+                    jsonObject.put(key, map.getBoolean(key));
+                    break;
+                case Number:
+                    jsonObject.put(key, map.getDouble(key));
+                    break;
+                case String:
+                    jsonObject.put(key, map.getString(key));
+                    break;
+                case Map:
+                    jsonObject.put(key, convertReadableMapToJSON(map.getMap(key)));
+                    break;
+                case Array:
+                    jsonObject.put(key, convertReadableArrayToJSONArray(map.getArray(key)));
+                    break;
+            }
+        }
+        
+        return jsonObject;
+    }
+
+    /**
+     * 将 ReadableArray 转换为 JSONArray
+     */
+    private JSONArray convertReadableArrayToJSONArray(ReadableArray array) throws JSONException {
+        JSONArray jsonArray = new JSONArray();
+        
+        for (int i = 0; i < array.size(); i++) {
+            switch (array.getType(i)) {
+                case Null:
+                    jsonArray.put(JSONObject.NULL);
+                    break;
+                case Boolean:
+                    jsonArray.put(array.getBoolean(i));
+                    break;
+                case Number:
+                    jsonArray.put(array.getDouble(i));
+                    break;
+                case String:
+                    jsonArray.put(array.getString(i));
+                    break;
+                case Map:
+                    jsonArray.put(convertReadableMapToJSON(array.getMap(i)));
+                    break;
+                case Array:
+                    jsonArray.put(convertReadableArrayToJSONArray(array.getArray(i)));
+                    break;
+            }
+        }
+        
+        return jsonArray;
+    }
+
+    /**
+     * 将 JSONObject 转换为 WritableMap
+     */
+    private WritableMap convertJSONToWritableMap(JSONObject jsonObject) throws JSONException {
+        WritableMap map = new WritableNativeMap();
+        
+        Iterator<String> iterator = jsonObject.keys();
+        while (iterator.hasNext()) {
+            String key = iterator.next();
+            Object value = jsonObject.get(key);
+            Log.d("JuggleIM", "key: " + key + ", value: " + value);
+            
+            if (value instanceof JSONObject) {
+                map.putMap(key, convertJSONToWritableMap((JSONObject) value));
+            } else if (value instanceof JSONArray) {
+                map.putArray(key, convertJSONArrayToWritableArray((JSONArray) value));
+            } else if (value instanceof Boolean) {
+                map.putBoolean(key, (Boolean) value);
+            } else if (value instanceof Integer) {
+                map.putInt(key, (Integer) value);
+            } else if (value instanceof Double) {
+                map.putDouble(key, (Double) value);
+            } else if (value instanceof String) {
+                map.putString(key, (String) value);
+            } else if (value == JSONObject.NULL) {
+                map.putNull(key);
+            }
+        }
+        
+        return map;
+    }
+
+    /**
+     * 将 JSONArray 转换为 WritableArray
+     */
+    private WritableArray convertJSONArrayToWritableArray(JSONArray jsonArray) throws JSONException {
+        WritableArray array = new WritableNativeArray();
+        
+        for (int i = 0; i < jsonArray.length(); i++) {
+            Object value = jsonArray.get(i);
+            
+            if (value instanceof JSONObject) {
+                array.pushMap(convertJSONToWritableMap((JSONObject) value));
+            } else if (value instanceof JSONArray) {
+                array.pushArray(convertJSONArrayToWritableArray((JSONArray) value));
+            } else if (value instanceof Boolean) {
+                array.pushBoolean((Boolean) value);
+            } else if (value instanceof Integer) {
+                array.pushInt((Integer) value);
+            } else if (value instanceof Double) {
+                array.pushDouble((Double) value);
+            } else if (value instanceof String) {
+                array.pushString((String) value);
+            } else if (value == JSONObject.NULL) {
+                array.pushNull();
+            }
+        }
+        
+        return array;
     }
 
     /**

@@ -431,14 +431,14 @@ export type ConnectionStatus =
 支持多种消息内容类型：
 
 #### 文本消息 (TextMessageContent)
-``typescript
+```typescript
 export interface TextMessageContent extends MessageContent {
   content: string;
 }
 ```
 
 #### 图片消息 (ImageMessageContent)
-``typescript
+```typescript
 export interface ImageMessageContent extends MessageContent {
   localPath: string;
   thumbnailLocalPath?: string;
@@ -450,7 +450,7 @@ export interface ImageMessageContent extends MessageContent {
 ```
 
 #### 文件消息 (FileMessageContent)
-``typescript
+```typescript
 export interface FileMessageContent extends MessageContent {
   localPath: string;
   url?: string;
@@ -461,7 +461,7 @@ export interface FileMessageContent extends MessageContent {
 ```
 
 #### 语音消息 (VoiceMessageContent)
-``typescript
+```typescript
 export interface VoiceMessageContent extends MessageContent {
   localPath: string;
   url?: string;
@@ -525,3 +525,32 @@ export interface MessageMentionInfo {
 }
 ```
 
+#### 发送自定义消息
+
+* 自定义消息，继承自 CustomMessageContent 并设置消息类型
+```typescript
+export class TextCardMessage extends CustomMessageContent {
+    title: string = '';
+    description: string = '';
+    url: string = '';
+
+    constructor(title?: string, description?: string, url?: string) {
+        super('demo:textcard');
+        this.title = title || '';
+        this.description = description || '';
+        this.url = url || '';
+    }
+}
+```
+* 注册消息
+```typescript
+JuggleIM.registerCustomMessageType('demo:textcard', TextCardMessage);
+```
+* 发送消息
+```typescript
+JuggleIM.sendMessage({
+    conversationType: 1,
+    conversationId: 'user123',
+    content: TextCardMessage,
+});
+```

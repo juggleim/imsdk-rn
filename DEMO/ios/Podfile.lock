@@ -9,7 +9,7 @@ PODS:
     - hermes-engine/Pre-built (= 0.82.1)
   - hermes-engine/Pre-built (0.82.1)
   - JuggleIM (1.8.29)
-  - juggleim-rnsdk (0.0.22):
+  - juggleim-rnsdk (0.0.23):
     - JuggleIM (~> 1.8.29)
     - React-Core
   - RCT-Folly (2024.11.18.00):
@@ -2798,7 +2798,7 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 273e30e7fb618279934b0b95ffab60ecedb7acf5
   JuggleIM: f1ca701545871e263d115c976d59f7b551f0f4db
-  juggleim-rnsdk: 6b46c193176a275d98d223c9baa784ee05c8f56a
+  juggleim-rnsdk: d128077c2fd6a8b10259f7e8dcfb14f94194066e
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: f17e2ebc07876ca9ab8eb6e4b0a4e4647497ae3a
   RCTRequired: e2c574c1b45231f7efb0834936bd609d75072b63

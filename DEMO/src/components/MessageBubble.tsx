@@ -7,6 +7,7 @@ import {
   VoiceMessageContent,
   FileMessageContent,
 } from 'juggleim-rnsdk';
+import CardMessageBubble from './CardMessageBubble';
 
 interface MessageBubbleProps {
   message: Message;
@@ -21,7 +22,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const renderContent = () => {
     const { contentType } = message.content;
-
+    // console.log('msg bubble', message.content);
     switch (contentType) {
       case 'jg:text':
         return (
@@ -182,6 +183,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {formatFileSize(fileContent.size)}
               </Text>
             </View>
+          </View>
+        );
+      case 'demo:textcard':
+        return (
+          <View style={{ maxWidth: '100%', width: 270 }}>
+            <CardMessageBubble message={message} isSender={isOutgoing} />
           </View>
         );
       default:

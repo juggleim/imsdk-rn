@@ -20,6 +20,23 @@ const juggleIMEmitter = JMI
  */
 class JuggleIM {
   /**
+   * 注册自定义消息类型
+   * @param {string} contentType - 消息类型标识符(不能以 "jg:" 开头)
+   * @param {function} messageClass - 自定义消息类的构造函数
+   * @returns {void}
+   */
+  static registerCustomMessageType(contentType, messageClass) {
+    if (contentType.startsWith('jg:')) {
+      throw new Error('contentType 不能以 "jg:" 开头');
+    }
+
+    // 通知原生层
+    JMI.registerCustomMessageType(contentType);
+
+    console.log(`已注册自定义消息类型: ${contentType}`);
+  }
+
+  /**
    * 设置服务器地址列表
    * @param {string[]} urls - 服务器地址列表
    * @returns {void}
@@ -465,18 +482,8 @@ class JuggleIM {
    * @param {boolean} isTop - 是否置顶
    * @returns {Promise<boolean>} 设置结果
    */
-  static async setTop(conversation, isTop, callback) {
-    try {
-      const result = await JMI.setTop(conversation, isTop);
-      if (callback && callback.onSuccess) {
-        callback.onSuccess();
-      }
-      return result;
-    } catch (error) {
-      if (callback && callback.onError) {
-        callback.onError(error.code || -1);
-      }
-    }
+  static async setTop(conversation, isTop) {
+    return JMI.setTop(conversation, isTop);
   }
 
   /**
@@ -928,22 +935,10 @@ class JuggleIM {
    * 发送消息已读回执
    * @param {object} conversation - 会话对象
    * @param {string[]} messageIds - 消息ID列表
-   * @param {object} callback - 回调对象
    * @returns {Promise<boolean>} 发送结果
    */
-  static async sendReadReceipt(conversation, messageIds, callback) {
-    try {
-      const result = await JMI.sendReadReceipt(conversation, messageIds);
-      if (callback && callback.onSuccess) {
-        callback.onSuccess();
-      }
-      return result;
-    } catch (error) {
-      if (callback && callback.onError) {
-        callback.onError(error.code || -1);
-      }
-      throw error;
-    }
+  static sendReadReceipt(conversation, messageIds) {
+    return JMI.sendReadReceipt(conversation, messageIds);
   }
 
   /**
@@ -951,22 +946,23 @@ class JuggleIM {
    * @param {string} messageId - 消息ID
    * @param {object} conversation - 会话对象
    * @param {boolean} isTop - 是否置顶
-   * @param {object} callback - 回调对象
    * @returns {Promise<boolean>} 设置结果
    */
-  static async setMessageTop(messageId, conversation, isTop, callback) {
-    try {
-      const result = await JMI.setMessageTop(messageId, conversation, isTop);
-      if (callback && callback.onSuccess) {
-        callback.onSuccess();
-      }
-      return result;
-    } catch (error) {
-      if (callback && callback.onError) {
-        callback.onError(error.code || -1);
-      }
-      throw error;
-    }
+  static setMessageTop(messageId, conversation, isTop) {
+    return JMI.setMessageTop(messageId, conversation, isTop);
+  }
+}
+
+/**
+ * 自定义消息内容基类
+ * 用于创建自定义消息类型
+ */
+export class CustomMessageContent {
+  /**
+   * @param {string} contentType - 消息内容类型
+   */
+  constructor(contentType) {
+    this.contentType = contentType;
   }
 }
 

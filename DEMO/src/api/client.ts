@@ -44,10 +44,8 @@ export async function fetchData<T = any>(data: {
     }
 
     try {
-        console.log('req', url, options);
         const res = await fetch(url, options);
         const json: ApiResponse<T> = await res.json();
-        console.log('res', json);
         if (json.code !== 0) {
             throw new Error(json.msg || 'Request failed');
         }

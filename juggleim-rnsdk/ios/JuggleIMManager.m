@@ -1,4 +1,5 @@
 #import "JuggleIMManager.h"
+#import "GenericCustomMessage.h"
 #import <JuggleIM/JuggleIM.h>
 #import <React/RCTEventEmitter.h>
 
@@ -9,9 +10,19 @@
                                JMessageReadReceiptDelegate,
                                JMessageDestroyDelegate, JConversationDelegate>
 
+// 自定义消息类型注册表
+@property(nonatomic, strong) NSMutableDictionary *customMessageTypes;
+
 @end
 
 @implementation JuggleIMManager
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _customMessageTypes = [NSMutableDictionary dictionary];
+  }
+  return self;
+}
 
 RCT_EXPORT_MODULE(JuggleIM);
 
@@ -22,6 +33,20 @@ RCT_EXPORT_METHOD(setServerUrls : (NSArray *)urls) {
 RCT_EXPORT_METHOD(initWithAppKey : (NSString *)appKey) {
   [[JIM shared] initWithAppKey:appKey];
   [JIM.shared setConsoleLogLevel:JLogLevelVerbose];
+  // 注册通用自定义消息类型
+  [JIM.shared.messageManager registerContentType:[GenericCustomMessage class]];
+}
+
+/**
+ * 注册自定义消息类型
+ */
+RCT_EXPORT_METHOD(registerCustomMessageType : (NSString *)contentType) {
+  if ([contentType hasPrefix:@"jg:"]) {
+    NSLog(@"contentType 不能以 'jg:' 开头");
+    return;
+  }
+  self.customMessageTypes[contentType] = contentType;
+  NSLog(@"注册自定义消息类型: %@", contentType);
 }
 
 RCT_EXPORT_METHOD(connectWithToken : (NSString *)token) {
@@ -419,7 +444,8 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
  */
 - (NSDictionary *)convertMessageContentToDictionary:(JMessageContent *)content {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-  dict[@"contentType"] = [[content class] contentType] ?: @"";
+  NSString *contentType = [[content class] contentType];
+  dict[@"contentType"] = contentType ?: @"";
 
   if ([content isKindOfClass:[JTextMessage class]]) {
     JTextMessage *textMsg = (JTextMessage *)content;
@@ -447,6 +473,32 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
+  } else if ([contentType isEqualToString:@"jgrn:custom"]) {
+    // 处理通用自定义消息:解析 JSON 数据
+    GenericCustomMessage *customMsg = (GenericCustomMessage *)content;
+    NSData *data = [customMsg encode];
+    if (data) {
+      NSError *error = nil;
+      NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data
+                                                               options:0
+                                                                 error:&error];
+      if (!error && jsonDict) {
+        [dict addEntriesFromDictionary:jsonDict];
+      }
+    }
+  } else if (self.customMessageTypes[contentType]) {
+    // 处理其他自定义消息类型
+    NSData *data = [content encode];
+    if (data) {
+      NSError *error = nil;
+      NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data
+                                                               options:0
+                                                                 error:&error];
+      if (!error && jsonDict) {
+        [dict addEntriesFromDictionary:jsonDict];
+        dict[@"contentType"] = contentType;
+      }
+    }
   }
 
   return dict;
@@ -1291,6 +1343,9 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     voice.localPath = messageDict[@"localPath"];
     voice.duration = [messageDict[@"duration"] integerValue];
     return voice;
+  } else if (self.customMessageTypes[contentType]) {
+    // 处理自定义消息:将字典转换为 JSON 数据
+    return [self createCustomMessageFromDict:messageDict];
   }
 
   return nil;
@@ -1404,6 +1459,32 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
   JUserInfo *userInfo = [[JUserInfo alloc] init];
   userInfo.userId = userId;
   return userInfo;
+}
+
+/**
+ * 创建自定义消息对象
+ */
+- (JMessageContent *)createCustomMessageFromDict:(NSDictionary *)dict {
+  @try {
+    // 将字典转换为 JSON 数据
+    NSError *error = nil;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict
+                                                       options:0
+                                                         error:&error];
+    if (error || !jsonData) {
+      NSLog(@"创建自定义消息失败: %@", error.localizedDescription);
+      return nil;
+    }
+
+    // 创建通用自定义消息对象
+    GenericCustomMessage *customMsg = [[GenericCustomMessage alloc] init];
+    [customMsg setData:jsonData];
+
+    return customMsg;
+  } @catch (NSException *exception) {
+    NSLog(@"创建自定义消息异常: %@", exception.reason);
+    return nil;
+  }
 }
 
 /**

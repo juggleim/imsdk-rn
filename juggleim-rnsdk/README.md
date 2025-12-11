@@ -407,14 +407,7 @@ const conversation = {
 
 const messageIds = ['messageId1', 'messageId2'];
 
-await JuggleIM.sendReadReceipt(conversation, messageIds, {
-  onSuccess: () => {
-    console.log('发送已读回执成功');
-  },
-  onError: (errorCode) => {
-    console.log('发送已读回执失败, 错误码:', errorCode);
-  }
-});
+JuggleIM.sendReadReceipt(conversation, messageIds);
 ```
 
 ### 设置消息置顶
@@ -430,14 +423,7 @@ const conversation = {
 const messageId = 'messageId1';
 const isTop = true; // true 表示置顶，false 表示取消置顶
 
-await JuggleIM.setMessageTop(messageId, conversation, isTop, {
-  onSuccess: () => {
-    console.log('设置消息置顶成功');
-  },
-  onError: (errorCode) => {
-    console.log('设置消息置顶失败, 错误码:', errorCode);
-  }
-});
+JuggleIM.setMessageTop(messageId, conversation, isTop);
 ```
 
 ## 类型定义

@@ -6,6 +6,7 @@ import { APP_KEY, SERVER_URLS } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import { ActivityIndicator, View } from 'react-native';
 import JuggleIM from 'juggleim-rnsdk';
+import { TextCardMessage } from './src/messages/TextCardMessage';
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);
@@ -20,6 +21,7 @@ const App = () => {
         JuggleIM.connect(session.token);
         setInitialRoute('Main');
       }
+      JuggleIM.registerCustomMessageType('demo:textcard', TextCardMessage);
       setInitializing(false);
     };
 
