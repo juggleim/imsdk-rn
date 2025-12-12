@@ -107,7 +107,6 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
-        JIM.getInstance().getMessageManager().registerContentType(GenericCustomMessage.class);
     }
 
     /**
@@ -117,11 +116,13 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void registerCustomMessageType(String contentType) {
-        if (contentType.startsWith("jg:")) {
+        if (contentType == null || contentType.isEmpty() || contentType.startsWith("jg:")) {
             Log.e("JuggleIM", "contentType 不能以 'jg:' 开头");
             return;
         }
         customMessageTypes.put(contentType, contentType);
+        GenericCustomMessage.setJsType(contentType);
+        JIM.getInstance().getMessageManager().registerContentType(GenericCustomMessage.class);
         Log.d("JuggleIM", "注册自定义消息类型: " + contentType);
     }
 
@@ -508,7 +509,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("url", voice.getUrl());
             map.putString("localPath", voice.getLocalPath());
             map.putInt("duration", voice.getDuration());
-        } else if (contentType.equals("jgrn:custom")) {
+        } else if (customMessageTypes.containsKey(contentType)) {
             GenericCustomMessage genericCustomMessage = (GenericCustomMessage) content;
             byte[] data = genericCustomMessage.encode();
             if (data != null) {

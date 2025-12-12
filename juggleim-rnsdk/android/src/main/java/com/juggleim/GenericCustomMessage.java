@@ -8,10 +8,17 @@ import java.nio.charset.StandardCharsets;
  * 用于承载 RN 层自定义消息的 JSON 数据
  */
 public class GenericCustomMessage extends MessageContent {
-    private String mContentType = "jgrn:custom";
+    private String mContentType;
     private byte[] mData;
+
+    private static String jsType = "jgrn:custom";
     
     public GenericCustomMessage() {
+        this.mContentType = jsType;
+    }
+
+    public static void setJsType(String type) {
+        jsType = type;
     }
     
     @Override

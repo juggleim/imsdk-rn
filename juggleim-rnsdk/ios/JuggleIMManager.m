@@ -33,8 +33,6 @@ RCT_EXPORT_METHOD(setServerUrls : (NSArray *)urls) {
 RCT_EXPORT_METHOD(initWithAppKey : (NSString *)appKey) {
   [[JIM shared] initWithAppKey:appKey];
   [JIM.shared setConsoleLogLevel:JLogLevelVerbose];
-  // 注册通用自定义消息类型
-  [JIM.shared.messageManager registerContentType:[GenericCustomMessage class]];
 }
 
 /**
@@ -46,6 +44,8 @@ RCT_EXPORT_METHOD(registerCustomMessageType : (NSString *)contentType) {
     return;
   }
   self.customMessageTypes[contentType] = contentType;
+  [GenericCustomMessage setJsType:contentType];
+  [JIM.shared.messageManager registerContentType:[GenericCustomMessage class]];
   NSLog(@"注册自定义消息类型: %@", contentType);
 }
 
@@ -473,8 +473,8 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
-  } else if ([contentType isEqualToString:@"jgrn:custom"]) {
-    // 处理通用自定义消息:解析 JSON 数据
+  } else if (self.customMessageTypes[contentType]) {
+    // 处理自定义消息:解析 JSON 数据
     GenericCustomMessage *customMsg = (GenericCustomMessage *)content;
     NSData *data = [customMsg encode];
     if (data) {
@@ -483,22 +483,13 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
                                                                options:0
                                                                  error:&error];
       if (!error && jsonDict) {
-        [dict addEntriesFromDictionary:jsonDict];
+        dict = [jsonDict mutableCopy];
+      } else {
+        NSLog(@"解析自定义消息失败: %@", error.localizedDescription);
       }
     }
-  } else if (self.customMessageTypes[contentType]) {
-    // 处理其他自定义消息类型
-    NSData *data = [content encode];
-    if (data) {
-      NSError *error = nil;
-      NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data
-                                                               options:0
-                                                                 error:&error];
-      if (!error && jsonDict) {
-        [dict addEntriesFromDictionary:jsonDict];
-        dict[@"contentType"] = contentType;
-      }
-    }
+  } else {
+    NSLog(@"Unknown contentType: %@", contentType);
   }
 
   return dict;

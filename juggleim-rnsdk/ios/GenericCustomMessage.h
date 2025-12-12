@@ -12,6 +12,11 @@
 @property(nonatomic, strong) NSData *data;
 
 /**
+ * 设置 JS 层的消息类型
+ */
++ (void)setJsType:(NSString *)type;
+
+/**
  * 设置消息数据
  */
 - (void)setData:(NSData *)data;
