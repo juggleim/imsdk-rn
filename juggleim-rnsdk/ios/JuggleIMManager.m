@@ -396,6 +396,8 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 
   // 添加是否已读
   dict[@"hasRead"] = @(message.hasRead);
+  dict[@"isEdit"] = @(message.isEdit);
+  dict[@"isDeleted"] = @(message.isDeleted);
 
   // 添加群消息阅读信息
   if (message.groupReadInfo) {
@@ -1496,6 +1498,34 @@ RCT_EXPORT_METHOD(
         reject(@"error",
                [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
       }];
+}
+
+/**
+ * 更新消息
+ */
+RCT_EXPORT_METHOD(updateMessage : (NSString *)messageId content : (
+    NSDictionary *)contentMap conversation : (NSDictionary *)
+                      conversationMap resolver : (RCTPromiseResolveBlock)
+                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    JMessageContent *content = [self convertDictToMessageContent:contentMap];
+    JConversation *conversation =
+        [self convertDictionaryToConversation:conversationMap];
+
+    [JIM.shared.messageManager updateMessage:content
+        messageId:messageId
+        inConversation:conversation
+        success:^(JMessage *message) {
+          resolve([self convertMessageToDictionary:message]);
+        }
+        error:^(JErrorCode code) {
+          reject(@"error",
+                 [NSString stringWithFormat:@"Error code: %ld", (long)code],
+                 nil);
+        }];
+  } @catch (NSException *exception) {
+    reject(@"UPDATE_MESSAGE_ERROR", exception.reason, nil);
+  }
 }
 
 /**

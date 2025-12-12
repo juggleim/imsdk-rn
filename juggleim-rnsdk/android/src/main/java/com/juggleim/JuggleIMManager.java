@@ -441,6 +441,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
         // 添加是否已读
         map.putBoolean("hasRead", message.isHasRead());
+        map.putBoolean("isEdit", message.isEdit());
+        map.putBoolean("isDeleted", message.isDeleted());
 
         // 添加群消息阅读信息
         if (message.getGroupMessageReadInfo() != null) {
@@ -1539,6 +1541,36 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 @Override
                 public void onSuccess() {
                     promise.resolve(true);
+                }
+
+                @Override
+                public void onError(int errorCode) {
+                    promise.reject("error", "Error code: " + errorCode);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            promise.reject(e);
+        }
+    }
+
+    /**
+     * 更新消息
+     * @param messageId 消息ID
+     * @param contentMap 新的消息内容
+     * @param conversationMap 会话对象
+     * @param promise Promise对象
+     */
+    @ReactMethod
+    public void updateMessage(String messageId, ReadableMap contentMap, ReadableMap conversationMap, Promise promise) {
+        try {
+            MessageContent content = convertMapToMessageContent(contentMap);
+            Conversation conversation = convertMapToConversation(conversationMap);
+
+            JIM.getInstance().getMessageManager().updateMessage(messageId, content, conversation, new IMessageManager.IMessageCallback() {
+                @Override
+                public void onSuccess(Message message) {
+                    promise.resolve(convertMessageToMap(message));
                 }
 
                 @Override

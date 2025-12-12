@@ -475,7 +475,7 @@ export interface Message {
   clientMsgNo: number;
   localAttribute: string;
   messageState: number;
-  isEdited: boolean;
+  isEdite: boolean;
   direction: number;
   isDelete: boolean;
   senderUserId: string;

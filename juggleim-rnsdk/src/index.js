@@ -939,6 +939,28 @@ class JuggleIM {
   }
 
   /**
+   * 更新消息
+   * @param {string} messageId - 消息ID
+   * @param {MessageContent} content - 新的消息内容
+   * @param {Conversation} conversation - 会话对象
+   * @param {UpdateMessageCallback} callback - 回调对象
+   * @returns {Promise<Message>} 更新后的消息对象
+   */
+  static async updateMessage(messageId, content, conversation, callback = {}) {
+    try {
+      const updatedMessage = await JMI.updateMessage(messageId, content, conversation);
+      if (callback.onSuccess) {
+        callback.onSuccess(updatedMessage);
+      }
+      return updatedMessage;
+    } catch (error) {
+      if (callback.onError) {
+        callback.onError(error.code || -1);
+      }
+    }
+  }
+
+  /**
    * 设置消息置顶
    * @param {string} messageId - 消息ID
    * @param {object} conversation - 会话对象

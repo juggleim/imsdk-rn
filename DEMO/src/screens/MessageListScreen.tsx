@@ -159,6 +159,8 @@ const MessageListScreen = () => {
   const didInitialScroll = useRef(false);
   const [memberSheetVisible, setMemberSheetVisible] = useState(false);
   const messageComposerRef = useRef<MessageComposerRef>(null);
+  const [quotedMessage, setQuotedMessage] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -202,6 +204,15 @@ const MessageListScreen = () => {
         ) {
           setMessages(prev =>
             prev.filter(m => m.messageId !== message.messageId),
+          );
+        }
+      },
+      onMessageUpdate: (message: Message) => {
+        if (
+          message.conversation.conversationId === conversation.conversationId
+        ) {
+          setMessages(prev =>
+            prev.map(m => m.messageId === message.messageId ? message : m),
           );
         }
       },
@@ -344,6 +355,31 @@ const MessageListScreen = () => {
   };
 
   const handleSendText = async (text: string, mentions: MentionInfo[]) => {
+    // Check if we're editing a message
+    if (editingMessage) {
+      const textContent: TextMessageContent = {
+        contentType: 'jg:text',
+        content: text,
+      };
+
+      try {
+        const updatedMessage = await JuggleIM.updateMessage(
+          editingMessage.messageId,
+          textContent,
+          conversation,
+        );
+        setMessages(prev =>
+          prev.map(m => m.messageId === editingMessage.messageId ? updatedMessage : m),
+        );
+        setEditingMessage(null);
+        messageComposerRef.current?.setEditingMessage(null);
+      } catch (error) {
+        console.error('Failed to update message:', error);
+        Alert.alert('Error', 'Failed to update message');
+      }
+      return;
+    }
+
     const textContent: TextMessageContent = {
       contentType: 'jg:text',
       content: text,
@@ -382,12 +418,18 @@ const MessageListScreen = () => {
       conversationId: conversation.conversationId,
       content: textContent,
       mentionInfo,
+      referredMessageId: quotedMessage?.messageId,
     };
 
     try {
       const sentMessage = await JuggleIM.sendMessage(messageToSend);
       // Insert newest message at the start (we keep newest->oldest)
       setMessages(prev => [sentMessage, ...prev]);
+      // Clear quote after sending
+      if (quotedMessage) {
+        setQuotedMessage(null);
+        messageComposerRef.current?.setQuotedMessage(null, '');
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       Alert.alert('Error', 'Failed to send message');
@@ -483,44 +525,27 @@ const MessageListScreen = () => {
 
     const options = [];
     const isOutgoing = selectedMessage.direction === 1;
+    const isTextMessage = selectedMessage.content.contentType === 'jg:text';
 
     // Copy option for text messages
-    if (selectedMessage.content.contentType === 'jg:text') {
+    if (isTextMessage) {
       options.push({
-        label: 'Copy',
+        label: '复制',
         onPress: () => {
           Clipboard.setString(
             (selectedMessage.content as TextMessageContent).content,
           );
+          setMenuVisible(false);
         },
       });
     }
 
-    // Recall option for outgoing messages
-    if (isOutgoing) {
-      options.push({
-        label: 'Recall',
-        onPress: () => {
-          JuggleIM.recallMessage(selectedMessage.messageId)
-            .then(() => {
-              setMessages(prev =>
-                prev.filter(m => m.messageId !== selectedMessage.messageId),
-              );
-            })
-            .catch((e: any) => {
-              console.error('Failed to recall message:', e);
-              Alert.alert('Error', 'Failed to recall message');
-            });
-        },
-      });
-    }
-
-    // Delete option
+    // Delete option for all messages
     options.push({
-      label: 'Delete',
+      label: '删除',
       destructive: true,
       onPress: () => {
-        console.log('Deleting message:', selectedMessage, conversation);
+        setMenuVisible(false);
         JuggleIM.deleteMessagesByClientMsgNoList(conversation, [
           selectedMessage.clientMsgNo,
         ])
@@ -535,6 +560,76 @@ const MessageListScreen = () => {
           });
       },
     });
+
+    // Quote option for all messages
+    options.push({
+      label: '引用',
+      onPress: async () => {
+        // Capture these values before any async operations
+        const composerRef = messageComposerRef.current;
+        const messageToQuote = selectedMessage;
+
+        setMenuVisible(false);
+
+        // Get sender name
+        let senderName = messageToQuote.senderUserId;
+        const userInfo = await UserInfoManager.getUserInfo(messageToQuote.senderUserId);
+        if (userInfo) {
+          senderName = userInfo.nickname || userInfo.user_id;
+        }
+
+        // Use the captured ref
+        if (composerRef) {
+          setQuotedMessage(messageToQuote);
+          composerRef.setQuotedMessage(messageToQuote, senderName);
+        } else {
+          console.error('MessageComposer ref is null');
+        }
+      },
+    });
+
+    // Translate option for text messages (placeholder)
+    if (isTextMessage) {
+      options.push({
+        label: '翻译',
+        onPress: () => {
+          setMenuVisible(false);
+          Alert.alert('翻译', '翻译功能即将推出');
+        },
+      });
+    }
+
+    // Recall option for outgoing messages
+    if (isOutgoing) {
+      options.push({
+        label: '撤回',
+        onPress: () => {
+          setMenuVisible(false);
+          JuggleIM.recallMessage(selectedMessage.messageId)
+            .then(() => {
+              setMessages(prev =>
+                prev.filter(m => m.messageId !== selectedMessage.messageId),
+              );
+            })
+            .catch((e: any) => {
+              console.error('Failed to recall message:', e);
+              Alert.alert('Error', 'Failed to recall message');
+            });
+        },
+      });
+    }
+
+    // Edit option for outgoing text messages
+    if (isOutgoing && isTextMessage) {
+      options.push({
+        label: '编辑',
+        onPress: () => {
+          setMenuVisible(false);
+          setEditingMessage(selectedMessage);
+          messageComposerRef.current?.setEditingMessage(selectedMessage);
+        },
+      });
+    }
 
     return options;
   };

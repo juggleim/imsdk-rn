@@ -14,6 +14,7 @@ import {
   launchCamera,
   MediaType,
 } from 'react-native-image-picker';
+import { Message } from 'juggleim-rnsdk';
 import { GroupMember } from '../api/groups';
 import { Friend } from '../api/friends';
 // import DocumentPicker from 'react-native-document-picker';
@@ -21,6 +22,7 @@ import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import MoreMenu from './MoreMenu';
 import CardMessageInput from './CardMessageInput';
 import FriendSelectionSheet from './FriendSelectionSheet';
+import QuoteReplyBar from './QuoteReplyBar';
 
 export interface MentionInfo {
   userId: string;
@@ -51,6 +53,8 @@ interface MessageComposerProps {
 
 export interface MessageComposerRef {
   addMention: (userId: string, nickname: string) => void;
+  setQuotedMessage: (message: Message | null, senderName: string) => void;
+  setEditingMessage: (message: Message | null) => void;
 }
 
 const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((props, ref) => {
@@ -74,11 +78,28 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showCardInput, setShowCardInput] = useState(false);
   const [showFriendSelection, setShowFriendSelection] = useState(false);
+  const [quotedMessage, setQuotedMessage] = useState<Message | null>(null);
+  const [quotedSenderName, setQuotedSenderName] = useState<string>('');
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
-  // Expose addMention method to parent via ref
+  // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
     addMention: (userId: string, nickname: string) => {
       addMentionInternal(userId, nickname);
+    },
+    setQuotedMessage: (message: Message | null, senderName: string = '') => {
+      console.log('setQuotedMessage', message);
+      setQuotedMessage(message);
+      setQuotedSenderName(senderName);
+    },
+    setEditingMessage: (message: Message | null) => {
+      setEditingMessage(message);
+      if (message && message.content.contentType === 'jg:text') {
+        const textContent = message.content as any;
+        setText(textContent.content || '');
+      } else if (!message) {
+        setText('');
+      }
     },
   }));
 
@@ -228,6 +249,16 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       style={styles.container}>
+      {quotedMessage && (
+        <QuoteReplyBar
+          message={quotedMessage}
+          senderName={quotedSenderName}
+          onClose={() => {
+            setQuotedMessage(null);
+            setQuotedSenderName('');
+          }}
+        />
+      )}
       <View style={styles.composer}>
         <TouchableOpacity
           onPress={() => setShowMoreMenu(true)}

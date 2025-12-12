@@ -22,11 +22,8 @@ const ContactsScreen = () => {
     };
 
     useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
-            fetchFriends();
-        });
-        return unsubscribe;
-    }, [navigation]);
+        fetchFriends();
+    }, []);
 
     const renderHeader = () => (
         <View>

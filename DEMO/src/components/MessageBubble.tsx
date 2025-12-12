@@ -27,32 +27,91 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOutgoing,
   onLongPress,
 }) => {
+  const getQuotedMessagePreview = (quotedMsg: Message): string => {
+    const contentType = quotedMsg.content.contentType;
+    if (contentType === 'jg:text') {
+      return (quotedMsg.content as TextMessageContent).content;
+    } else if (contentType === 'jg:img') {
+      return '[图片]';
+    } else if (contentType === 'jg:file') {
+      return '[文件]';
+    } else if (contentType === 'jg:video') {
+      return '[视频]';
+    } else if (contentType === 'jg:voice') {
+      return '[语音]';
+    } else {
+      return '[消息]';
+    }
+  };
+
+  const renderQuotedMessage = (quotedMsg: Message) => {
+    return (
+      <View style={styles.quotedContainer}>
+        <View style={styles.quotedContent}>
+          <Image
+            source={require('../assets/icons/reply.png')}
+            style={[
+              styles.quotedIcon,
+              isOutgoing ? styles.outgoingQuotedIcon : styles.incomingQuotedIcon,
+            ]}
+          />
+          <View style={styles.quotedTextContainer}>
+            <Text
+              style={[
+                styles.quotedSender,
+                isOutgoing ? styles.outgoingText : styles.incomingText,
+              ]}
+              numberOfLines={1}>
+              {quotedMsg.senderUserId}
+            </Text>
+            <Text
+              style={[
+                styles.quotedPreview,
+                isOutgoing ? styles.outgoingTimestamp : styles.incomingTimestamp,
+              ]}
+              numberOfLines={1}>
+              {getQuotedMessagePreview(quotedMsg)}
+            </Text>
+          </View>
+        </View>
+        <View style={[
+          styles.quotedDivider,
+          isOutgoing ? styles.outgoingDivider : styles.incomingDivider,
+        ]} />
+      </View>
+    );
+  };
+
   const renderContent = async () => {
     const { contentType } = message.content;
     console.log('msg bubble', message.content);
     switch (contentType) {
       case 'jg:text':
         return (
-          <View style={styles.textRow}>
-            <Text
-              style={[
-                styles.text,
-                isOutgoing ? styles.outgoingText : styles.incomingText,
-              ]}>
-              {(message.content as TextMessageContent).content}
-            </Text>
-            <Text
-              style={[
-                styles.timestamp,
-                isOutgoing
-                  ? styles.outgoingTimestamp
-                  : styles.incomingTimestamp,
-              ]}>
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
+          <View>
+            {message.referredMessage && renderQuotedMessage(message.referredMessage)}
+            <View style={styles.textRow}>
+              <Text
+                style={[
+                  styles.text,
+                  isOutgoing ? styles.outgoingText : styles.incomingText,
+                ]}>
+                {(message.content as TextMessageContent).content}
+              </Text>
+              <Text
+                style={[
+                  styles.timestamp,
+                  isOutgoing
+                    ? styles.outgoingTimestamp
+                    : styles.incomingTimestamp,
+                ]}>
+                {new Date(message.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+                {message.isEdit && ' 已编辑'}
+              </Text>
+            </View>
           </View>
         );
       case 'jg:callfinishntf':
@@ -367,6 +426,46 @@ const styles = StyleSheet.create({
     height: 18,
     paddingHorizontal: 15,
     textAlign: 'center',
+  },
+  quotedContainer: {
+    marginBottom: 6,
+  },
+  quotedContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quotedIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 6,
+  },
+  outgoingQuotedIcon: {
+    tintColor: 'rgba(255,255,255,0.7)',
+  },
+  incomingQuotedIcon: {
+    tintColor: 'rgba(0,0,0,0.5)',
+  },
+  quotedTextContainer: {
+    flex: 1,
+  },
+  quotedSender: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  quotedPreview: {
+    fontSize: 11,
+  },
+  quotedDivider: {
+    height: 1,
+    marginBottom: 6,
+  },
+  outgoingDivider: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  incomingDivider: {
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
 });
 

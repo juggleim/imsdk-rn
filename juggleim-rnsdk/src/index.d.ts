@@ -202,12 +202,14 @@ declare module "juggleim-rnsdk" {
    * @property {Conversation} conversation - 会话对象
    * @property {MessageContent} content - 消息内容
    * @property {GroupMessageReadInfo} [groupMessageReadInfo] - 群消息阅读信息（可选）
+   * @property {MessageMentionInfo} mentionInfo - 消息提及信息
+   * @property {Message} [referredMessage] - 引用的消息
    */
   export interface Message {
     clientMsgNo: number;
     localAttribute: string;
     messageState: number;
-    isEdited: boolean;
+    isEdit: boolean;
     direction: number;
     isDelete: boolean;
     senderUserId: string;
@@ -218,6 +220,7 @@ declare module "juggleim-rnsdk" {
     content: MessageContent;
     groupMessageReadInfo?: GroupMessageReadInfo;
     mentionInfo: MessageMentionInfo;
+    referredMessage?: Message;
   }
 
   /**
@@ -364,6 +367,11 @@ declare module "juggleim-rnsdk" {
     onError?: (message: Message, errorCode: number) => void;
   }
 
+  export interface UpdateMessageCallback {
+    onSuccess?: (message: Message) => void;
+    onError?: (errorCode: number) => void;
+  }
+
   // 获取消息相关接口
   export interface GetMessageOptions {
     count?: number;
@@ -377,6 +385,8 @@ declare module "juggleim-rnsdk" {
     content: MessageContent;
     mentionInfo?: MessageMentionInfo;
     pushData?: PushData;
+    // 引用消息ID
+    referredMessageId?: string;
   }
   /**
    * 连接状态监听器回调函数
@@ -852,6 +862,21 @@ declare module "juggleim-rnsdk" {
       conversation: Conversation,
       messageIds: string[],
     ): Promise<Boolean>;
+
+    /**
+     * 更新消息
+     * @param messageId 消息ID
+     * @param content 新的消息内容
+     * @param conversation 会话对象
+     * @param callback 回调函数
+     * @returns {Promise<Message>} 更新后的消息对象
+     */
+    static updateMessage(
+      messageId: string,
+      content: MessageContent,
+      conversation: Conversation,
+      callback?: UpdateMessageCallback
+    ): Promise<Message>;
 
     /**
      * 设置消息置顶
