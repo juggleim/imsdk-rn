@@ -472,7 +472,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
-  } else if (self.customMessageTypes[contentType]) {
+  } else if ([contentType isEqualToString:@"jgrn:custom"]) {
     // 处理自定义消息:解析 JSON 数据
     GenericCustomMessage *customMsg = (GenericCustomMessage *)content;
     NSData *data = [customMsg encode];

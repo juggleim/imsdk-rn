@@ -509,7 +509,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("url", voice.getUrl());
             map.putString("localPath", voice.getLocalPath());
             map.putInt("duration", voice.getDuration());
-        } else if (customMessageTypes.containsKey(contentType)) {
+        } else if (contentType.equals("jgrn:custom")) {
             GenericCustomMessage genericCustomMessage = (GenericCustomMessage) content;
             byte[] data = genericCustomMessage.encode();
             if (data != null) {
