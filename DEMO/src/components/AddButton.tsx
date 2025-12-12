@@ -1,6 +1,13 @@
-import React from 'react';
-import { TouchableOpacity, Image, StyleSheet, Alert, Platform, ActionSheetIOS } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import {
+    TouchableOpacity,
+    Image,
+    StyleSheet,
+    View,
+    Text,
+    Modal,
+    TouchableWithoutFeedback,
+} from 'react-native';
 
 interface AddButtonProps {
     onAddFriend: () => void;
@@ -8,42 +15,70 @@ interface AddButtonProps {
 }
 
 const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => {
-    const handlePress = () => {
-        if (Platform.OS === 'ios') {
-            ActionSheetIOS.showActionSheetWithOptions(
-                {
-                    options: ['取消', '添加好友', '创建群组'],
-                    cancelButtonIndex: 0,
-                },
-                buttonIndex => {
-                    if (buttonIndex === 1) {
-                        onAddFriend();
-                    } else if (buttonIndex === 2) {
-                        onCreateGroup();
-                    }
-                }
-            );
-        } else {
-            Alert.alert(
-                '选择操作',
-                '',
-                [
-                    { text: '添加好友', onPress: onAddFriend },
-                    { text: '创建群组', onPress: onCreateGroup },
-                    { text: '取消', style: 'cancel' },
-                ],
-                { cancelable: true }
-            );
-        }
+    const [menuVisible, setMenuVisible] = useState(false);
+
+    const handleAddFriend = () => {
+        setMenuVisible(false);
+        setTimeout(() => onAddFriend(), 100);
+    };
+
+    const handleCreateGroup = () => {
+        setMenuVisible(false);
+        setTimeout(() => onCreateGroup(), 100);
     };
 
     return (
-        <TouchableOpacity onPress={handlePress} style={styles.button}>
-            <Image
-                source={require('../assets/icons/add.png')}
-                style={styles.icon}
-            />
-        </TouchableOpacity>
+        <>
+            <TouchableOpacity
+                onPress={() => setMenuVisible(true)}
+                style={styles.button}
+            >
+                <Image
+                    source={require('../assets/icons/circle_add.png')}
+                    style={styles.icon}
+                />
+            </TouchableOpacity>
+
+            <Modal
+                visible={menuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setMenuVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+                    <View style={styles.overlay}>
+                        <View style={styles.menuContainer}>
+                            <View style={styles.triangle} />
+                            <View style={styles.menu}>
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={handleCreateGroup}
+                                >
+                                    <Image
+                                        source={require('../assets/icons/chat.png')}
+                                        style={styles.menuIcon}
+                                    />
+                                    <Text style={styles.menuText}>发起群聊</Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.divider} />
+
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={handleAddFriend}
+                                >
+                                    <Image
+                                        source={require('../assets/icons/avatar.png')}
+                                        style={styles.menuIcon}
+                                    />
+                                    <Text style={styles.menuText}>添加朋友</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
+        </>
     );
 };
 
@@ -56,6 +91,61 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         tintColor: '#007AFF',
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'transparent',
+    },
+    menuContainer: {
+        position: 'absolute',
+        top: 100,
+        right: 10,
+        alignItems: 'flex-end',
+    },
+    triangle: {
+        width: 0,
+        height: 0,
+        backgroundColor: 'transparent',
+        borderStyle: 'solid',
+        borderLeftWidth: 8,
+        borderRightWidth: 8,
+        borderBottomWidth: 8,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderBottomColor: '#4a4a4a',
+        marginRight: 20,
+    },
+    menu: {
+        backgroundColor: '#4a4a4a',
+        borderRadius: 8,
+        paddingVertical: 8,
+        minWidth: 160,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+    },
+    menuIcon: {
+        width: 24,
+        height: 24,
+        tintColor: '#fff',
+        marginRight: 12,
+    },
+    menuText: {
+        color: '#fff',
+        fontSize: 16,
+    },
+    divider: {
+        height: 0.5,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        marginHorizontal: 16,
     },
 });
 
