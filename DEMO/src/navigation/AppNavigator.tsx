@@ -13,12 +13,17 @@ import MomentScreen from '../screens/MomentScreen';
 import PublishMomentScreen from '../screens/PublishMomentScreen';
 import ConversationInfoScreen from '../screens/ConversationInfoScreen';
 import GroupAnnouncementScreen from '../screens/GroupAnnouncementScreen';
+import CreateGroupScreen from '../screens/CreateGroupScreen';
 import { Image } from 'react-native';
+import AddButton from '../components/AddButton';
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
+  const navigation = useNavigation<any>();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -38,7 +43,20 @@ const MainTabNavigator = () => {
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
       })}>
-      <Tab.Screen name="Chats" component={ConversationListScreen} />
+      <Tab.Screen
+        name="Chats"
+        component={ConversationListScreen}
+        options={{
+          headerShown: true,
+          title: '会话',
+          headerRight: () => (
+            <AddButton
+              onAddFriend={() => navigation.navigate('SearchFriends')}
+              onCreateGroup={() => navigation.navigate('CreateGroup')}
+            />
+          ),
+        }}
+      />
       <Tab.Screen name="Contacts" component={ContactsScreen} />
       <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Me" component={ProfileScreen} />
@@ -60,6 +78,7 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="PublishMoment" component={PublishMomentScreen} options={{ headerShown: true, title: '发朋友圈' }} />
       <Stack.Screen name="ConversationInfo" component={ConversationInfoScreen} options={{ headerShown: true, title: '聊天信息' }} />
       <Stack.Screen name="GroupAnnouncement" component={GroupAnnouncementScreen} options={{ headerShown: true, title: '群公告' }} />
+      <Stack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ headerShown: true, title: '创建群组' }} />
     </Stack.Navigator>
   );
 };

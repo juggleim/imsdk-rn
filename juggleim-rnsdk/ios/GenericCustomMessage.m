@@ -1,15 +1,9 @@
 #import "GenericCustomMessage.h"
 
-static NSString *jsType = @"jgrn:custom";
-
 @implementation GenericCustomMessage
 
-+ (void)setJsType:(NSString *)type {
-  jsType = type;
-}
-
 + (NSString *)contentType {
-  return jsType;
+  return @"jgrn:custom";
 }
 
 - (NSData *)encode {

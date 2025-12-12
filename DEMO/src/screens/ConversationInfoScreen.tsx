@@ -34,16 +34,18 @@ const ConversationInfoScreen = () => {
     const isGroupChat = conversation.conversationType === 2;
 
     useEffect(() => {
-        loadConversationInfo();
+        loadConversationInfo(true);
         loadConversationSettings();
     }, [conversation]);
 
-    const loadConversationInfo = async () => {
+    const loadConversationInfo = async (forceUpdate: boolean = false) => {
         if (isPrivateChat) {
             const user = await UserInfoManager.getUserInfo(conversation.conversationId);
             setUserInfo(user);
         } else if (isGroupChat) {
-            const group = await UserInfoManager.getGroupInfo(conversation.conversationId);
+            const group = forceUpdate
+                ? await UserInfoManager.getGroupInfoForceSync(conversation.conversationId)
+                : await UserInfoManager.getGroupInfo(conversation.conversationId);
             setGroupInfo(group);
 
             // Load announcement
@@ -95,7 +97,7 @@ const ConversationInfoScreen = () => {
             await inviteGroupMembers(conversation.conversationId, [friend.user_id]);
             Alert.alert('Success', 'Member invited successfully');
             // Reload group info
-            loadConversationInfo();
+            loadConversationInfo(true);
         } catch (error) {
             console.error('Failed to invite member:', error);
             Alert.alert('Error', 'Failed to invite member');
@@ -147,7 +149,7 @@ const ConversationInfoScreen = () => {
             await removeGroupMembers(conversation.conversationId, [userId]);
             Alert.alert('Success', 'Member removed successfully');
             // Reload group info
-            loadConversationInfo();
+            loadConversationInfo(true);
         } catch (error) {
             console.error('Failed to remove member:', error);
             Alert.alert('Error', 'Failed to remove member');

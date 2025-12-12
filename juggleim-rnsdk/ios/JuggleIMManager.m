@@ -33,6 +33,7 @@ RCT_EXPORT_METHOD(setServerUrls : (NSArray *)urls) {
 RCT_EXPORT_METHOD(initWithAppKey : (NSString *)appKey) {
   [[JIM shared] initWithAppKey:appKey];
   [JIM.shared setConsoleLogLevel:JLogLevelVerbose];
+  [JIM.shared.messageManager registerContentType:[GenericCustomMessage class]];
 }
 
 /**
@@ -44,8 +45,6 @@ RCT_EXPORT_METHOD(registerCustomMessageType : (NSString *)contentType) {
     return;
   }
   self.customMessageTypes[contentType] = contentType;
-  [GenericCustomMessage setJsType:contentType];
-  [JIM.shared.messageManager registerContentType:[GenericCustomMessage class]];
   NSLog(@"注册自定义消息类型: %@", contentType);
 }
 

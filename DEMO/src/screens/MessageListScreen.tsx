@@ -55,6 +55,9 @@ const MessageItem = ({
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [name, setName] = useState<string>(item.senderUserId || '');
 
+  // Check if this is a system message
+  const isSystemMessage = item.content.contentType === 'jgd:grpntf' || item.content.contentType === 'jgd:friendntf';
+
   useEffect(() => {
     let isMounted = true;
     const loadUserInfo = async () => {
@@ -81,6 +84,19 @@ const MessageItem = ({
       isMounted = false;
     };
   }, [item.senderUserId]);
+
+  // Render system messages centered without avatars
+  if (isSystemMessage) {
+    return (
+      <View style={styles.systemMessageRow}>
+        <MessageBubble
+          message={item}
+          isOutgoing={isOutgoing}
+          onLongPress={() => onLongPress(item)}
+        />
+      </View>
+    );
+  }
 
   return (
     <View
@@ -735,6 +751,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
     alignItems: 'flex-end',
+  },
+  systemMessageRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   outgoingRow: {
     justifyContent: 'flex-end',

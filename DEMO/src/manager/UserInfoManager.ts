@@ -56,6 +56,16 @@ class UserInfoManager {
         return null;
     }
 
+    public async getGroupInfoForceSync(groupId: string): Promise<GroupInfo | null> {
+        const groupInfo = await getGroupInfo(groupId);
+        if (groupInfo) {
+            this.groupCache.set(groupId, { data: groupInfo, timestamp: Date.now() });
+            this.enforceCacheLimit(this.groupCache);
+            return groupInfo;
+        }
+        return null;
+    }
+
     public async getGroupInfo(groupId: string): Promise<GroupInfo | null> {
         if (this.groupCache.has(groupId)) {
             const item = this.groupCache.get(groupId);

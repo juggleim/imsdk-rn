@@ -48,6 +48,11 @@ const ConversationItem = ({
         return '[Voice]';
       case 'demo:textcard':
         return '[TextCard]';
+      case 'jgd:grpntf':
+        return '[群通知]';
+      case 'jgd:friendntf':
+        console.log('content', content);
+        return '[好友通知]';
       default:
         return '[Message]';
     }
@@ -296,7 +301,10 @@ const ConversationListScreen = () => {
         direction: 0,
       });
       console.log('会话列表:', list);
-      setConversations(sortConversations(list || []));
+      if (list == null || list.length === 0) {
+        return;
+      }
+      setConversations(sortConversations(list));
     } catch (e) {
       console.error('Failed to load conversations', e);
     }

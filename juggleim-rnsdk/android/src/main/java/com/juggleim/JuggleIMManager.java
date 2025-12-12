@@ -107,6 +107,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
+        JIM.getInstance().getMessageManager().registerContentType(GenericCustomMessage.class);
     }
 
     /**
@@ -121,8 +122,6 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             return;
         }
         customMessageTypes.put(contentType, contentType);
-        GenericCustomMessage.setJsType(contentType);
-        JIM.getInstance().getMessageManager().registerContentType(GenericCustomMessage.class);
         Log.d("JuggleIM", "注册自定义消息类型: " + contentType);
     }
 
@@ -486,6 +485,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     private WritableMap convertMessageContentToMap(MessageContent content) {
         WritableMap map = new WritableNativeMap();
         String contentType = content.getContentType();
+        Log.d("JuggleIM", "contentType: " + contentType);
         map.putString("contentType", contentType);
         
         if (contentType.equals("jg:text")) {
@@ -520,11 +520,14 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 } catch (JSONException e) {
                     Log.e("JuggleIM", "解析自定义消息失败: " + e.getMessage());
                 }
+            } else {
+                Log.e("JuggleIM", "No data for contentType: " + contentType);
             }
         } else {
             Log.e("JuggleIM", "Unknown contentType: " + contentType);
             return RNTypeConverter.toWritableMap(content);
         }
+        Log.d("JuggleIM", "convertMessageContentToMap: " + map.getString("contentType"));
 
         return map;
     }
@@ -663,8 +666,6 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         while (iterator.hasNext()) {
             String key = iterator.next();
             Object value = jsonObject.get(key);
-            Log.d("JuggleIM", "key: " + key + ", value: " + value);
-            
             if (value instanceof JSONObject) {
                 map.putMap(key, convertJSONToWritableMap((JSONObject) value));
             } else if (value instanceof JSONArray) {
@@ -993,10 +994,12 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         WritableMap map = new WritableNativeMap();
         WritableArray userMap = new WritableNativeArray();
         map.putInt("type", mentionInfo.getType().getValue());
-        for (UserInfo userInfo : mentionInfo.getTargetUsers()) {
-            userMap.pushMap(convertUserInfoToMap(userInfo));
+        if (mentionInfo.getTargetUsers() != null) { 
+            for (UserInfo userInfo : mentionInfo.getTargetUsers()) {
+                userMap.pushMap(convertUserInfoToMap(userInfo));
+            }
+            map.putArray("targetUsers", userMap);
         }
-        map.putArray("targetUsers", userMap);
         return map;
     }
 

@@ -8,6 +8,8 @@ import { ActivityIndicator, View } from 'react-native';
 import JuggleIM from 'juggleim-rnsdk';
 import { TextCardMessage } from './src/messages/TextCardMessage';
 import { BusinessCardMessage } from './src/messages/BusinessCardMessage';
+import { GroupNotifyMessage } from './src/messages/GroupNotifyMessage';
+import { FriendNotifyMessage } from './src/messages/FriendNotifyMessage';
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);
@@ -24,6 +26,8 @@ const App = () => {
       }
       JuggleIM.registerCustomMessageType('demo:textcard', TextCardMessage);
       JuggleIM.registerCustomMessageType('demo:businesscard', BusinessCardMessage);
+      JuggleIM.registerCustomMessageType('jgd:grpntf', GroupNotifyMessage);
+      JuggleIM.registerCustomMessageType('jgd:friendntf', FriendNotifyMessage);
       setInitializing(false);
     };
 

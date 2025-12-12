@@ -86,3 +86,23 @@ export async function getGroupAnnouncement(group_id: string): Promise<GroupAnnou
         }
     });
 }
+
+export interface CreateGroupRequest {
+    group_name: string;
+    group_portrait?: string;
+    member_ids: string[];
+}
+
+export interface CreateGroupResponse {
+    group_id: string;
+    group_name: string;
+    group_portrait: string;
+}
+
+export async function createGroup(request: CreateGroupRequest): Promise<CreateGroupResponse> {
+    return fetchData<CreateGroupResponse>({
+        url: '/jim/groups/create',
+        method: 'POST',
+        data: request
+    });
+}

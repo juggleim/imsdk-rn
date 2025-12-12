@@ -10,6 +10,11 @@ import {
 import CardMessageBubble from './CardMessageBubble';
 import BusinessCardBubble from './BusinessCardBubble';
 import { BusinessCardMessage } from '../messages/BusinessCardMessage';
+import { GroupNotifyMessage } from '../messages/GroupNotifyMessage';
+import { FriendNotifyMessage } from '../messages/FriendNotifyMessage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { USER_ID_KEY } from '../utils/auth';
+import UserInfoManager from '../manager/UserInfoManager';
 
 interface MessageBubbleProps {
   message: Message;
@@ -22,9 +27,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOutgoing,
   onLongPress,
 }) => {
-  const renderContent = () => {
+  const renderContent = async () => {
     const { contentType } = message.content;
-    // console.log('msg bubble', message.content);
+    console.log('msg bubble', message.content);
     switch (contentType) {
       case 'jg:text':
         return (
@@ -203,6 +208,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <BusinessCardBubble message={message.content as any as BusinessCardMessage} isOutgoing={isOutgoing} />
           </View>
         );
+      case 'jgd:grpntf':
+        const groupNotifyMsg = message.content as any as GroupNotifyMessage;
+        const [currentUserId, setCurrentUserId] = React.useState<string>('');
+        React.useEffect(() => {
+          AsyncStorage.getItem(USER_ID_KEY).then(userId => {
+            if (userId) setCurrentUserId(userId);
+          });
+        }, []);
+        return (
+          <View style={styles.systemMessageContainer}>
+            <Text style={styles.systemMessageText}>
+              {groupNotifyMsg.description ? groupNotifyMsg.description(currentUserId) : '[群通知]'}
+            </Text>
+          </View>
+        );
+      case 'jgd:friendntf':
+        const friendNotifyMsg = message.content as FriendNotifyMessage;
+        const userInfo = await UserInfoManager.getUserInfo(message.senderUserId);
+        console.log('friendNotifyMsg', friendNotifyMsg, userInfo);
+        return (
+          <View style={styles.systemMessageContainer}>
+            <Text style={styles.systemMessageText}>
+              {userInfo?.nickname + (friendNotifyMsg.type === 0 ? '添加' : '通过') + '你为好友'}
+            </Text>
+          </View>
+        );
       default:
         return (
           <Text style={styles.text}>
@@ -277,6 +308,7 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 10,
     marginLeft: 4,
+    minWidth: 50,
     alignSelf: 'flex-end',
   },
   outgoingTimestamp: {
@@ -323,6 +355,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
+  systemMessageContainer: {
+    alignSelf: 'center',
+    height: 16,
+    backgroundColor: 'transparent',
+  },
+  systemMessageText: {
+    fontSize: 10,
+    color: '#999',
+    width: '90%',
+    height: 18,
+    paddingHorizontal: 15,
+    textAlign: 'center',
+  },
 });
 
 export default MessageBubble;
+
