@@ -8,6 +8,7 @@ interface MessageHeaderProps {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  onInfoPress?: () => void;
 }
 
 const MessageHeader: React.FC<MessageHeaderProps> = ({
@@ -15,6 +16,7 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
   title,
   subtitle,
   onBack,
+  onInfoPress,
 }) => {
   const navigation = useNavigation();
 
@@ -48,9 +50,8 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
       </View>
 
       <View style={styles.rightContainer}>
-        {/* Placeholder for future actions like Info or Call */}
-        <TouchableOpacity style={styles.actionButton}>
-          {/* <Image source={require('../assets/icons/info.png')} style={styles.actionIcon} /> */}
+        <TouchableOpacity style={styles.actionButton} onPress={onInfoPress}>
+          <Image source={require('../assets/icons/Info.png')} style={styles.actionIcon} />
         </TouchableOpacity>
       </View>
     </View>

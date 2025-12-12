@@ -38,3 +38,51 @@ export async function getGroupInfo(group_id: string): Promise<GroupInfo> {
         }
     });
 }
+
+export interface GroupAnnouncement {
+    group_id: string;
+    content: string;
+}
+
+export async function inviteGroupMembers(group_id: string, member_ids: string[]): Promise<void> {
+    return fetchData<void>({
+        url: '/jim/groups/invite',
+        method: 'POST',
+        data: {
+            group_id,
+            member_ids
+        }
+    });
+}
+
+export async function removeGroupMembers(group_id: string, member_ids: string[]): Promise<void> {
+    return fetchData<void>({
+        url: '/jim/groups/members/del',
+        method: 'POST',
+        data: {
+            group_id,
+            member_ids
+        }
+    });
+}
+
+export async function setGroupAnnouncement(group_id: string, content: string): Promise<void> {
+    return fetchData<void>({
+        url: '/jim/groups/setgrpannouncement',
+        method: 'POST',
+        data: {
+            group_id,
+            content
+        }
+    });
+}
+
+export async function getGroupAnnouncement(group_id: string): Promise<GroupAnnouncement> {
+    return fetchData<GroupAnnouncement>({
+        url: '/jim/groups/getgrpannouncement',
+        method: 'GET',
+        params: {
+            group_id
+        }
+    });
+}

@@ -959,6 +959,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 将 ConversationInfo 转换为 WritableMap
      */
     private WritableMap convertConversationInfoToMap(ConversationInfo info) {
+        if (info == null) {
+            return null;
+        }
         WritableMap map = new WritableNativeMap();
         map.putMap("conversation", convertConversationToMap(info.getConversation()));
         map.putInt("unreadCount", info.getUnreadCount());
@@ -984,6 +987,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 将 MentionInfo 转换为 WritableMap
      */
     private WritableMap convertMentionInfoToMap(MessageMentionInfo mentionInfo) {
+        if (mentionInfo == null) {
+            return null;
+        }
         WritableMap map = new WritableNativeMap();
         WritableArray userMap = new WritableNativeArray();
         map.putInt("type", mentionInfo.getType().getValue());

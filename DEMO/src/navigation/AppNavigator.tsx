@@ -11,6 +11,8 @@ import NewFriendsScreen from '../screens/NewFriendsScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
 import MomentScreen from '../screens/MomentScreen';
 import PublishMomentScreen from '../screens/PublishMomentScreen';
+import ConversationInfoScreen from '../screens/ConversationInfoScreen';
+import GroupAnnouncementScreen from '../screens/GroupAnnouncementScreen';
 import { Image } from 'react-native';
 
 const Stack = createNativeStackNavigator();
@@ -56,6 +58,8 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="NewFriends" component={NewFriendsScreen} options={{ headerShown: true, title: 'New Friends' }} />
       <Stack.Screen name="Moment" component={MomentScreen} options={{ headerShown: true, title: 'Moments' }} />
       <Stack.Screen name="PublishMoment" component={PublishMomentScreen} options={{ headerShown: true, title: '发朋友圈' }} />
+      <Stack.Screen name="ConversationInfo" component={ConversationInfoScreen} options={{ headerShown: true, title: '聊天信息' }} />
+      <Stack.Screen name="GroupAnnouncement" component={GroupAnnouncementScreen} options={{ headerShown: true, title: '群公告' }} />
     </Stack.Navigator>
   );
 };

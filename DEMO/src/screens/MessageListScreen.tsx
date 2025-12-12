@@ -654,6 +654,7 @@ const MessageListScreen = () => {
           conversation.conversationType === 1 ? 'Private Chat' : 'Group Chat'
         }
         onBack={() => navigation.goBack()}
+        onInfoPress={() => navigation.navigate('ConversationInfo', { conversation, title })}
       />
 
       <FlatList
