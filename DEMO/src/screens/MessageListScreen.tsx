@@ -39,6 +39,7 @@ import CardMessageBubble from '../components/CardMessageBubble';
 import UserInfoManager from '../manager/UserInfoManager';
 import { GroupMember } from '../api/groups';
 import { TextCardMessage } from '../messages/TextCardMessage';
+import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MessageItem = ({
@@ -124,8 +125,7 @@ const MessageItem = ({
 const MessageListScreen = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { conversation, title } = route.params;
-
+  const { conversation, title, unreadCount } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   // loading older messages (when scrolling to top)
@@ -165,7 +165,9 @@ const MessageListScreen = () => {
     loadGroupMembers();
 
     // Clear unread count on entry
-    JuggleIM.clearUnreadCount(conversation);
+    if (unreadCount > 0) {
+      JuggleIM.clearUnreadCount(conversation);
+    }
 
     loadMessages();
     const msgUpdateListener = JuggleIM.addMessageListener('MessageListScreen', {
@@ -232,8 +234,12 @@ const MessageListScreen = () => {
             .map(msg => msg.messageId)
             .filter(id => id && id.length > 0);
 
-          if (messageIds.length > 0) {
-            JuggleIM.sendReadReceipt(conversation, messageIds);
+          if (messageIds.length > 0 && unreadCount > 0) {
+            JuggleIM.sendReadReceipt(conversation, messageIds).then(() => {
+              console.log('Read receipt sent for', messageIds);
+            }).catch(error => {
+              console.error('Failed to send read receipt:', error);
+            });
           }
         }
       } else {
@@ -612,6 +618,23 @@ const MessageListScreen = () => {
     }
   };
 
+  const handleSendBusinessCard = async (userId: string, nickname: string, avatar: string) => {
+    const businessCardMsg = new BusinessCardMessage(userId, nickname, avatar);
+    const messageToSend: SendMessageObject = {
+      conversationType: conversation.conversationType,
+      conversationId: conversation.conversationId,
+      content: businessCardMsg as any,
+    };
+
+    try {
+      const sentMessage = await JuggleIM.sendMessage(messageToSend);
+      setMessages(prev => [sentMessage, ...prev]);
+    } catch (error) {
+      console.error('Failed to send business card message:', error);
+      Alert.alert('Error', 'Failed to send business card message');
+    }
+  };
+
   // Auto-scroll to newest (index 0) after initial load
   useEffect(() => {
     if (!isLoading && messages.length > 0 && !didInitialScroll.current) {
@@ -670,6 +693,7 @@ const MessageListScreen = () => {
         onSendImage={handleSendImage}
         onSendFile={handleSendFile}
         onSendCard={handleSendCard}
+        onSendBusinessCard={handleSendBusinessCard}
         onVoicePress={() => setVoiceRecorderVisible(true)}
         onAtPress={handleAtPress}
       />

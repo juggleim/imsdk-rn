@@ -26,6 +26,7 @@ interface MoreMenuProps {
     onImage: () => void;
     onFile: () => void;
     onCard: () => void;
+    onBusinessCard: () => void;
 }
 
 const MoreMenu: React.FC<MoreMenuProps> = ({
@@ -35,6 +36,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({
     onImage,
     onFile,
     onCard,
+    onBusinessCard,
 }) => {
     const slideAnim = useRef(new Animated.Value(300)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -76,7 +78,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({
             label: '文件',
             onPress: () => {
                 onClose();
-                setTimeout(onFile, 300);
+                setTimeout(onFile, 100);
             },
             color: '#007AFF',
         },
@@ -85,9 +87,18 @@ const MoreMenu: React.FC<MoreMenuProps> = ({
             label: '卡片消息',
             onPress: () => {
                 onClose();
-                setTimeout(onCard, 300);
+                setTimeout(onCard, 100);
             },
             color: '#5856D6',
+        },
+        {
+            icon: '👤',
+            label: '名片',
+            onPress: () => {
+                onClose();
+                setTimeout(onBusinessCard, 100);
+            },
+            color: '#34C759',
         },
     ];
 
@@ -122,7 +133,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({
                                         key={index}
                                         style={styles.menuItem}
                                         onPress={option.onPress}
-                                        activeOpacity={0.7}>
+                                        activeOpacity={0.75}>
                                         <View
                                             style={[
                                                 styles.iconContainer,
@@ -171,7 +182,7 @@ const styles = StyleSheet.create({
         paddingTop: 10,
     },
     menuItem: {
-        width: (width - 60) / 2,
+        width: (width - 60) / 3,
         alignItems: 'center',
         paddingVertical: 20,
     },

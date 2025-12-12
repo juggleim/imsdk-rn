@@ -307,7 +307,7 @@ declare module "juggleim-rnsdk" {
 
   export interface ConversationInfo {
     conversation: Conversation;
-    unreadMessageCount: number;
+    unreadCount: number;
     isTop: boolean;
     isMute: boolean;
     lastMessage?: Message;

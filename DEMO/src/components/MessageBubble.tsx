@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from 'react-native';
 import {
   Message,
   TextMessageContent,
@@ -8,6 +8,8 @@ import {
   FileMessageContent,
 } from 'juggleim-rnsdk';
 import CardMessageBubble from './CardMessageBubble';
+import BusinessCardBubble from './BusinessCardBubble';
+import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 
 interface MessageBubbleProps {
   message: Message;
@@ -74,7 +76,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        const uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
+        console.log(imgContent);
+        let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
+        if (!uri.startsWith('http')) {
+          uri = Platform.OS === 'android' ? 'file://' + uri : uri;
+        }
 
         const originalWidth = imgContent.width || 0;
         const originalHeight = imgContent.height || 0;
@@ -187,14 +193,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'demo:textcard':
         return (
-          <View style={{ maxWidth: '100%', width: 270 }}>
+          <View style={{ maxWidth: '100%', width: 260 }}>
             <CardMessageBubble message={message} isSender={isOutgoing} />
+          </View>
+        );
+      case 'demo:businesscard':
+        return (
+          <View style={{ maxWidth: '100%', width: 260 }}>
+            <BusinessCardBubble message={message.content as any as BusinessCardMessage} isOutgoing={isOutgoing} />
           </View>
         );
       default:
         return (
           <Text style={styles.text}>
-            [Unsupported Message Type: {contentType}]
+            [Unsupported Message: {contentType}]
           </Text>
         );
     }

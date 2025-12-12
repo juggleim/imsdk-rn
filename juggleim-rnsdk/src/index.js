@@ -707,7 +707,6 @@ class JuggleIM {
       errorListener.remove();
       cancelListener.remove();
       console.error("sendImageMessage error:", error);
-      throw error;
     }
   }
 
@@ -784,7 +783,6 @@ class JuggleIM {
       errorListener.remove();
       cancelListener.remove();
       console.error("sendFileMessage error:", error);
-      throw error;
     }
   }
 
@@ -861,7 +859,6 @@ class JuggleIM {
       errorListener.remove();
       cancelListener.remove();
       console.error("sendVoiceMessage error:", error);
-      throw error;
     }
   }
 

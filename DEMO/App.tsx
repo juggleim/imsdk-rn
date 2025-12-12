@@ -7,6 +7,7 @@ import { getToken } from './src/utils/auth';
 import { ActivityIndicator, View } from 'react-native';
 import JuggleIM from 'juggleim-rnsdk';
 import { TextCardMessage } from './src/messages/TextCardMessage';
+import { BusinessCardMessage } from './src/messages/BusinessCardMessage';
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);
@@ -22,6 +23,7 @@ const App = () => {
         setInitialRoute('Main');
       }
       JuggleIM.registerCustomMessageType('demo:textcard', TextCardMessage);
+      JuggleIM.registerCustomMessageType('demo:businesscard', BusinessCardMessage);
       setInitializing(false);
     };
 

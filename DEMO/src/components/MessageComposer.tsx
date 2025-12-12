@@ -15,10 +15,12 @@ import {
   MediaType,
 } from 'react-native-image-picker';
 import { GroupMember } from '../api/groups';
+import { Friend } from '../api/friends';
 // import DocumentPicker from 'react-native-document-picker';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import MoreMenu from './MoreMenu';
 import CardMessageInput from './CardMessageInput';
+import FriendSelectionSheet from './FriendSelectionSheet';
 
 export interface MentionInfo {
   userId: string;
@@ -40,6 +42,7 @@ interface MessageComposerProps {
     size: number;
   }) => void;
   onSendCard?: (title: string, description: string, url: string) => void;
+  onSendBusinessCard?: (userId: string, nickname: string, avatar: string) => void;
   onAttachmentPress?: () => void;
   onCameraPress?: () => void;
   onVoicePress?: () => void;
@@ -59,6 +62,7 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
     onSendVoice,
     onSendFile,
     onSendCard,
+    onSendBusinessCard,
     onAttachmentPress,
     onCameraPress,
     onVoicePress,
@@ -69,6 +73,7 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showCardInput, setShowCardInput] = useState(false);
+  const [showFriendSelection, setShowFriendSelection] = useState(false);
 
   // Expose addMention method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -212,6 +217,12 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
     }
   };
 
+  const handleFriendSelect = (friend: Friend) => {
+    if (onSendBusinessCard) {
+      onSendBusinessCard(friend.user_id, friend.nickname, friend.avatar);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -280,12 +291,19 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
         onImage={handleImageSelection}
         onFile={handleFileSelection}
         onCard={() => setShowCardInput(true)}
+        onBusinessCard={() => setShowFriendSelection(true)}
       />
 
       <CardMessageInput
         visible={showCardInput}
         onClose={() => setShowCardInput(false)}
         onSend={handleSendCard}
+      />
+
+      <FriendSelectionSheet
+        visible={showFriendSelection}
+        onClose={() => setShowFriendSelection(false)}
+        onSelectFriend={handleFriendSelect}
       />
     </KeyboardAvoidingView>
   );

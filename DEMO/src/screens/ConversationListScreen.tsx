@@ -129,9 +129,9 @@ const ConversationItem = ({
             {hasMention && <Text style={styles.mentionIndicator}>[You were mentioned] </Text>}
             {lastMsgContent}
           </Text>
-          {!item.isMute && (item as any).unreadCount > 0 && (
+          {!item.isMute && item.unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{(item as any).unreadCount}</Text>
+              <Text style={styles.badgeText}>{item.unreadCount}</Text>
             </View>
           )}
           {item.isMute && (
@@ -307,7 +307,7 @@ const ConversationListScreen = () => {
       <ConversationItem
         item={item}
         onPress={(name) => {
-          navigation.navigate('MessageList', { conversation: item.conversation, title: name });
+          navigation.navigate('MessageList', { conversation: item.conversation, title: name, unreadCount: item.unreadCount });
         }}
         onLongPress={handleLongPress}
       />

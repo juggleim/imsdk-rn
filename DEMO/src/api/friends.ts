@@ -66,7 +66,6 @@ async function fetchData<T = any>(data: {
         return json.data;
     } catch (error) {
         console.error('fetchData error', error);
-        throw error;
     }
 }
 
