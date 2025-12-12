@@ -9,7 +9,7 @@ PODS:
     - hermes-engine/Pre-built (= 0.82.1)
   - hermes-engine/Pre-built (0.82.1)
   - JuggleIM (1.8.29)
-  - juggleim-rnsdk (0.0.23):
+  - juggleim-rnsdk (0.1.3):
     - JuggleIM (~> 1.8.29)
     - React-Core
   - RCT-Folly (2024.11.18.00):
@@ -2798,7 +2798,7 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 273e30e7fb618279934b0b95ffab60ecedb7acf5
   JuggleIM: f1ca701545871e263d115c976d59f7b551f0f4db
-  juggleim-rnsdk: d128077c2fd6a8b10259f7e8dcfb14f94194066e
+  juggleim-rnsdk: 1b13541069a321bf0efce4fabb2e3ea6a59e89b0
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: f17e2ebc07876ca9ab8eb6e4b0a4e4647497ae3a
   RCTRequired: e2c574c1b45231f7efb0834936bd609d75072b63
@@ -2868,11 +2868,11 @@ SPEC CHECKSUMS:
   ReactCodegen: 897bad2d2f722ff4dc46fc144f9cc018db0e2ce4
   ReactCommon: c5803af00bd3737dc1631749b1f1da5beba5b049
   RNCAsyncStorage: 302f2fac014fd450046c120567ca364632da682b
-  RNPermissions: b19f27b645fe3320ff4343db06463c7edeab4841
+  RNPermissions: b63e1b19666a371c738fabf19162b8bb29e9aa79
   RNScreens: 3693ec4bbc0065151b843269e50e9807644e9918
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 689c8e04277f3ad631e60fe2a08e41d411daf8eb
 
-PODFILE CHECKSUM: 9420f03da2c0643c82c052e77f8e9f4c7816a9c3
+PODFILE CHECKSUM: ba15c26f8d21193839181224d8ca6eb948f69ae1
 
 COCOAPODS: 1.16.0
