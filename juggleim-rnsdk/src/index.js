@@ -626,7 +626,7 @@ class JuggleIM {
       const localMsg = await JMI.sendMessage(message, messageId);
       return localMsg;
     } catch (error) {
-      callback.onError?.(null, -1);
+      callback.onError?.(JSON.stringify(error), -1);
       successListener.remove();
       errorListener.remove();
       console.error("sendMessage error:", error);

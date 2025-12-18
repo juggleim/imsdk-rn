@@ -19,7 +19,7 @@ import UserInfoManager from '../manager/UserInfoManager';
 interface MessageBubbleProps {
   message: Message;
   isOutgoing: boolean;
-  onLongPress?: () => void;
+  onLongPress?: (anchor: { x: number; y: number; width: number; height: number }) => void;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -27,6 +27,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOutgoing,
   onLongPress,
 }) => {
+  const bubbleRef = React.useRef<View>(null);
+
+  const handleLongPress = () => {
+    if (onLongPress && bubbleRef.current) {
+      // Measure the position relative to the window
+      bubbleRef.current.measureInWindow((x, y, width, height) => {
+        onLongPress({ x, y, width, height });
+      });
+    }
+  };
+
   const getQuotedMessagePreview = (quotedMsg: Message): string => {
     const contentType = quotedMsg.content.contentType;
     if (contentType === 'jg:text') {
@@ -83,8 +94,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   const renderContent = async () => {
+    console.log('renderContent', message.content);
     const { contentType } = message.content;
-    console.log('msg bubble', message.content);
     switch (contentType) {
       case 'jg:text':
         return (
@@ -283,13 +294,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </View>
         );
       case 'jgd:friendntf':
-        const friendNotifyMsg = message.content as FriendNotifyMessage;
-        const userInfo = await UserInfoManager.getUserInfo(message.senderUserId);
-        console.log('friendNotifyMsg', friendNotifyMsg, userInfo);
+        // const friendNotifyMsg = message.content as FriendNotifyMessage;
+        // const userInfo = await UserInfoManager.getUserInfo(message.senderUserId);
+        // console.log('friendNotifyMsg', friendNotifyMsg, userInfo);
         return (
           <View style={styles.systemMessageContainer}>
             <Text style={styles.systemMessageText}>
-              {userInfo?.nickname + (friendNotifyMsg.type === 0 ? '添加' : '通过') + '你为好友'}
+              {'好友通知'}
             </Text>
           </View>
         );
@@ -308,15 +319,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         styles.container,
         isOutgoing ? styles.outgoingContainer : styles.incomingContainer,
       ]}>
-      <TouchableOpacity
-        onLongPress={onLongPress}
-        activeOpacity={0.6}
-        style={[
-          styles.bubble,
-          isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
-        ]}>
-        {renderContent()}
-      </TouchableOpacity>
+      <View ref={bubbleRef} collapsable={false}>
+        <TouchableOpacity
+          onLongPress={handleLongPress}
+          activeOpacity={0.6}
+          style={[
+            styles.bubble,
+            isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
+          ]}>
+          {renderContent()}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

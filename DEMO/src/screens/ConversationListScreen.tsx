@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Alert,
-  ActionSheetIOS,
-  Platform,
 } from 'react-native';
 import JuggleIM, { ConversationInfo } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import UserInfoManager from '../manager/UserInfoManager';
+import CustomMenu from '../components/CustomMenu';
 
 const ConversationItem = ({
   item,
@@ -21,7 +19,7 @@ const ConversationItem = ({
 }: {
   item: ConversationInfo;
   onPress: (name: string) => void;
-  onLongPress: (item: ConversationInfo) => void;
+  onLongPress: (item: ConversationInfo, anchor: { x: number; y: number; width: number; height: number }) => void;
 }) => {
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
@@ -29,6 +27,7 @@ const ConversationItem = ({
 
   const [name, setName] = useState(conversationId);
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const itemRef = useRef<View>(null);
 
   // Get display content based on message type
   const getMessageDisplay = () => {
@@ -105,54 +104,67 @@ const ConversationItem = ({
     };
   }, [conversationId, conversationType]);
 
+  const handleLongPress = () => {
+    if (itemRef.current) {
+      itemRef.current.measureInWindow((x, y, width, height) => {
+        onLongPress(item, { x, y, width, height });
+      });
+    }
+  };
+
   return (
-    <TouchableOpacity
-      style={[
-        styles.itemContainer,
-        item.isTop && { backgroundColor: '#f2f2f2' },
-      ]}
-      onPress={() => onPress(name)}
-      onLongPress={() => onLongPress(item)}>
-      <View style={styles.avatar}>
-        {avatar ? (
-          <Image source={{ uri: avatar }} style={styles.avatarImage} />
-        ) : (
-          <Text style={styles.avatarText}>
-            {name.substring(0, 1).toUpperCase()}
-          </Text>
-        )}
-      </View>
-      <View style={styles.contentContainer}>
-        <View style={styles.topRow}>
-          <Text style={styles.name}>{name}</Text>
-          <View style={styles.timeContainer}>
-            <Text style={styles.time}>{time}</Text>
+    <View ref={itemRef} collapsable={false}>
+      <TouchableOpacity
+        style={[
+          styles.itemContainer,
+          item.isTop && { backgroundColor: '#f2f2f2' },
+        ]}
+        onPress={() => onPress(name)}
+        onLongPress={handleLongPress}>
+        <View style={styles.avatar}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>
+              {name.substring(0, 1).toUpperCase()}
+            </Text>
+          )}
+        </View>
+        <View style={styles.contentContainer}>
+          <View style={styles.topRow}>
+            <Text style={styles.name}>{name}</Text>
+            <View style={styles.timeContainer}>
+              <Text style={styles.time}>{time}</Text>
+            </View>
+          </View>
+          <View style={styles.bottomRow}>
+            <Text style={styles.message} numberOfLines={1}>
+              {hasMention && <Text style={styles.mentionIndicator}>[You were mentioned] </Text>}
+              {lastMsgContent}
+            </Text>
+            {!item.isMute && item.unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.unreadCount}</Text>
+              </View>
+            )}
+            {item.isMute && (
+              <Image
+                source={require('../assets/icons/mute.png')}
+                style={styles.muteIcon}
+              />
+            )}
           </View>
         </View>
-        <View style={styles.bottomRow}>
-          <Text style={styles.message} numberOfLines={1}>
-            {hasMention && <Text style={styles.mentionIndicator}>[You were mentioned] </Text>}
-            {lastMsgContent}
-          </Text>
-          {!item.isMute && item.unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.unreadCount}</Text>
-            </View>
-          )}
-          {item.isMute && (
-            <Image
-              source={require('../assets/icons/mute.png')}
-              style={styles.muteIcon}
-            />
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 };
 
 const ConversationListScreen = () => {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | undefined>(undefined);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationInfo | null>(null);
   const navigation = useNavigation<any>();
 
   const sortConversations = (list: ConversationInfo[]) => {
@@ -167,70 +179,45 @@ const ConversationListScreen = () => {
     });
   };
 
-  const handleLongPress = (item: ConversationInfo) => {
-    const options = [
-      '删除会话',
-      item.isTop ? '取消置顶' : '置顶',
-      item.isMute ? '取消免打扰' : '免打扰',
-      'Cancel',
-    ];
-    const destructiveButtonIndex = 0;
-    const cancelButtonIndex = 3;
+  const handleLongPress = (item: ConversationInfo, anchor: { x: number; y: number; width: number; height: number }) => {
+    setSelectedConversation(item);
+    setMenuAnchor(anchor);
+    setMenuVisible(true);
+  };
 
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex,
-          destructiveButtonIndex,
+  const getMenuOptions = () => {
+    if (!selectedConversation) return [];
+
+    return [
+      {
+        label: selectedConversation.isTop ? '取消置顶' : '置顶',
+        onPress: () => {
+          JuggleIM.setTop(selectedConversation.conversation, !selectedConversation.isTop);
+          setMenuVisible(false);
         },
-        buttonIndex => {
-          if (buttonIndex === 0) {
-            // Delete
-            JuggleIM.deleteConversationInfo(item.conversation, {
-              onSuccess: () => { },
-              onError: () => { },
-            });
-          } else if (buttonIndex === 1) {
-            // Top
-            JuggleIM.setTop(item.conversation, !item.isTop);
-          } else if (buttonIndex === 2) {
-            // Mute
-            JuggleIM.setMute(item.conversation, !item.isMute);
-          }
+        icon: require('../assets/icons/top.png'),
+      },
+      {
+        label: selectedConversation.isMute ? '取消免打扰' : '免打扰',
+        onPress: () => {
+          JuggleIM.setMute(selectedConversation.conversation, !selectedConversation.isMute);
+          setMenuVisible(false);
         },
-      );
-    } else {
-      Alert.alert(
-        'Options',
-        undefined,
-        [
-          {
-            text: '删除会话',
-            style: 'destructive',
-            onPress: () => {
-              JuggleIM.deleteConversationInfo(item.conversation, {
-                onSuccess: () => { },
-                onError: () => { },
-              });
-            },
-          },
-          {
-            text: item.isTop ? '取消置顶' : '置顶',
-            onPress: () => JuggleIM.setTop(item.conversation, !item.isTop),
-          },
-          {
-            text: item.isMute ? '取消免打扰' : '免打扰',
-            onPress: () => JuggleIM.setMute(item.conversation, !item.isMute),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-        { cancelable: true },
-      );
-    }
+        icon: require('../assets/icons/mute.png'),
+      },
+      {
+        label: '删除会话',
+        destructive: true,
+        onPress: () => {
+          setMenuVisible(false);
+          JuggleIM.deleteConversationInfo(selectedConversation.conversation, {
+            onSuccess: () => { },
+            onError: () => { },
+          });
+        },
+        icon: require('../assets/icons/delete_light.png'),
+      }
+    ];
   };
 
   useEffect(() => {
@@ -335,6 +322,12 @@ const ConversationListScreen = () => {
             <Text style={styles.emptyText}>No conversations yet</Text>
           </View>
         }
+      />
+      <CustomMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        options={getMenuOptions()}
+        anchor={menuAnchor}
       />
     </View>
   );

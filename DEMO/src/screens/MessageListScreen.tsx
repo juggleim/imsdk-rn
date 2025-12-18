@@ -31,7 +31,11 @@ import { getToken, USER_ID_KEY } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
 import MessageBubble from '../components/MessageBubble';
-import CustomMenu from '../components/CustomMenu';
+import GridMenu from '../components/GridMenu';
+
+
+
+
 import VoiceRecorder from '../components/VoiceRecorder';
 import MemberSelectionSheet from '../components/MemberSelectionSheet';
 import CardMessageBubble from '../components/CardMessageBubble';
@@ -85,6 +89,7 @@ const MessageItem = ({
     };
   }, [item.senderUserId]);
 
+
   // Render system messages centered without avatars
   if (isSystemMessage) {
     return (
@@ -92,7 +97,7 @@ const MessageItem = ({
         <MessageBubble
           message={item}
           isOutgoing={isOutgoing}
-          onLongPress={() => onLongPress(item)}
+          onLongPress={(anchor) => onLongPress(item, anchor)}
         />
       </View>
     );
@@ -119,7 +124,7 @@ const MessageItem = ({
       <MessageBubble
         message={item}
         isOutgoing={isOutgoing}
-        onLongPress={() => onLongPress(item)}
+        onLongPress={(anchor) => onLongPress(item, anchor)}
       />
 
       {isOutgoing && (
@@ -150,7 +155,7 @@ const MessageListScreen = () => {
   const [refreshingNew, setRefreshingNew] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | undefined>(undefined);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [voiceRecorderVisible, setVoiceRecorderVisible] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -237,7 +242,6 @@ const MessageListScreen = () => {
   }, [conversation]);
 
   const loadMessages = async () => {
-    console.log('Loading messages for', conversation.conversationId);
     setIsLoading(true);
     setHasMore(true);
     try {
@@ -253,6 +257,8 @@ const MessageListScreen = () => {
         setMessages(sorted);
         if (result.messages.length < 20) {
           setHasMore(false);
+        } else {
+          setHasMore(true);
         }
 
         // Send read receipt for loaded messages if there are any
@@ -280,18 +286,20 @@ const MessageListScreen = () => {
   };
 
   const loadMoreMessages = async () => {
-    if (messages.length === 0 || !hasMore) {
+    if (messages.length === 0) {
+      console.log('No messages to load more');
       return;
     }
-    if (loadingMore) {
+    if (loadingMore || !hasMore || isLoading) {
       return;
     }
     setLoadingMore(true);
     try {
-      // messages state is newest->oldest, so last element is the oldest
-      const oldestMessage = messages[messages.length - 1];
-      // Request messages older than the oldestMessage timestamp (exclusive)
-      const startTime = Math.max(0, oldestMessage.timestamp - 1);
+      let startTime = 0;
+      if (messages.length > 0) {
+        const oldestMessage = messages[messages.length - 1];
+        startTime = Math.max(0, oldestMessage.timestamp - 1);
+      }
       console.log('Requesting messages older than', startTime);
       const result = await JuggleIM.getMessageList(conversation, 0, {
         count: 20,
@@ -323,10 +331,11 @@ const MessageListScreen = () => {
   };
 
   const loadNewMessages = async () => {
+    console.log('Loading new messages', messages.length);
     if (messages.length === 0) {
       return;
     }
-    if (refreshingNew) {
+    if (refreshingNew || isLoading) {
       return;
     }
     setRefreshingNew(true);
@@ -338,6 +347,7 @@ const MessageListScreen = () => {
         count: 20,
         startTime,
       });
+      console.log('Loaded new messages:', result);
       if (result && result.messages && result.messages.length > 0) {
         const combined = [...result.messages, ...messages];
         const map = new Map<number, Message>();
@@ -421,18 +431,18 @@ const MessageListScreen = () => {
       referredMessageId: quotedMessage?.messageId,
     };
 
-    try {
-      const sentMessage = await JuggleIM.sendMessage(messageToSend);
-      // Insert newest message at the start (we keep newest->oldest)
-      setMessages(prev => [sentMessage, ...prev]);
-      // Clear quote after sending
-      if (quotedMessage) {
-        setQuotedMessage(null);
-        messageComposerRef.current?.setQuotedMessage(null, '');
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      Alert.alert('Error', 'Failed to send message');
+    JuggleIM.sendMessage(messageToSend, {
+      onSuccess: (message: Message) => {
+        console.log('Message sent successfully', message);
+        setMessages(prev => [message, ...prev]);
+      },
+      onError: (message: Message, errorCode: number) => {
+        console.error('Failed to send message:', errorCode);
+      },
+    });
+    if (quotedMessage) {
+      setQuotedMessage(null);
+      messageComposerRef.current?.setQuotedMessage(null, '');
     }
   };
 
@@ -506,14 +516,10 @@ const MessageListScreen = () => {
     ]);
   };
 
-  const handleMessageLongPress = (message: Message, event?: any) => {
+  const handleMessageLongPress = (message: Message, anchor?: { x: number; y: number; width: number; height: number }) => {
     setSelectedMessage(message);
-    // Get touch position if available
-    if (event?.nativeEvent) {
-      setMenuPosition({
-        x: event.nativeEvent.pageX,
-        y: event.nativeEvent.pageY,
-      });
+    if (anchor) {
+      setMenuAnchor(anchor);
     }
     setMenuVisible(true);
   };
@@ -527,7 +533,7 @@ const MessageListScreen = () => {
     const isOutgoing = selectedMessage.direction === 1;
     const isTextMessage = selectedMessage.content.contentType === 'jg:text';
 
-    // Copy option for text messages
+    // Copy
     if (isTextMessage) {
       options.push({
         label: '复制',
@@ -537,13 +543,23 @@ const MessageListScreen = () => {
           );
           setMenuVisible(false);
         },
+        icon: require('../assets/icons/copy.png'),
       });
     }
 
-    // Delete option for all messages
+    // Forward (placeholder)
+    options.push({
+      label: '转发',
+      onPress: () => {
+        setMenuVisible(false);
+        Alert.alert('转发', '功能即将推出');
+      },
+      icon: require('../assets/icons/send_message.png'),
+    });
+
+    // Delete
     options.push({
       label: '删除',
-      destructive: true,
       onPress: () => {
         setMenuVisible(false);
         JuggleIM.deleteMessagesByClientMsgNoList(conversation, [
@@ -559,36 +575,33 @@ const MessageListScreen = () => {
             Alert.alert('Error', 'Failed to delete message');
           });
       },
+      icon: require('../assets/icons/delete_light.png'),
     });
 
-    // Quote option for all messages
+    // Quote
     options.push({
       label: '引用',
       onPress: async () => {
-        // Capture these values before any async operations
         const composerRef = messageComposerRef.current;
         const messageToQuote = selectedMessage;
 
         setMenuVisible(false);
 
-        // Get sender name
         let senderName = messageToQuote.senderUserId;
         const userInfo = await UserInfoManager.getUserInfo(messageToQuote.senderUserId);
         if (userInfo) {
           senderName = userInfo.nickname || userInfo.user_id;
         }
 
-        // Use the captured ref
         if (composerRef) {
           setQuotedMessage(messageToQuote);
           composerRef.setQuotedMessage(messageToQuote, senderName);
-        } else {
-          console.error('MessageComposer ref is null');
         }
       },
+      icon: require('../assets/icons/refer.png'),
     });
 
-    // Translate option for text messages (placeholder)
+    // Translate
     if (isTextMessage) {
       options.push({
         label: '翻译',
@@ -596,10 +609,11 @@ const MessageListScreen = () => {
           setMenuVisible(false);
           Alert.alert('翻译', '翻译功能即将推出');
         },
+        icon: require('../assets/icons/translate.png'),
       });
     }
 
-    // Recall option for outgoing messages
+    // Recall
     if (isOutgoing) {
       options.push({
         label: '撤回',
@@ -616,10 +630,11 @@ const MessageListScreen = () => {
               Alert.alert('Error', 'Failed to recall message');
             });
         },
+        icon: require('../assets/icons/recall.png'),
       });
     }
 
-    // Edit option for outgoing text messages
+    // Edit 
     if (isOutgoing && isTextMessage) {
       options.push({
         label: '编辑',
@@ -628,6 +643,7 @@ const MessageListScreen = () => {
           setEditingMessage(selectedMessage);
           messageComposerRef.current?.setEditingMessage(selectedMessage);
         },
+        icon: require('../assets/icons/edit.png'),
       });
     }
 
@@ -721,8 +737,15 @@ const MessageListScreen = () => {
     };
 
     try {
-      const sentMessage = await JuggleIM.sendMessage(messageToSend);
-      setMessages(prev => [sentMessage, ...prev]);
+      JuggleIM.sendMessage(messageToSend, {
+        onSuccess: (message: Message) => {
+          console.log('Message sent successfully', message);
+          setMessages(prev => [message, ...prev]);
+        },
+        onError: (message: Message, errorCode: number) => {
+          console.error('Failed to send message:', errorCode);
+        },
+      });
     } catch (error) {
       console.error('Failed to send card message:', error);
       Alert.alert('Error', 'Failed to send card message');
@@ -738,8 +761,15 @@ const MessageListScreen = () => {
     };
 
     try {
-      const sentMessage = await JuggleIM.sendMessage(messageToSend);
-      setMessages(prev => [sentMessage, ...prev]);
+      JuggleIM.sendMessage(messageToSend, {
+        onSuccess: (message: Message) => {
+          console.log('Message sent successfully', message);
+          setMessages(prev => [message, ...prev]);
+        },
+        onError: (message: Message, errorCode: number) => {
+          console.error('Failed to send message:', errorCode);
+        },
+      });
     } catch (error) {
       console.error('Failed to send business card message:', error);
       Alert.alert('Error', 'Failed to send business card message');
@@ -784,17 +814,17 @@ const MessageListScreen = () => {
         }
         // When user scrolls to the top (older messages), load more
         onEndReached={loadMoreMessages}
-        onEndReachedThreshold={0}
+        onEndReachedThreshold={0.5}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps={Platform.OS === 'ios' ? 'handled' : 'always'}
-        // Show initial loading indicator at the top (since list is inverted)
-        ListHeaderComponent={
+        // Inverted List: ListFooterComponent is at the TOP (visually). Use this for "Loading History" spinner.
+        ListFooterComponent={
           loadingMore ? (
             <ActivityIndicator style={styles.spinner} />
           ) : null
         }
-        // Show overall loading when first loading messages at the bottom
-        ListFooterComponent={isLoading ? <ActivityIndicator style={styles.spinner} /> : null}
+        // Inverted List: ListHeaderComponent is at the BOTTOM (visually).
+        ListHeaderComponent={null}
       />
 
       <MessageComposer
@@ -810,11 +840,11 @@ const MessageListScreen = () => {
         onAtPress={handleAtPress}
       />
 
-      <CustomMenu
+      <GridMenu
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
         options={getMenuOptions()}
-        position={menuPosition}
+        anchor={menuAnchor}
       />
 
       <VoiceRecorder

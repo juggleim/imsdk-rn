@@ -4,6 +4,10 @@ import com.facebook.react.bridge.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.Iterator;
 
 /**
  * 通用的 Java ↔ React Native 类型转换工具
@@ -169,6 +173,81 @@ public class RNTypeConverter {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static WritableMap stringToWritableMap(String json) {
+        WritableMap map = new WritableNativeMap();
+        if (json == null || json.isEmpty()) return map;
+
+        try {
+            JSONObject jsonObject = new JSONObject(json);
+            convertJsonObject(jsonObject, map);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    private static void convertJsonObject(JSONObject jsonObject, WritableMap map)
+            throws JSONException {
+
+        Iterator<String> keys = jsonObject.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = jsonObject.get(key);
+
+            if (value == JSONObject.NULL) {
+                map.putNull(key);
+            } else if (value instanceof String) {
+                map.putString(key, (String) value);
+            } else if (value instanceof Integer) {
+                map.putInt(key, (Integer) value);
+            } else if (value instanceof Long) {
+                map.putDouble(key, ((Long) value).doubleValue());
+            } else if (value instanceof Double) {
+                map.putDouble(key, (Double) value);
+            } else if (value instanceof Boolean) {
+                map.putBoolean(key, (Boolean) value);
+            } else if (value instanceof JSONObject) {
+                WritableMap nested = new WritableNativeMap();
+                convertJsonObject((JSONObject) value, nested);
+                map.putMap(key, nested);
+            } else if (value instanceof JSONArray) {
+                WritableArray array = new WritableNativeArray();
+                convertJsonArray((JSONArray) value, array);
+                map.putArray(key, array);
+            }
+        }
+    }
+
+    private static void convertJsonArray(JSONArray jsonArray, WritableArray array)
+            throws JSONException {
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            Object value = jsonArray.get(i);
+
+            if (value == JSONObject.NULL) {
+                array.pushNull();
+            } else if (value instanceof String) {
+                array.pushString((String) value);
+            } else if (value instanceof Integer) {
+                array.pushInt((Integer) value);
+            } else if (value instanceof Long) {
+                array.pushDouble(((Long) value).doubleValue());
+            } else if (value instanceof Double) {
+                array.pushDouble((Double) value);
+            } else if (value instanceof Boolean) {
+                array.pushBoolean((Boolean) value);
+            } else if (value instanceof JSONObject) {
+                WritableMap nested = new WritableNativeMap();
+                convertJsonObject((JSONObject) value, nested);
+                array.pushMap(nested);
+            } else if (value instanceof JSONArray) {
+                WritableArray nestedArray = new WritableNativeArray();
+                convertJsonArray((JSONArray) value, nestedArray);
+                array.pushArray(nestedArray);
+            }
         }
     }
 }
