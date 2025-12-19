@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  RefreshControl,
 } from 'react-native';
 import JuggleIM, { ConversationInfo } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
@@ -45,13 +46,14 @@ const ConversationItem = ({
         return '[Video]';
       case 'jg:voice':
         return '[Voice]';
-      case 'demo:textcard':
-        return '[TextCard]';
       case 'jgd:grpntf':
         return '[群通知]';
       case 'jgd:friendntf':
-        console.log('content', content);
         return '[好友通知]';
+      case 'demo:businesscard':
+        return '[BusinessCard]';
+      case 'demo:textcard':
+        return '[TextCard]';
       default:
         return '[Message]';
     }
@@ -162,6 +164,7 @@ const ConversationItem = ({
 
 const ConversationListScreen = () => {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | undefined>(undefined);
   const [selectedConversation, setSelectedConversation] = useState<ConversationInfo | null>(null);
@@ -297,6 +300,12 @@ const ConversationListScreen = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadConversations();
+    setRefreshing(false);
+  };
+
   const renderItem = ({ item }: { item: ConversationInfo }) => {
     return (
       <ConversationItem
@@ -316,6 +325,9 @@ const ConversationListScreen = () => {
         renderItem={renderItem}
         keyExtractor={item =>
           item.conversation?.conversationId || Math.random().toString()
+        }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

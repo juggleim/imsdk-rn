@@ -1167,8 +1167,8 @@ RCT_EXPORT_METHOD(getMessages : (NSDictionary *)conversationDict direction : (
     }
 
     JPullDirection pullDirection =
-        direction == 0 ? JPullDirectionOlder : JPullDirectionNewer;
-
+        direction == 0 ? JPullDirectionNewer : JPullDirectionOlder;
+      NSLog(@"getMessages start");
     [JIM.shared.messageManager
         getMessages:conversation
           direction:pullDirection

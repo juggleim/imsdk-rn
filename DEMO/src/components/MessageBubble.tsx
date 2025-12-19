@@ -94,7 +94,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   const renderContent = async () => {
-    console.log('renderContent', message.content);
     const { contentType } = message.content;
     switch (contentType) {
       case 'jg:text':
@@ -151,7 +150,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        console.log(imgContent);
         let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
         if (!uri.startsWith('http')) {
           uri = Platform.OS === 'android' ? 'file://' + uri : uri;
