@@ -25,6 +25,8 @@ import JuggleIM, {
   MergeMessagePreviewUnit,
   MessageMentionInfo,
   UserInfo,
+  JuggleIMCall,
+  CallMediaType,
 } from 'juggleim-rnsdk';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getToken, USER_ID_KEY } from '../utils/auth';
@@ -233,9 +235,20 @@ const MessageListScreen = () => {
         console.log('onMessageDestroyTimeUpdate', messageId, conversation, destroyTiem);
       }
     })
+
+
+    // Incoming call listener
+    const callReceiveListener = JuggleIMCall.addReceiveListener({
+      onCallReceive: (session) => {
+        console.log('Incoming call received', session);
+        navigation.navigate('VideoCall', { callId: session.callId, isIncoming: true });
+      }
+    });
+
     return () => {
       msgUpdateListener();
       msgDestoryLisener();
+      callReceiveListener();
     };
   }, [conversation]);
 
@@ -567,7 +580,7 @@ const MessageListScreen = () => {
   };
 
   const renderMessageItem = ({ item }: { item: Message }) => {
-    console.log('renderMessageItem', item.messageId);
+    // console.log('renderMessageItem', item.messageId);
     return (
       <MessageItem
         item={item}
@@ -713,6 +726,20 @@ const MessageListScreen = () => {
         }
         onBack={() => navigation.goBack()}
         onInfoPress={() => navigation.navigate('ConversationInfo', { conversation, title })}
+        onVideoCallPress={() => {
+          if (conversation.conversationType === 1) { // Single Chat
+            JuggleIMCall.startSingleCall(conversation.conversationId, CallMediaType.VIDEO)
+              .then(session => {
+                navigation.navigate('VideoCall', { callId: session.callId, isIncoming: false });
+              })
+              .catch(e => {
+                console.error('Start call failed', e);
+                Alert.alert('Error', 'Start call failed');
+              });
+          } else { // Group Chat
+            navigation.navigate('CallSelectMember', { conversationId: conversation.conversationId });
+          }
+        }}
       />
 
       <FlatList

@@ -9,6 +9,7 @@ interface MessageHeaderProps {
   subtitle?: string;
   onBack?: () => void;
   onInfoPress?: () => void;
+  onVideoCallPress?: () => void;
 }
 
 const MessageHeader: React.FC<MessageHeaderProps> = ({
@@ -17,6 +18,7 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
   subtitle,
   onBack,
   onInfoPress,
+  onVideoCallPress,
 }) => {
   const navigation = useNavigation();
 
@@ -50,6 +52,14 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
       </View>
 
       <View style={styles.rightContainer}>
+        {onVideoCallPress && (
+          <TouchableOpacity style={styles.actionButton} onPress={onVideoCallPress}>
+            <Image
+              source={require('../assets/icons/video_call.png')}
+              style={styles.actionIcon}
+            />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.actionButton} onPress={onInfoPress}>
           <Image source={require('../assets/icons/Info.png')} style={styles.actionIcon} />
         </TouchableOpacity>
@@ -98,11 +108,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    padding: 8,
+    padding: 10,
   },
   actionIcon: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     tintColor: '#3399ff',
   },
 });

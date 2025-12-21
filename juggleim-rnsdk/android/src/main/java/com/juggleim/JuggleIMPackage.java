@@ -17,11 +17,14 @@ public class JuggleIMPackage implements ReactPackage {
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new JuggleIMManager(reactContext));
+        modules.add(new com.juggleim.call.JuggleIMCallModule(reactContext));
         return modules;
     }
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        return Collections.emptyList();
+        List<ViewManager> managers = new ArrayList<>();
+        managers.add(new com.juggleim.call.view.RCTZegoSurfaceViewManager());
+        return managers;
     }
 }

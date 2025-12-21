@@ -985,4 +985,5 @@ export class CustomMessageContent {
   }
 }
 
+export * from './call';
 export default JuggleIM;

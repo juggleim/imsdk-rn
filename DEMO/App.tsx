@@ -5,7 +5,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { APP_KEY, SERVER_URLS } from './src/api/config';
 import { getToken } from './src/utils/auth';
 import { ActivityIndicator, View } from 'react-native';
-import JuggleIM from 'juggleim-rnsdk';
+import JuggleIM, { JuggleIMCall } from 'juggleim-rnsdk';
 import { TextCardMessage } from './src/messages/TextCardMessage';
 import { BusinessCardMessage } from './src/messages/BusinessCardMessage';
 import { GroupNotifyMessage } from './src/messages/GroupNotifyMessage';
@@ -28,6 +28,7 @@ const App = () => {
       JuggleIM.registerCustomMessageType('demo:businesscard', BusinessCardMessage);
       JuggleIM.registerCustomMessageType('jgd:grpntf', GroupNotifyMessage);
       JuggleIM.registerCustomMessageType('jgd:friendntf', FriendNotifyMessage);
+      JuggleIMCall.initZegoEngine(1881186044);
       setInitializing(false);
     };
 

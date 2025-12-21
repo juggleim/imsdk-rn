@@ -14,6 +14,8 @@ import PublishMomentScreen from '../screens/PublishMomentScreen';
 import ConversationInfoScreen from '../screens/ConversationInfoScreen';
 import GroupAnnouncementScreen from '../screens/GroupAnnouncementScreen';
 import CreateGroupScreen from '../screens/CreateGroupScreen';
+import VideoCallScreen from '../screens/VideoCallScreen';
+import CallSelectMemberScreen from '../screens/CallSelectMemberScreen';
 import { Image } from 'react-native';
 import AddButton from '../components/AddButton';
 import { useNavigation } from '@react-navigation/native';
@@ -79,6 +81,8 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="ConversationInfo" component={ConversationInfoScreen} options={{ headerShown: true, title: '聊天信息' }} />
       <Stack.Screen name="GroupAnnouncement" component={GroupAnnouncementScreen} options={{ headerShown: true, title: '群公告' }} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ headerShown: true, title: '创建群组' }} />
+      <Stack.Screen name="VideoCall" component={VideoCallScreen} options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="CallSelectMember" component={CallSelectMemberScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 };
