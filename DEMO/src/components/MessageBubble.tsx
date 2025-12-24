@@ -277,17 +277,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </View>
         );
       case 'jgd:grpntf':
-        const groupNotifyMsg = message.content as any as GroupNotifyMessage;
-        const [currentUserId, setCurrentUserId] = React.useState<string>('');
-        React.useEffect(() => {
-          AsyncStorage.getItem(USER_ID_KEY).then(userId => {
-            if (userId) setCurrentUserId(userId);
-          });
-        }, []);
         return (
           <View style={styles.systemMessageContainer}>
             <Text style={styles.systemMessageText}>
-              {groupNotifyMsg.description ? groupNotifyMsg.description(currentUserId) : '[群通知]'}
+              {'[群通知]'}
             </Text>
           </View>
         );

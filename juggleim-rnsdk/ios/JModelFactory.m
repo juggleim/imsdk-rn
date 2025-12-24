@@ -158,11 +158,13 @@
   if (info.userId) {
     [dic setObject:info.userId forKey:@"userId"];
   }
+  // Map iOS userName to JS 'nickname' field
   if (info.userName) {
-    [dic setObject:info.userName forKey:@"userName"];
+    [dic setObject:info.userName forKey:@"nickname"];
   }
+  // Map iOS portrait to JS 'avatar' field
   if (info.portrait) {
-    [dic setObject:info.portrait forKey:@"portrait"];
+    [dic setObject:info.portrait forKey:@"avatar"];
   }
   if (info.extraDic) {
     [dic setObject:info.extraDic forKey:@"extraMap"];
@@ -326,8 +328,9 @@
   if (callSession.owner) {
     [dic setObject:callSession.owner forKey:@"owner"];
   }
+  // Map iOS inviterId to JS 'inviter' field
   if (callSession.inviterId) {
-    [dic setObject:callSession.inviterId forKey:@"inviterId"];
+    [dic setObject:callSession.inviterId forKey:@"inviter"];
   }
   if (callSession.extra) {
     [dic setObject:callSession.extra forKey:@"extra"];
@@ -339,6 +342,12 @@
     [memberDicArray addObject:memberDic];
   }
   [dic setObject:memberDicArray forKey:@"members"];
+
+  // Add currentMember field
+  if (callSession.currentCallMember) {
+    [dic setObject:[self callMemberToDic:callSession.currentCallMember]
+            forKey:@"currentMember"];
+  }
 
   return [dic copy];
 }

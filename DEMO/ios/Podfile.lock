@@ -9,9 +9,13 @@ PODS:
     - hermes-engine/Pre-built (= 0.82.1)
   - hermes-engine/Pre-built (0.82.1)
   - JuggleIM (1.8.30)
-  - juggleim-rnsdk (0.1.5):
+  - juggleim-rnsdk (0.1.6):
     - JuggleIM (~> 1.8.30)
+    - JZegoCall (= 1.8.13.1)
     - React-Core
+  - JZegoCall (1.8.13.1):
+    - JuggleIM
+    - ZegoExpressEngine
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2538,6 +2542,7 @@ PODS:
     - Yoga
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
+  - ZegoExpressEngine (3.23.0)
 
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
@@ -2625,8 +2630,10 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - JuggleIM
+    - JZegoCall
     - React-Codegen
     - SocketRocket
+    - ZegoExpressEngine
 
 EXTERNAL SOURCES:
   boost:
@@ -2798,7 +2805,8 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 273e30e7fb618279934b0b95ffab60ecedb7acf5
   JuggleIM: fab4251eb3cfc45fc3ecd6dfc707725e1d51bae9
-  juggleim-rnsdk: dbd4d54ed870792c03747f61c8c7240391803a65
+  juggleim-rnsdk: aa18b0eaf54759d27981d5371d5079d2e98a200e
+  JZegoCall: a8803b796b15864ec995abb650598d393d28132c
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: f17e2ebc07876ca9ab8eb6e4b0a4e4647497ae3a
   RCTRequired: e2c574c1b45231f7efb0834936bd609d75072b63
@@ -2872,6 +2880,7 @@ SPEC CHECKSUMS:
   RNScreens: 3693ec4bbc0065151b843269e50e9807644e9918
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 689c8e04277f3ad631e60fe2a08e41d411daf8eb
+  ZegoExpressEngine: 3849d6990f25d20dca2a8f0e5b6c5c6efa970350
 
 PODFILE CHECKSUM: ba15c26f8d21193839181224d8ca6eb948f69ae1
 

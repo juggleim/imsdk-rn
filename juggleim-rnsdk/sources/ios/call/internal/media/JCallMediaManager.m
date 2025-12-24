@@ -1,0 +1,165 @@
+//
+//  JCallMediaManager.m
+//  JuggleIM
+//
+//  Created by Fei Li on 2024/10/31.
+//
+
+#import "JCallMediaManager.h"
+#import "JCallMediaEngineProtocol.h"
+#import "JIM.h"
+
+@interface JCallMediaManager () <JCallMediaEngineDelegate>
+@property (nonatomic, strong) id<JCallMediaEngineProtocol> engine;
+@property (nonatomic, weak) id<JCallMediaDelegate> delegate;
+@end
+
+@implementation JCallMediaManager
+
+static JCallMediaManager *_instance;
+
++ (instancetype)shared {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instance = [[self alloc] init];
+    });
+    return _instance;
+}
+
+- (void)initZegoEngineWith:(int)appId appSign:(NSString *)appSign {
+    Class zegoEngineClass = NSClassFromString(@"JCallMediaZegoEngine");
+    self.engine = [[zegoEngineClass alloc] init];
+    if ([self.engine respondsToSelector:@selector(createZegoEngineWith:appSign:)]) {
+        [self.engine performSelector:@selector(createZegoEngineWith:appSign:) withObject:@(appId) withObject:appSign];
+    }
+    [self.engine setDelegate:self];
+}
+
+- (void)initLiveKitEngine {
+    Class liveKitEngineClass = NSClassFromString(@"JCallMediaLiveKitEngine");
+    self.engine = [[liveKitEngineClass alloc] init];
+    [self.engine setDelegate:self];
+}
+
+- (void)initAgoraEngineWith:(NSString *)appId {
+    Class agoraEngineClass = NSClassFromString(@"JCallMediaAgoraEngine");
+    self.engine = [[agoraEngineClass alloc] init];
+    [self.engine createAgoraEngineWith:appId];
+    [self.engine setDelegate:self];
+}
+
+- (void)joinRoom:(JCallSessionImpl *)callSession
+        complete:(void (^)(int, NSDictionary *))completeBlock {
+    JCallMediaRoom *room = [[JCallMediaRoom alloc] init];
+    room.roomId = callSession.callId;
+    JCallMediaUser *user = [[JCallMediaUser alloc] init];
+    user.userId = JIM.shared.currentUserId;
+    JCallMediaRoomConfig *config = [[JCallMediaRoomConfig alloc] init];
+    config.isUserStatusNotify = YES;
+    config.token = callSession.token;
+    config.url = callSession.url;
+    
+    [self.engine joinRoom:room
+                     user:user
+                   config:config
+                 complete:^(int errorCode, NSDictionary *data) {
+        if (errorCode == 0) {
+            self.delegate = callSession;
+        }
+        if (completeBlock) {
+            completeBlock(errorCode, data);
+        }
+    }];
+}
+
+- (void)leaveRoom:(NSString *)callId {
+    self.delegate = nil;
+    [self.engine leaveRoom:callId];
+}
+
+- (void)enableCamera:(BOOL)isEnable {
+    [self.engine enableCamera:isEnable];
+}
+
+- (void)startPreview:(UIView *)view {
+    [self.engine startPreview:view];
+}
+
+- (void)stopPreview {
+    [self.engine stopPreview];
+}
+
+- (void)setVideoView:(UIView *)view roomId:(NSString *)roomId userId:(NSString *)userId {
+    [self.engine setVideoView:view roomId:roomId userId:userId];
+}
+
+- (void)muteMicrophone:(BOOL)isMute {
+    [self.engine muteMicrophone:isMute];
+}
+
+- (void)muteSpeaker:(BOOL)isMute {
+    [self.engine muteSpeaker:isMute];
+}
+
+- (void)setSpeakerEnable:(BOOL)isEnable {
+    [self.engine setSpeakerEnable:isEnable];
+}
+
+- (void)useFrontCamera:(BOOL)isEnable {
+    [self.engine useFrontCamera:isEnable];
+}
+
+- (void)enableAEC:(BOOL)isEnable {
+    [self.engine enableAEC:isEnable];
+}
+
+- (void)setVideoDenoiseParams:(JCallVideoDenoiseParams *)params {
+    [self.engine setVideoDenoiseParams:params];
+}
+
+#pragma mark - JCallMediaEngineDelegate
+- (UIView *)viewForUserId:(NSString *)userId {
+    if ([self.delegate respondsToSelector:@selector(viewForUserId:)]) {
+        return [self.delegate viewForUserId:userId];
+    }
+    return nil;
+}
+
+- (UIView *)viewForSelf {
+    if ([self.delegate respondsToSelector:@selector(viewForSelf)]) {
+        return [self.delegate viewForSelf];
+    }
+    return nil;
+}
+
+- (void)usersDidConnect:(NSArray<NSString *> *)userIdList {
+    if ([self.delegate respondsToSelector:@selector(usersDidConnect:)]) {
+        [self.delegate usersDidConnect:userIdList];
+    }
+}
+
+- (void)userCamaraDidChange:(BOOL)enable userId:(NSString *)userId {
+    if ([self.delegate respondsToSelector:@selector(userCamaraDidChange:userId:)]) {
+        [self.delegate userCamaraDidChange:enable userId:userId];
+    }
+}
+
+- (void)userMicrophoneDidChange:(BOOL)enable userId:(NSString *)userId {
+    if ([self.delegate respondsToSelector:@selector(userMicrophoneDidChange:userId:)]) {
+        [self.delegate userMicrophoneDidChange:enable userId:userId];
+    }
+}
+
+- (void)soundLevelDidUpdate:(NSDictionary<NSString *,NSNumber *> *)soundLevels {
+    if ([self.delegate respondsToSelector:@selector(soundLevelDidUpdate:)]) {
+        [self.delegate soundLevelDidUpdate:soundLevels];
+    }
+}
+
+- (void)videoFirstFrameDidRender:(NSString *)userId {
+    if ([self.delegate respondsToSelector:@selector(videoFirstFrameDidRender:)]) {
+        [self.delegate videoFirstFrameDidRender:userId];
+    }
+}
+
+@end

@@ -292,10 +292,13 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
             try {
                 int uiManagerType = ViewUtil.getUIManagerType(viewTag);
                 UIManager uiManager = UIManagerHelper.getUIManager(mReactContext, uiManagerType);
+                android.view.View view = uiManager.resolveView(viewTag);
                 Log.d("JuggleIMCall",
                         "viewTag: " + viewTag + ", uiManagerType: " + uiManagerType + ", uiManager: " + uiManager
-                                + ", view: " + uiManager.resolveView(viewTag));
-                android.view.View view = uiManager.resolveView(viewTag);
+                                + ", view: " + view);
+                if (view == null) {
+                    return;
+                }
                 session.startPreview(((com.juggleim.call.view.ZegoSurfaceView) view).getView());
             } catch (Exception e) {
                 e.printStackTrace();
