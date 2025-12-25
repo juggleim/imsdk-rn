@@ -358,7 +358,7 @@ export default class JuggleIM {
   /**
    * 获取历史消息
    * @param {Conversation} conversation 会话
-   * @param {number} direction 拉取方向，0表示从startTime往后的消息，1表示从startTime往前的消息
+   * @param {number} direction 拉取方向，0 比startTime更新的消息，1 比startTime更旧的消息
    * @param {GetMessageOptions} options 获取消息选项
    * @returns {Promise<MessageResponse>} 消息响应对象，包含消息列表、时间戳和是否有更多消息
    */

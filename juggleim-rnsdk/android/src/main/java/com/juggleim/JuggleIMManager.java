@@ -1066,9 +1066,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 getOptions.setStartTime((long) options.getDouble("startTime"));
             }
 
-            JIMConst.PullDirection pullDirection = direction == 0 ? JIMConst.PullDirection.OLDER
-                    : JIMConst.PullDirection.NEWER;
-
+            JIMConst.PullDirection pullDirection = direction == 0 ? JIMConst.PullDirection.NEWER : JIMConst.PullDirection.OLDER;
             JIM.getInstance().getMessageManager().getMessages(
                     conversation,
                     pullDirection,
