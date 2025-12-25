@@ -63,30 +63,39 @@ export class CallSession {
         // Ideally we filter events by callId
         const subscriptions = [
             eventEmitter.addListener('CallSession_onCallConnect', (event) => {
+                console.log('CallSession_onCallConnect', event);
                 if (event.callId === this.callId && listener.onCallConnect) listener.onCallConnect();
             }),
             eventEmitter.addListener('CallSession_onCallFinish', (event) => {
+                console.log('CallSession_onCallFinish', event);
                 if (event.callId === this.callId && listener.onCallFinish) listener.onCallFinish(event.finishReason);
             }),
             eventEmitter.addListener('CallSession_onErrorOccur', (event) => {
+                console.log('CallSession_onErrorOccur', event);
                 if (event.callId === this.callId && listener.onErrorOccur) listener.onErrorOccur(event.errorCode);
             }),
             eventEmitter.addListener('CallSession_onUsersInvite', (event) => {
+                console.log('CallSession_onUsersInvite', event);
                 if (event.callId === this.callId && listener.onUsersInvite) listener.onUsersInvite(event.inviterId, event.userIdList);
             }),
             eventEmitter.addListener('CallSession_onUsersConnect', (event) => {
+                console.log('CallSession_onUsersConnect', event);
                 if (event.callId === this.callId && listener.onUsersConnect) listener.onUsersConnect(event.userIdList);
             }),
             eventEmitter.addListener('CallSession_onUsersLeave', (event) => {
+                console.log('CallSession_onUsersLeave', event);
                 if (event.callId === this.callId && listener.onUsersLeave) listener.onUsersLeave(event.userIdList);
             }),
             eventEmitter.addListener('CallSession_onUserCameraEnable', (event) => {
+                console.log('CallSession_onUserCameraEnable', event);
                 if (event.callId === this.callId && listener.onUserCameraEnable) listener.onUserCameraEnable(event.userId, event.enable);
             }),
             eventEmitter.addListener('CallSession_onUserMicrophoneEnable', (event) => {
+                console.log('CallSession_onUserMicrophoneEnable', event);
                 if (event.callId === this.callId && listener.onUserMicrophoneEnable) listener.onUserMicrophoneEnable(event.userId, event.enable);
             }),
             eventEmitter.addListener('CallSession_onSoundLevelUpdate', (event) => {
+                console.log('CallSession_onSoundLevelUpdate', event);
                 if (event.callId === this.callId && listener.onSoundLevelUpdate) listener.onSoundLevelUpdate(event.soundLevels);
             }),
             eventEmitter.addListener('CallSession_onVideoFirstFrameRender', (event) => {

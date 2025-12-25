@@ -27,8 +27,8 @@
 @property(nonatomic, weak) JuggleIMCallModule *module;
 
 - (instancetype)initWithCallId:(NSString *)callId
-                  key:(NSString *)key
-                module:(JuggleIMCallModule *)module;
+                           key:(NSString *)key
+                        module:(JuggleIMCallModule *)module;
 
 @end
 
@@ -315,8 +315,15 @@ RCT_EXPORT_METHOD(startPreview : (NSString *)callId viewTag : (
       return;
 
     UIView *view = [self.bridge.uiManager viewForReactTag:viewTag];
-    if (view) {
-      [session startPreview:view];
+    UIView *targetView = view;
+    if ([view isKindOfClass:[ZegoSurfaceView class]]) {
+      ZegoSurfaceView *zView = (ZegoSurfaceView *)view;
+      if (zView.videoView) {
+        targetView = zView.videoView;
+      }
+    }
+    if (targetView) {
+      [session startPreview:targetView];
       resolve(nil);
     } else {
       reject(@"View not found", @"View not found", nil);
@@ -347,6 +354,7 @@ RCT_EXPORT_METHOD(addSessionListener : (NSString *)callId key : (NSString *)
     self.sessionListeners[callId] = [NSMutableDictionary dictionary];
   }
   self.sessionListeners[callId][key] = listener;
+    [session addDelegate:listener];
 }
 
 RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
@@ -403,7 +411,6 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 
 @end
 
-
 #pragma mark - JCallSessionDelegateWrapper
 
 @implementation JCallSessionDelegateWrapper
@@ -420,11 +427,14 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 }
 
 - (void)callDidConnect {
+  NSLog(@"CallSession_onCallConnect callId=%@", self.callId);
   [self.module sendEventWithName:@"CallSession_onCallConnect"
                             body:@{@"callId" : self.callId}];
 }
 
 - (void)callDidFinish:(JCallFinishReason)finishReason {
+  NSLog(@"CallSession_onCallFinish callId=%@ finishReason=%ld", self.callId,
+        finishReason);
   [self.module sendEventWithName:@"CallSession_onCallFinish"
                             body:@{
                               @"callId" : self.callId,
@@ -434,6 +444,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 
 - (void)usersDidInvite:(NSArray<NSString *> *)userIdList
              inviterId:(NSString *)inviterId {
+  NSLog(@"CallSession_onUsersInvite callId=%@ inviterId=%@ userIdList=%@",
+        self.callId, inviterId, userIdList);
   [self.module sendEventWithName:@"CallSession_onUsersInvite"
                             body:@{
                               @"callId" : self.callId,
@@ -443,6 +455,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 }
 
 - (void)usersDidConnect:(NSArray<NSString *> *)userIdList {
+  NSLog(@"CallSession_onUsersConnect callId=%@ userIdList=%@", self.callId,
+        userIdList);
   [self.module
       sendEventWithName:@"CallSession_onUsersConnect"
                    body:@{@"callId" : self.callId, @"userIdList" : userIdList}];
@@ -455,6 +469,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 }
 
 - (void)userCamaraDidChange:(BOOL)enable userId:(NSString *)userId {
+  NSLog(@"CallSession_onUserCameraEnable callId=%@ userId=%@ enable=%d",
+        self.callId, userId, enable);
   [self.module sendEventWithName:@"CallSession_onUserCameraEnable"
                             body:@{
                               @"callId" : self.callId,
@@ -464,6 +480,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 }
 
 - (void)userMicrophoneDidChange:(BOOL)enable userId:(NSString *)userId {
+  NSLog(@"CallSession_onUserMicrophoneEnable callId=%@ userId=%@ enable=%d",
+        self.callId, userId, enable);
   [self.module sendEventWithName:@"CallSession_onUserMicrophoneEnable"
                             body:@{
                               @"callId" : self.callId,
@@ -474,6 +492,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 
 - (void)soundLevelDidUpdate:
     (NSDictionary<NSString *, NSNumber *> *)soundLevels {
+  NSLog(@"CallSession_onSoundLevelUpdate callId=%@ soundLevels=%@", self.callId,
+        soundLevels);
   [self.module sendEventWithName:@"CallSession_onSoundLevelUpdate"
                             body:@{
                               @"callId" : self.callId,
@@ -482,12 +502,16 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 }
 
 - (void)videoFirstFrameDidRender:(NSString *)userId {
+  NSLog(@"CallSession_onVideoFirstFrameRender callId=%@ userId=%@", self.callId,
+        userId);
   [self.module
       sendEventWithName:@"CallSession_onVideoFirstFrameRender"
                    body:@{@"callId" : self.callId, @"userId" : userId}];
 }
 
 - (void)errorDidOccur:(JCallErrorCode)errorCode {
+  NSLog(@"CallSession_onErrorOccur callId=%@ errorCode=%ld", self.callId,
+        errorCode);
   [self.module sendEventWithName:@"CallSession_onErrorOccur"
                             body:@{
                               @"callId" : self.callId,

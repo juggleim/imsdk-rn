@@ -241,19 +241,9 @@ const MessageListScreen = () => {
       }
     })
 
-
-    // Incoming call listener
-    const callReceiveListener = JuggleIMCall.addReceiveListener({
-      onCallReceive: (session) => {
-        console.log('Incoming call received', session);
-        navigation.navigate('VideoCall', { callId: session.callId, isIncoming: true });
-      }
-    });
-
     return () => {
       msgUpdateListener();
       msgDestoryLisener();
-      callReceiveListener();
     };
   }, [conversation]);
 

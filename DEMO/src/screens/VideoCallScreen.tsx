@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Component } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,8 @@ import {
     Alert,
     Dimensions,
     FlatList,
-    findNodeHandle
+    findNodeHandle,
+    NodeHandle
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
@@ -41,7 +42,7 @@ const VideoCallScreen = () => {
 
     // Refs for views to pass to native
     const localViewRef = useRef<View>(null);
-    const remoteViewRefs = useRef<Map<string, View>>(new Map());
+    const remoteViewRefs = useRef<Map<string, any>>(new Map());
 
     useEffect(() => {
         let timer: any;
@@ -57,6 +58,7 @@ const VideoCallScreen = () => {
 
     useEffect(() => {
         const initCall = async () => {
+            console.log('initCall', callId);
             let currentSession = await JuggleIMCall.getCallSession(callId);
             if (!currentSession) {
                 Alert.alert('Error', 'Call session not found', [
@@ -67,9 +69,6 @@ const VideoCallScreen = () => {
             setSession(currentSession);
             setCallStatus(currentSession.callStatus);
             console.log('currentSession', currentSession.currentMember);
-            const viewTag = findNodeHandle(localViewRef.current);
-            console.log('viewTag', viewTag);
-            currentSession.startPreview(viewTag);
             const cleanup = currentSession.addListener({
                 onCallConnect: () => {
                     console.log('onCallConnect');
@@ -103,14 +102,9 @@ const VideoCallScreen = () => {
             });
 
             console.log('isIncoming', isIncoming, 'mediaType', currentSession.mediaType, 'isViewReady', isViewReady);
-            if (!isIncoming && currentSession.mediaType === CallMediaType.VIDEO) {
-                // We need to wait for view ref to be available. 
-                // It will be handled in a separate effect or callback when view mounts?
-                // For now, let's rely on onLayout or ref callback? 
-                // actually logic `if (localViewRef.current)` above inside listener might miss initial state.
-                // We should try to start preview when session is ready AND view is ready.
-            }
-
+            const viewTag = findNodeHandle(localViewRef.current);
+            console.log('viewTag', viewTag);
+            currentSession.startPreview(viewTag);
             return () => {
                 cleanup();
             };
@@ -198,8 +192,13 @@ const VideoCallScreen = () => {
                             ref={(ref: number | React.ComponentClass<any, any> | React.Component<any, any, any> | null) => {
                                 if (ref && session) {
                                     const viewTag = findNodeHandle(ref);
-                                    session.setVideoView(remoteMembers[0].userInfo.userId, viewTag);
+                                    remoteViewRefs.current.set(remoteMembers[0].userInfo.userId, viewTag);
                                 }
+                            }}
+                            onLayout={() => {
+                                const viewTag = remoteViewRefs.current.get(remoteMembers[0].userInfo.userId);
+                                console.log('onLayout', session, viewTag);
+                                session?.setVideoView(remoteMembers[0].userInfo.userId, viewTag);
                             }}
                         />
                     </View>

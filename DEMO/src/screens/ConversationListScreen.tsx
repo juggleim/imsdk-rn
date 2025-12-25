@@ -8,7 +8,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
-import JuggleIM, { ConversationInfo } from 'juggleim-rnsdk';
+import JuggleIM, { ConversationInfo, JuggleIMCall } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import UserInfoManager from '../manager/UserInfoManager';
 import CustomMenu from '../components/CustomMenu';
@@ -276,8 +276,16 @@ const ConversationListScreen = () => {
       },
     );
 
+    const removeCallListener = JuggleIMCall.addReceiveListener({
+      onCallReceive: (session) => {
+        console.log('Incoming call received', session);
+        navigation.navigate('VideoCall', { callId: session.callId, isIncoming: true });
+      }
+    });
+
     return () => {
       removeListener();
+      removeCallListener();
       // connectionListener();
     };
   }, []);
