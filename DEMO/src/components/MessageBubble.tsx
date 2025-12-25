@@ -171,16 +171,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             if (width / maxWidth > height / maxHeight) {
               width = maxWidth;
               height = width / aspectRatio;
-              w = width + width * 0.26
+              w = width + width * 0.6
             } else {
               height = maxHeight;
               width = height * aspectRatio;
-              w = width + width * 0.26
+              w = width + width * 0.6
             }
           }
         } else {
-          width = 200;
-          height = 300;
+          width = maxWidth;
+          height = maxHeight;
         }
         return (
           <View style={{ width: w, height }}>

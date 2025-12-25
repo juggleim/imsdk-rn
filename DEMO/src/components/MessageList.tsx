@@ -1,5 +1,5 @@
 import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, InteractionManager } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Message } from 'juggleim-rnsdk';
 
@@ -33,22 +33,40 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
     } = props;
 
     const listRef = useRef<FlashList<Message>>(null);
+    const autoScrolledRef = useRef(false);
 
     useImperativeHandle(ref, () => ({
         scrollToBottom: (animated = true) => {
-            listRef.current?.scrollToEnd({ animated });
+            console.log('scrollToBottom called');
+            // In inverted mode the newest message is at index 0 (bottom visually).
+            // Use scrollToIndex to reliably jump to the bottom/newest item.
+            try {
+                listRef.current?.scrollToIndex({ index: 0, animated });
+            } catch (e) {
+                // Fallback to scrollToEnd if scrollToIndex fails for some reason
+                listRef.current?.scrollToEnd?.({ animated });
+            }
         },
         scrollToIndex: (index: number, animated = true) => {
+            console.log('scrollToIndex called:', index);
             listRef.current?.scrollToIndex({ index, animated });
         },
     }));
 
-    // Auto-scroll logic removed for inverted=true as it defaults to bottom (index 0)
-
-    // Handlers for Scroll
-    // We want standard list: Top (Index 0) -> Bottom (Index N)
-    // Pull Down -> Load Prev (History)
-    // Pull Up / End Reached -> Load Next (Newer)
+    // Auto-scroll to bottom on first load when messages exist. This avoids
+    // the screen showing at the visual top on entry.
+    useEffect(() => {
+        if (!autoScrolledRef.current && messages && messages.length > 0) {
+            InteractionManager.runAfterInteractions(() => {
+                try {
+                    listRef.current?.scrollToIndex({ index: 0, animated: false });
+                } catch (e) {
+                    listRef.current?.scrollToEnd?.({ animated: false });
+                }
+                autoScrolledRef.current = true;
+            });
+        }
+    }, [messages]);
 
     return (
         <View style={styles.container}>
@@ -63,12 +81,15 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
                 // We will pass data as [Newest, ..., Oldest]
                 // So Index 0 (Bottom) = Newest. visual: Top(Old) -> Bottom(New)
                 inverted={true}
-
+                // Helps keep scroll position stable when prepending history
+                maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
+                initialNumToRender={20}
                 drawDistance={500}
 
                 // In Inverted mode:
                 // "End" is the visual TOP. So onEndReached loads HISTORY (Prev).
                 onEndReached={() => {
+                    console.log('onEndReached triggered');
                     if (hasPrev && onLoadPrev) {
                         onLoadPrev();
                     }

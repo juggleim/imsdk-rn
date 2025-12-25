@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+// InteractionManager removed; auto-scrolling handled inside MessageList
 import JuggleIM, {
   Conversation,
   Message,
@@ -44,7 +45,7 @@ import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageList, { MessageListRef } from '../components/MessageList';
 
-const DEFAULT_MESSAGE_COUNT = 30;
+const DEFAULT_MESSAGE_COUNT = 15;
 
 const MessageItem = ({
   item,
@@ -150,6 +151,7 @@ const MessageListScreen = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingNewer, setLoadingNewer] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [hasPrev, setHasPrev] = useState(true);
   const [hasNext, setHasNext] = useState(false); // Initially false until we support "middle" entry
   const [oldestMessageTime, setOldestMessageTime] = useState<number>(0);
@@ -204,8 +206,6 @@ const MessageListScreen = () => {
           setNewestMessageTime(message.timestamp);
           // Mark as read when received in active chat
           JuggleIM.clearUnreadCount(conversation);
-          // Optional: Scroll to bottom
-          listRef.current?.scrollToBottom();
         }
       },
       onMessageRecall: (message: Message) => {
@@ -249,19 +249,23 @@ const MessageListScreen = () => {
 
   const loadInitialMessages = async () => {
     try {
+      setLoadingInitial(true);
       const result = await JuggleIM.getMessageList(conversation, 1, {
         count: DEFAULT_MESSAGE_COUNT,
         startTime: 0,
       });
       if (result && result.messages) {
-        console.log('loadInitialMessages', result.messages.length);
+        console.log('loadInitialMessages', result.messages.length, result.hasMore);
         // Sort New -> Old (Descending) for inverted list
         const sorted = result.messages.sort((a, b) => b.timestamp - a.timestamp);
         setMessages(sorted);
 
+        // MessageList handles initial auto-scroll; no-op here to avoid races.
+
         if (sorted.length > 0) {
-          setOldestMessageTime(sorted[0].timestamp);
-          setNewestMessageTime(sorted[sorted.length - 1].timestamp);
+          setNewestMessageTime(sorted[0].timestamp);
+          setOldestMessageTime(sorted[sorted.length - 1].timestamp);
+          console.log('Initial Oldest:', new Date(oldestMessageTime).toLocaleString(), 'Newest:', new Date(newestMessageTime).toLocaleString());
         }
 
         // Check if there are more history
@@ -271,27 +275,32 @@ const MessageListScreen = () => {
         setHasNext(false);
 
         // No need to scroll - inverted list defaults to bottom (index 0 = newest)
+        // setTimeout(() => 
+        //   // listRef.current?.scrollToBottom()
+        // , 100);
+
       }
     } catch (error) {
       console.error('Failed to load initial messages:', error);
+    } finally {
+      setLoadingInitial(false);
     }
   };
 
   const loadHistory = async () => {
-    if (loadingHistory || !hasPrev) return;
+    if (loadingHistory || !hasPrev || loadingInitial) return;
     setLoadingHistory(true);
     try {
+      console.log('Loading history before: formate date=', new Date(oldestMessageTime).toLocaleString());
       const result = await JuggleIM.getMessageList(conversation, 1, {
         count: DEFAULT_MESSAGE_COUNT,
-        startTime: oldestMessageTime,
+        startTime: oldestMessageTime - 1,
       });
       if (result && result.messages && result.messages.length > 0) {
-        // Result messages are older. Sort New -> Old for inverted list
         const sorted = result.messages.sort((a, b) => b.timestamp - a.timestamp);
-        console.log('loadHistory sorted', sorted.length);
-        // In inverted mode: prepend older messages to END of array
         setMessages(prev => [...prev, ...sorted]);
-        setOldestMessageTime(sorted[0].timestamp);
+        setOldestMessageTime(sorted[sorted.length - 1].timestamp);
+        console.log('loadHistory sorted', sorted.length, result.hasMore, new Date(oldestMessageTime).toLocaleString());
         setHasPrev(result.hasMore);
       } else {
         setHasPrev(false);
