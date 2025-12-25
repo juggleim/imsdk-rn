@@ -762,6 +762,29 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 获取会话信息列表
+     */
+    @ReactMethod
+    public void getTopConversationInfoList(int count, double ts, int pullDirection, Promise promise) {
+        try {
+            JIMConst.PullDirection direction = pullDirection == 0 ? JIMConst.PullDirection.NEWER
+                    : JIMConst.PullDirection.OLDER;
+
+            List<ConversationInfo> conversationInfos = com.juggle.im.JIM.getInstance().getConversationManager()
+                    .getTopConversationInfoList(count, (long) ts, direction);
+            Log.d("JuggleIM", "top conversationInfos: " + conversationInfos.size());
+            WritableArray result = new WritableNativeArray();
+            for (ConversationInfo info : conversationInfos) {
+                result.pushMap(convertConversationInfoToMap(info));
+            }
+            promise.resolve(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            promise.reject(e);
+        }
+    }
+
+    /**
      * 获取单个会话信息
      */
     @ReactMethod

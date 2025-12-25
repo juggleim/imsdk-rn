@@ -819,13 +819,12 @@ RCT_EXPORT_METHOD(setUnread : (NSDictionary *)conversationMap resolver : (
 /**
  * 获取置顶会话列表
  */
-RCT_EXPORT_METHOD(getTopConversationInfoList : (int)count timestamp : (
-    long long)timestamp pullDirection : (NSString *)
-                      pullDirection resolver : (RCTPromiseResolveBlock)
-                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  JPullDirection direction = [@"up" isEqualToString:pullDirection]
-                                 ? JPullDirectionNewer
-                                 : JPullDirectionOlder;
+RCT_EXPORT_METHOD(getTopConversationInfoList:(int)count
+          timestamp:(double)timestamp
+        pullDirection:(int)pullDirection
+          resolver:(RCTPromiseResolveBlock)resolve
+          rejecter:(RCTPromiseRejectBlock)reject) {
+  JPullDirection direction = pullDirection == 0 ? JPullDirectionNewer : JPullDirectionOlder;
 
   NSArray<JConversationInfo *> *conversationInfos =
       [JIM.shared.conversationManager
