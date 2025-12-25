@@ -401,6 +401,103 @@ const addResult = await JuggleIM.addMessageReaction('message_id', 'thumbs_up');
 const removeResult = await JuggleIM.removeMessageReaction('message_id', 'thumbs_up');
 ```
 
+## 音视频通话 (Call)
+
+### 初始化 (Initialization)
+
+```javascript
+import { JuggleIMCall } from 'juggleim-rnsdk';
+
+// 初始化 Zego 引擎
+JuggleIMCall.initZegoEngine(123456789);
+```
+
+### 发起通话 (Start Call)
+
+```javascript
+import { CallMediaType } from 'juggleim-rnsdk';
+
+// 发起单人视频通话
+const session = await JuggleIMCall.startSingleCall(
+  'targetUserId',
+  CallMediaType.VIDEO
+);
+
+// 发起多人语音通话
+const session = await JuggleIMCall.startMultiCall(
+  ['user1', 'user2'],
+  CallMediaType.AUDIO
+);
+```
+
+### 通话监听 (Call Listener)
+
+```javascript
+// 监听收到通话请求
+const unsubscribe = JuggleIMCall.addReceiveListener({
+  onCallReceive: (session) => {
+    console.log('收到通话请求:', session);
+    // 可以在此处跳转到通话页面
+  }
+});
+
+// 取消监听
+// unsubscribe();
+```
+
+### 获取通话会话 (Get Session)
+
+```javascript
+const session = await JuggleIMCall.getCallSession('call_id');
+if (session) {
+  // 获取成功
+}
+```
+
+### UI 组件 (UI Component)
+
+`ZegoSurfaceView` 用于渲染视频流。
+
+```javascript
+import { ZegoSurfaceView } from 'juggleim-rnsdk';
+import { findNodeHandle } from 'react-native';
+
+<ZegoSurfaceView
+  style={{ width: 100, height: 150 }}
+  ref={(ref) => {
+    // 将视图与用户绑定
+    const viewTag = findNodeHandle(ref);
+    if (session && viewTag) {
+      session.setVideoView(userId, viewTag);
+    }
+  }}
+/>
+```
+
+### 通话控制 (Call Control)
+
+`CallSession` 对象提供了多种控制方法：
+
+```javascript
+// 接听
+session.accept();
+
+// 挂断
+session.hangup();
+
+// 开启/关闭麦克风
+session.muteMicrophone(true);
+
+// 开启/关闭摄像头
+session.enableCamera(false);
+
+// 切换前后摄像头
+session.useFrontCamera(true);
+
+// 开启/关闭扬声器
+session.setSpeakerEnable(true);
+```
+
 ## 类型定义
 
 ### 会话类型
