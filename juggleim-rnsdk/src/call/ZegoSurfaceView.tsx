@@ -14,7 +14,7 @@ export interface SurfaceViewProps extends ViewProps {
 }
 
 const ZegoSurfaceViewManager = Platform.select<React.ComponentType<SurfaceViewProps>>({
-    ios: View as React.ComponentType<SurfaceViewProps>,  // UIView
+    ios: requireNativeComponent<SurfaceViewProps>('ZegoSurfaceView'),
     android: requireNativeComponent<SurfaceViewProps>('RCTZegoSurfaceView'),  // * android.view.SurfaceView
 })!;
 

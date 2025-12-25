@@ -90,6 +90,7 @@ export class CallSession {
                 if (event.callId === this.callId && listener.onSoundLevelUpdate) listener.onSoundLevelUpdate(event.soundLevels);
             }),
             eventEmitter.addListener('CallSession_onVideoFirstFrameRender', (event) => {
+                console.log('CallSession_onVideoFirstFrameRender', event);
                 if (event.callId === this.callId && listener.onVideoFirstFrameRender) listener.onVideoFirstFrameRender(event.userId);
             }),
         ];

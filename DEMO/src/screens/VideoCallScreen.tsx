@@ -66,8 +66,10 @@ const VideoCallScreen = () => {
             }
             setSession(currentSession);
             setCallStatus(currentSession.callStatus);
-            setRemoteMembers(currentSession.members.filter(m => m.userInfo.userId !== currentSession.currentMember.userInfo.userId));
-
+            console.log('currentSession', currentSession.currentMember);
+            const viewTag = findNodeHandle(localViewRef.current);
+            console.log('viewTag', viewTag);
+            currentSession.startPreview(viewTag);
             const cleanup = currentSession.addListener({
                 onCallConnect: () => {
                     console.log('onCallConnect');
@@ -96,13 +98,11 @@ const VideoCallScreen = () => {
                     refreshMembers(currentSession!);
                 },
                 onUserCameraEnable: (userId, enable) => {
-                    // Force re-render if needed, but video view should handle stream updates usually?
-                    // Actually usually native view needs to be re-bound or it just works.
-                    // If view is already attached, logic is in native.
+                    console.log('onUserCameraEnable', userId, enable);
                 }
             });
 
-            // If outgoing, start preview immediately
+            console.log('isIncoming', isIncoming, 'mediaType', currentSession.mediaType, 'isViewReady', isViewReady);
             if (!isIncoming && currentSession.mediaType === CallMediaType.VIDEO) {
                 // We need to wait for view ref to be available. 
                 // It will be handled in a separate effect or callback when view mounts?
@@ -119,21 +119,8 @@ const VideoCallScreen = () => {
         initCall();
     }, [callId]);
 
-    // Another effect to handle view binding when session and views are ready
-    useEffect(() => {
-        if (session && localViewRef.current && isViewReady) {
-            const viewTag = findNodeHandle(localViewRef.current);
-            console.log('Starting preview', viewTag, isViewReady);
-            session.startPreview(viewTag);
-        }
-    }, [session, localViewRef.current, isViewReady]);
-
     const refreshMembers = (currentSession: CallSession) => {
         setRemoteMembers(currentSession.members.filter(m => m.userInfo.userId !== currentSession.currentMember.userInfo.userId));
-        // We also need to bind views for new members
-        // React will render new ZegoSurfaceViews, we need to bind them.
-        // This is tricky because we need the ref of the NEW view.
-        // We can do this in the `ref` callback of the item in FlatList.
     };
 
     const handleAccept = () => {
@@ -182,6 +169,7 @@ const VideoCallScreen = () => {
     };
 
     const renderRemoteVideo = ({ item }: { item: CallMember }) => {
+        console.log('renderRemoteVideo', item);
         return (
             <View style={styles.remoteViewContainer}>
                 <ZegoSurfaceView

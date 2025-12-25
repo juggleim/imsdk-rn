@@ -17,6 +17,6 @@ Pod::Spec.new do |s|
 
   s.dependency "React-Core"
   s.dependency "JuggleIM", "~> 1.8.30"
-  s.dependency 'JZegoCall', '1.8.13.1'
+  s.dependency 'JZegoCall', '1.8.25'
 
 end

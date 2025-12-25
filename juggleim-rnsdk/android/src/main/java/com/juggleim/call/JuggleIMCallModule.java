@@ -311,8 +311,10 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void addSessionListener(String callId, String key) {
         ICallSession session = getCallManager().getCallSession(callId);
-        if (session == null)
+        if (session == null) {
+            Log.d("JuggleIMCall", "addSessionListener: session is null");
             return;
+        }
 
         ICallSession.ICallSessionListener listener = new ICallSession.ICallSessionListener() {
             @Override

@@ -33,12 +33,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to your camera to make video calls</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to your microphone to record voice messages and make audio/video calls</string>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to your camera to make video calls</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

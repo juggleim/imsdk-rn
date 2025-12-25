@@ -1,5 +1,6 @@
 #import "JuggleIMCallModule.h"
 #import "../JModelFactory.h"
+#import "view/ZegoSurfaceView.h"
 #import <JuggleIM/JuggleIM.h>
 #import <React/RCTEventEmitter.h>
 
@@ -14,6 +15,20 @@
 @property(nonatomic, strong) NSMutableDictionary<
     NSString *, NSMutableDictionary<NSString *, id<JCallSessionDelegate>> *>
     *sessionListeners;
+
+@end
+
+#pragma mark - JCallSessionDelegateWrapper (declaration)
+
+@interface JCallSessionDelegateWrapper : NSObject <JCallSessionDelegate>
+
+@property(nonatomic, copy) NSString *callId;
+@property(nonatomic, copy) NSString *key;
+@property(nonatomic, weak) JuggleIMCallModule *module;
+
+- (instancetype)initWithCallId:(NSString *)callId
+                  key:(NSString *)key
+                module:(JuggleIMCallModule *)module;
 
 @end
 
@@ -259,19 +274,36 @@ RCT_EXPORT_METHOD(setVideoView : (NSString *)callId userId : (NSString *)
                       userId viewTag : (nonnull NSNumber *)viewTag resolver : (
                           RCTPromiseResolveBlock)
                           resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    id<JCallSession> session = [[self getCallManager] getCallSession:callId];
-    if (!session)
-      return;
+  id<JCallSession> session = [[self getCallManager] getCallSession:callId];
+  if (!session) {
+    reject(@"NoSession", @"Call session not found", nil);
+    return;
+  }
 
-    UIView *view = [self.bridge.uiManager viewForReactTag:viewTag];
-    if (view) {
-      [session setVideoView:view forUserId:userId];
-      resolve(nil);
-    } else {
-      reject(@"View not found", @"View not found", nil);
-    }
-  });
+  NSNumber *tag = viewTag;
+  [self.bridge.uiManager
+      addUIBlock:^(RCTUIManager *uiManager,
+                   NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+        UIView *view = viewRegistry[tag];
+        UIView *targetView = view;
+        if ([view isKindOfClass:[ZegoSurfaceView class]]) {
+          ZegoSurfaceView *zView = (ZegoSurfaceView *)view;
+          if (zView.videoView) {
+            targetView = zView.videoView;
+          }
+        }
+        NSLog(@"[JuggleIMCallModule] setVideoView callId=%@ viewTag=%@ view=%@ "
+              @"targetView=%@",
+              callId, tag, view, targetView);
+        if (targetView) {
+          [session setVideoView:targetView forUserId:userId];
+          resolve(nil);
+        } else {
+          NSString *msg = [NSString
+              stringWithFormat:@"setVideoView View not found for tag %@", tag];
+          reject(@"ViewNotFound", msg, nil);
+        }
+      }];
 }
 
 RCT_EXPORT_METHOD(startPreview : (NSString *)callId viewTag : (
@@ -295,7 +327,27 @@ RCT_EXPORT_METHOD(startPreview : (NSString *)callId viewTag : (
 #pragma mark - Session Listeners
 
 RCT_EXPORT_METHOD(addSessionListener : (NSString *)callId key : (NSString *)
-                      key) {}
+                      key) {
+  id<JCallSession> session = [[self getCallManager] getCallSession:callId];
+  if (!session) {
+    NSLog(@"[JuggleIMCallModule] addSessionListener: session is null for "
+          @"callId=%@",
+          callId);
+    return;
+  }
+
+  // Create delegate wrapper
+  JCallSessionDelegateWrapper *listener =
+      [[JCallSessionDelegateWrapper alloc] initWithCallId:callId
+                                                      key:key
+                                                   module:self];
+
+  // Store listener in nested dictionary structure
+  if (!self.sessionListeners[callId]) {
+    self.sessionListeners[callId] = [NSMutableDictionary dictionary];
+  }
+  self.sessionListeners[callId][key] = listener;
+}
 
 RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
                       key) {
@@ -351,19 +403,8 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 
 @end
 
+
 #pragma mark - JCallSessionDelegateWrapper
-
-@interface JCallSessionDelegateWrapper : NSObject <JCallSessionDelegate>
-
-@property(nonatomic, copy) NSString *callId;
-@property(nonatomic, copy) NSString *key;
-@property(nonatomic, weak) JuggleIMCallModule *module;
-
-- (instancetype)initWithCallId:(NSString *)callId
-                           key:(NSString *)key
-                        module:(JuggleIMCallModule *)module;
-
-@end
 
 @implementation JCallSessionDelegateWrapper
 
