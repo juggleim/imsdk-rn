@@ -95,7 +95,6 @@ export class CallSession {
                 if (event.callId === this.callId && listener.onUserMicrophoneEnable) listener.onUserMicrophoneEnable(event.userId, event.enable);
             }),
             eventEmitter.addListener('CallSession_onSoundLevelUpdate', (event) => {
-                console.log('CallSession_onSoundLevelUpdate', event);
                 if (event.callId === this.callId && listener.onSoundLevelUpdate) listener.onSoundLevelUpdate(event.soundLevels);
             }),
             eventEmitter.addListener('CallSession_onVideoFirstFrameRender', (event) => {

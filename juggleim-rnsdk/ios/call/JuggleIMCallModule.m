@@ -492,8 +492,6 @@ RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
 
 - (void)soundLevelDidUpdate:
     (NSDictionary<NSString *, NSNumber *> *)soundLevels {
-  NSLog(@"CallSession_onSoundLevelUpdate callId=%@ soundLevels=%@", self.callId,
-        soundLevels);
   [self.module sendEventWithName:@"CallSession_onSoundLevelUpdate"
                             body:@{
                               @"callId" : self.callId,
