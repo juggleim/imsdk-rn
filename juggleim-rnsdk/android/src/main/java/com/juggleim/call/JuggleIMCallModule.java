@@ -265,7 +265,7 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void setVideoView(String callId, String userId, int viewTag) {
+    public void setVideoView(String callId, String userId, int viewTag, Promise promise) {
         mReactContext.runOnUiQueueThread(() -> {
             ICallSession session = getCallManager().getCallSession(callId);
             if (session == null)
@@ -280,10 +280,11 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
                 e.printStackTrace();
             }
         });
+        promise.resolve(null);
     }
 
     @ReactMethod
-    public void startPreview(String callId, int viewTag) {
+    public void startPreview(String callId, int viewTag, Promise promise) {
         mReactContext.runOnUiQueueThread(() -> {
             ICallSession session = getCallManager().getCallSession(callId);
             if (session == null)
@@ -304,6 +305,7 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
                 e.printStackTrace();
             }
         });
+        promise.resolve(null);
     }
 
     @ReactMethod

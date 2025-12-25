@@ -256,7 +256,9 @@ RCT_EXPORT_METHOD(setVideoDenoiseParams : (NSString *)
 }
 
 RCT_EXPORT_METHOD(setVideoView : (NSString *)callId userId : (NSString *)
-                      userId viewTag : (nonnull NSNumber *)viewTag) {
+                      userId viewTag : (nonnull NSNumber *)viewTag resolver : (
+                          RCTPromiseResolveBlock)
+                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     id<JCallSession> session = [[self getCallManager] getCallSession:callId];
     if (!session)
@@ -265,12 +267,16 @@ RCT_EXPORT_METHOD(setVideoView : (NSString *)callId userId : (NSString *)
     UIView *view = [self.bridge.uiManager viewForReactTag:viewTag];
     if (view) {
       [session setVideoView:view forUserId:userId];
+      resolve(nil);
+    } else {
+      reject(@"View not found", @"View not found", nil);
     }
   });
 }
 
-RCT_EXPORT_METHOD(startPreview : (NSString *)
-                      callId viewTag : (nonnull NSNumber *)viewTag) {
+RCT_EXPORT_METHOD(startPreview : (NSString *)callId viewTag : (
+    nonnull NSNumber *)viewTag resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
   dispatch_async(dispatch_get_main_queue(), ^{
     id<JCallSession> session = [[self getCallManager] getCallSession:callId];
     if (!session)
@@ -279,6 +285,9 @@ RCT_EXPORT_METHOD(startPreview : (NSString *)
     UIView *view = [self.bridge.uiManager viewForReactTag:viewTag];
     if (view) {
       [session startPreview:view];
+      resolve(nil);
+    } else {
+      reject(@"View not found", @"View not found", nil);
     }
   });
 }
@@ -286,9 +295,7 @@ RCT_EXPORT_METHOD(startPreview : (NSString *)
 #pragma mark - Session Listeners
 
 RCT_EXPORT_METHOD(addSessionListener : (NSString *)callId key : (NSString *)
-                      key) {
-
-}
+                      key) {}
 
 RCT_EXPORT_METHOD(removeSessionListener : (NSString *)callId key : (NSString *)
                       key) {

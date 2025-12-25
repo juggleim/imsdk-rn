@@ -1,5 +1,6 @@
 
-import { NativeModules, NativeEventEmitter, findNodeHandle, Component } from 'react-native';
+import { NativeModules, NativeEventEmitter, findNodeHandle, Component, Platform } from 'react-native';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { CallStatus, CallMediaType, CallFinishReason, CallErrorCode } from './CallConst';
 import { CallMember } from './CallMember';
 
@@ -139,13 +140,38 @@ export class CallSession {
         JuggleIMCallModule.setVideoDenoiseParams(this.callId, params);
     }
 
-    setVideoView(userId: string, view: Component | null) {
-        const viewId = findNodeHandle(view);
-        JuggleIMCallModule.setVideoView(this.callId, userId, viewId);
+    setVideoView(userId: string, view: Component | null): Promise<void> {
+        return JuggleIMCallModule.setVideoView(this.callId, userId, view);
     }
 
-    startPreview(view: Component | null) {
-        const viewId = findNodeHandle(view);
-        JuggleIMCallModule.startPreview(this.callId, viewId);
+    async startPreview(view: Component | null): Promise<void> {
+        console.log('startPreview', this.callId, this.mediaType, Platform.OS, view);
+        try {
+            if (this.mediaType === CallMediaType.VIDEO) {
+                const cameraPerm = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
+                const micPerm = Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
+                const camRes = await request(cameraPerm);
+                const micRes = await request(micPerm);
+                console.log('startPreview', this.callId, this.mediaType, Platform.OS, camRes, micRes);
+                if (camRes !== RESULTS.GRANTED || micRes !== RESULTS.GRANTED) {
+                    console.warn('Camera or microphone permission not granted', camRes, micRes);
+                    return Promise.reject('Camera or microphone permission not granted');
+                }
+            } else if (this.mediaType === CallMediaType.VOICE) {
+                const micPerm = Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
+                const micRes = await request(micPerm);
+                if (micRes !== RESULTS.GRANTED) {
+                    console.warn('Microphone permission not granted', micRes);
+                    return Promise.reject('Microphone permission not granted');
+                }
+            } else {
+                return Promise.reject('Unsupported media type');
+            }
+        } catch (e) {
+            console.warn('Permission request error', e);
+            return Promise.reject(e);
+        }
+
+        return JuggleIMCallModule.startPreview(this.callId, view);
     }
 }

@@ -31,6 +31,7 @@ target 'DEMO' do
 
   # Permissions configuration
   setup_permissions([
+    'Camera',
     'Microphone',
   ])
 
