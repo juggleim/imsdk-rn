@@ -981,18 +981,6 @@ class JuggleIM {
   }
 }
 
-/**
- * 自定义消息内容基类
- * 用于创建自定义消息类型
- */
-export class CustomMessageContent {
-  /**
-   * @param {string} contentType - 消息内容类型
-   */
-  constructor(contentType) {
-    this.contentType = contentType;
-  }
-}
-
+export * from './types';
 export * from './call';
 export default JuggleIM;
