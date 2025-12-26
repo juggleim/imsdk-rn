@@ -76,6 +76,11 @@ const MomentScreen = () => {
     const [selectedMomentId, setSelectedMomentId] = useState<string>('');
     const [replyToComment, setReplyToComment] = useState<Comment | null>(null);
 
+    // Image preview state
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [previewImages, setPreviewImages] = useState<string[]>([]);
+    const [previewIndex, setPreviewIndex] = useState(0);
+
     useEffect(() => {
         loadCurrentUser();
     }, []);
@@ -266,6 +271,13 @@ const MomentScreen = () => {
         );
     };
 
+    const handleImagePress = (medias: any[], index: number) => {
+        const images = medias.map(m => m.snapshot_url || m.url);
+        setPreviewImages(images);
+        setPreviewIndex(index);
+        setPreviewVisible(true);
+    };
+
     const renderHeader = () => (
         <View style={styles.profileHeader}>
             <Image
@@ -295,6 +307,58 @@ const MomentScreen = () => {
         </View>
     );
 
+    const renderImagePreview = () => {
+        return (
+            <Modal
+                visible={previewVisible}
+                transparent={true}
+                onRequestClose={() => setPreviewVisible(false)}
+            >
+                <View style={styles.previewContainer}>
+                    <FlatList
+                        data={previewImages}
+                        horizontal
+                        pagingEnabled
+                        initialScrollIndex={previewIndex}
+                        getItemLayout={(data, index) => (
+                            { length: width, offset: width * index, index }
+                        )}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                onPress={() => setPreviewVisible(false)}
+                                style={styles.previewItemContainer}
+                            >
+                                <Image
+                                    source={{ uri: item }}
+                                    style={styles.previewImage}
+                                    resizeMode="contain"
+                                />
+                            </TouchableOpacity>
+                        )}
+                    />
+                    {previewImages.length > 1 && (
+                        <View style={styles.previewIndicator}>
+                            {previewImages.map((_, index) => {
+                                // Simple indicator logic, ideally would track scroll position
+                                return (
+                                    <View
+                                        key={index}
+                                        style={[
+                                            styles.indicatorDot,
+                                            // This is static for initial index for now unless we add onScroll
+                                        ]}
+                                    />
+                                )
+                            })}
+                        </View>
+                    )}
+                </View>
+            </Modal>
+        );
+    };
+
     const renderMediaGrid = (medias: any[]) => {
         if (!medias || medias.length === 0) return null;
 
@@ -303,8 +367,10 @@ const MomentScreen = () => {
         return (
             <View style={styles.mediaGrid}>
                 {medias.map((media, index) => (
-                    <View
+                    <TouchableOpacity
                         key={index}
+                        activeOpacity={0.8}
+                        onPress={() => handleImagePress(medias, index)}
                         style={[
                             styles.mediaItem,
                             { width: imageWidth, height: imageWidth },
@@ -321,7 +387,7 @@ const MomentScreen = () => {
                                 </Text>
                             </View>
                         )}
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </View>
         );
@@ -532,6 +598,8 @@ const MomentScreen = () => {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
+
+            {renderImagePreview()}
         </View>
     );
 };
@@ -798,6 +866,35 @@ const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    // Preview styles
+    previewContainer: {
+        flex: 1,
+        backgroundColor: '#000000',
+        justifyContent: 'center',
+    },
+    previewItemContainer: {
+        width: width,
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+    },
+    previewIndicator: {
+        position: 'absolute',
+        bottom: 40,
+        flexDirection: 'row',
+        alignSelf: 'center',
+        gap: 8,
+    },
+    indicatorDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
     },
     commentInputContainer: {
         backgroundColor: '#FFFFFF',
