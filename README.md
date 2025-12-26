@@ -651,3 +651,13 @@ JuggleIM.sendMessage({
     content: TextCardMessage,
 });
 ```
+
+* 上传图片
+```typescript
+/**
+ * 上传图片
+ * @param localPath  本地图片路径：Android - /path/to/image，iOS - url 
+ * @returns Promise<string> 上传成功后返回图片url
+ */
+JuggleIM.uploadImage(localPath: string): Promise<string>;
+```
