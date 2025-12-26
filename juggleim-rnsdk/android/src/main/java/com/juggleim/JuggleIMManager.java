@@ -45,6 +45,8 @@ import java.nio.charset.StandardCharsets;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import javax.annotation.Nonnull;
 
@@ -796,6 +798,33 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 上传图片
+     */
+    @ReactMethod
+    public void uploadImage(String localPath, Promise promise) {
+        try {
+            String path = localPath;
+            if (path.startsWith("file://")) {
+                path = path.substring(7);
+            }
+            JIM.getInstance().getMessageManager().uploadImage(localPath, new JIMConst.IResultCallback<String>() {
+                @Override
+                public void onSuccess(String s) {
+                    promise.resolve(s);
+                }
+
+                @Override
+                public void onError(int i) {
+                    promise.reject(String.valueOf(i), "Upload failed with code: " + i);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            promise.reject("-1", e.getMessage());
+        }
+    }
+
+    /**
      * 创建会话信息
      */
     @ReactMethod
@@ -1066,7 +1095,8 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 getOptions.setStartTime((long) options.getDouble("startTime"));
             }
 
-            JIMConst.PullDirection pullDirection = direction == 0 ? JIMConst.PullDirection.NEWER : JIMConst.PullDirection.OLDER;
+            JIMConst.PullDirection pullDirection = direction == 0 ? JIMConst.PullDirection.NEWER
+                    : JIMConst.PullDirection.OLDER;
             JIM.getInstance().getMessageManager().getMessages(
                     conversation,
                     pullDirection,

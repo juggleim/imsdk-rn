@@ -583,6 +583,15 @@ class JuggleIM {
     return JMI.removeConversationsFromTag(conversations, tagId);
   }
 
+  /**
+   * 上传图片
+   * @param {string} localPath - 图片本地路径
+   * @returns {Promise<string>} 图片URL
+   */
+  static uploadImage(localPath) {
+    return JMI.uploadImage(localPath);
+  }
+
   //message
 
   /**

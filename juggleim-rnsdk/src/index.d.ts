@@ -271,6 +271,13 @@ export default class JuggleIM {
   ): Promise<Boolean>;
 
   /**
+   * 上传图片
+   * @param localPath 图片本地路径
+   * @returns {Promise<string>} 图片URL
+   */
+  static uploadImage(localPath: string): Promise<string>;
+
+  /**
    * 发送消息
    * @param {SendMessageObject} message  发送消息对象
    * @param {SendMessageCallback} [callback] 发送消息回调函数

@@ -653,6 +653,32 @@ RCT_EXPORT_METHOD(getConversationInfo : (NSDictionary *)
 }
 
 /**
+ * 上传图片
+ */
+RCT_EXPORT_METHOD(uploadImage : (NSString *)localPath resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  NSString *path = localPath;
+  if ([path hasPrefix:@"file://"]) {
+    path = [path substringFromIndex:7];
+  }
+
+  UIImage *image = [UIImage imageWithContentsOfFile:path];
+  if (!image) {
+    reject(@"-1", @"Image decode failed", nil);
+    return;
+  }
+
+  [JIM.shared.messageManager uploadImage:image
+      success:^(NSString *url) {
+        resolve(url);
+      }
+      error:^(JErrorCode code) {
+        reject([NSString stringWithFormat:@"%ld", (long)code], @"Upload failed",
+               nil);
+      }];
+}
+
+/**
  * 创建会话信息
  */
 RCT_EXPORT_METHOD(createConversationInfo : (NSDictionary *)
@@ -1167,7 +1193,7 @@ RCT_EXPORT_METHOD(getMessages : (NSDictionary *)conversationDict direction : (
 
     JPullDirection pullDirection =
         direction == 0 ? JPullDirectionNewer : JPullDirectionOlder;
-      NSLog(@"getMessages start");
+    NSLog(@"getMessages start");
     [JIM.shared.messageManager
         getMessages:conversation
           direction:pullDirection

@@ -12,6 +12,7 @@ import {
     Dimensions,
     Platform,
 } from 'react-native';
+import JuggleIM from 'juggleim-rnsdk';
 import { launchImageLibrary, ImagePickerResponse, Asset } from 'react-native-image-picker';
 import { addMoment, MomentMedia } from '../api/moment';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -33,6 +34,9 @@ interface SelectedImage {
     width: number;
     height: number;
     type?: string;
+    uploadedUrl?: string; // Add uploadedUrl
+    loading?: boolean;    // Add loading state
+    error?: boolean;      // Add error state
 }
 
 const PublishMomentScreen = () => {
@@ -45,19 +49,20 @@ const PublishMomentScreen = () => {
     const [publishing, setPublishing] = useState(false);
 
     useLayoutEffect(() => {
+        const isUploading = images.some(img => img.loading);
         navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity
                     onPress={handlePublish}
-                    disabled={publishing || (!text.trim() && images.length === 0)}
+                    disabled={publishing || (!text.trim() && images.length === 0) || isUploading}
                     style={styles.publishButton}>
-                    {publishing ? (
+                    {publishing || isUploading ? (
                         <ActivityIndicator size="small" color="#007AFF" />
                     ) : (
                         <Text
                             style={[
                                 styles.publishButtonText,
-                                (!text.trim() && images.length === 0) && styles.publishButtonTextDisabled,
+                                (publishing || (!text.trim() && images.length === 0) || isUploading) && styles.publishButtonTextDisabled,
                             ]}>
                             发表
                         </Text>
@@ -66,6 +71,31 @@ const PublishMomentScreen = () => {
             ),
         });
     }, [navigation, text, images, publishing]);
+
+    const uploadImage = async (image: SelectedImage, index: number) => {
+        try {
+            // Initial state is already 'loading: true' from handleSelectImages
+            const url = await JuggleIM.uploadImage(image.uri);
+            console.log('Uploaded image URL:', url);
+            setImages(prev => {
+                const newImages = [...prev];
+                // Ensure index is valid and refers to specific image just in case
+                if (newImages[index]) {
+                    newImages[index] = { ...newImages[index], uploadedUrl: url, loading: false };
+                }
+                return newImages;
+            });
+        } catch (error) {
+            console.error('Failed to upload image:', image.uri, error);
+            setImages(prev => {
+                const newImages = [...prev];
+                if (newImages[index]) {
+                    newImages[index] = { ...newImages[index], loading: false, error: true };
+                }
+                return newImages;
+            });
+        }
+    };
 
     const handleSelectImages = async () => {
         if (images.length >= 9) {
@@ -90,13 +120,23 @@ const PublishMomentScreen = () => {
             }
 
             if (result.assets) {
+                const currentImagesCount = images.length;
                 const newImages: SelectedImage[] = result.assets.map((asset: Asset) => ({
-                    uri: asset.uri || '',
+                    uri: asset.uri?.replace('file://', '') || '',
                     width: asset.width || 0,
                     height: asset.height || 0,
                     type: asset.type,
+                    loading: true, // Start loading immediately
                 }));
-                setImages([...images, ...newImages]);
+
+                // Add new images to state
+                setImages(prev => [...prev, ...newImages]);
+
+                // Trigger uploads for new images
+                newImages.forEach((img, i) => {
+                    // unexpected side-effect: index in state will be currentImagesCount + i
+                    uploadImage(img, currentImagesCount + i);
+                });
             }
         } catch (error) {
             console.error('Error selecting images:', error);
@@ -113,15 +153,26 @@ const PublishMomentScreen = () => {
             return;
         }
 
+        const isUploading = images.some(img => img.loading);
+        if (isUploading) {
+            Alert.alert('提示', '图片正在上传中，请稍候');
+            return;
+        }
+
+        const failedImages = images.filter(img => img.error);
+        if (failedImages.length > 0) {
+            Alert.alert('提示', '部分图片上传失败，请移除或重试');
+            return;
+        }
+
         try {
             setPublishing(true);
 
             // Convert images to MomentMedia format
-            // Note: In production, you should upload images first and get URLs
             const medias: MomentMedia[] = images.map((img) => ({
                 type: 'image' as const,
-                url: img.uri, // In production, this should be the uploaded URL
-                snapshot_url: img.uri, // In production, this should be the thumbnail URL
+                url: img.uploadedUrl || img.uri, // Use uploadedUrl if available
+                snapshot_url: img.uploadedUrl || img.uri,
                 width: img.width,
                 height: img.height,
             }));
@@ -148,7 +199,20 @@ const PublishMomentScreen = () => {
             <View style={styles.imageGrid}>
                 {images.map((image, index) => (
                     <View key={index} style={styles.imageContainer}>
-                        <Image source={{ uri: image.uri }} style={styles.imageItem} />
+                        <Image source={{ uri: (Platform.OS === 'android' ? 'file://' + image.uri : image.uri) }} style={styles.imageItem} />
+                        {image.loading && (
+                            <View style={styles.loadingOverlay}>
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            </View>
+                        )}
+                        {image.error && (
+                            <View style={styles.errorOverlay}>
+                                <Image
+                                    source={require('../assets/icons/error.png')}
+                                    style={styles.errorIcon}
+                                />
+                            </View>
+                        )}
                         <TouchableOpacity
                             style={styles.removeButton}
                             onPress={() => handleRemoveImage(index)}>
@@ -265,6 +329,25 @@ const styles = StyleSheet.create({
     },
     publishButtonTextDisabled: {
         color: '#CCCCCC',
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 4,
+    },
+    errorOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 4,
+    },
+    errorIcon: {
+        width: 24,
+        height: 24,
+        tintColor: '#FF3B30',
     },
 });
 
