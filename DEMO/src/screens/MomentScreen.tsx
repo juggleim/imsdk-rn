@@ -312,7 +312,7 @@ const MomentScreen = () => {
                     source={
                         currentUserAvatar
                             ? { uri: currentUserAvatar }
-                            : require('../assets/icons/avatar.png')
+                            : require('../assets/icons/default_avatar.png')
                     }
                     style={styles.userAvatar}
                 />
@@ -478,7 +478,7 @@ const MomentScreen = () => {
                     source={
                         item.userInfo?.avatar
                             ? { uri: item.userInfo.avatar }
-                            : require('../assets/icons/avatar.png')
+                            : require('../assets/icons/default_avatar.png')
                     }
                     style={styles.momentAvatar}
                 />

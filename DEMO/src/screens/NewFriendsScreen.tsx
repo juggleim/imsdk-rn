@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#ccc',
     },
     info: {
         flex: 1,
