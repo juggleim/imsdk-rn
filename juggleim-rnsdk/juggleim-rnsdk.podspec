@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency "React-Core"
-  s.dependency "JuggleIM", "~> 1.8.30"
+  s.dependency "JuggleIM", "~> 1.8.31"
   s.dependency 'JZegoCall', '1.8.25'
 
 end

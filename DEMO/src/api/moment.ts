@@ -1,5 +1,7 @@
 import { fetchData } from './client';
 
+//废弃，使用SDK内置的功能接口
+
 // Types & Interfaces
 export interface MomentMedia {
     type: 'image' | 'video';

@@ -12,9 +12,8 @@ import {
     Dimensions,
     Platform,
 } from 'react-native';
-import JuggleIM from 'juggleim-rnsdk';
+import JuggleIM, { JuggleIMMoment, MomentMedia, MomentMediaType } from 'juggleim-rnsdk';
 import { launchImageLibrary, ImagePickerResponse, Asset } from 'react-native-image-picker';
-import { addMoment, MomentMedia } from '../api/moment';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -170,17 +169,14 @@ const PublishMomentScreen = () => {
 
             // Convert images to MomentMedia format
             const medias: MomentMedia[] = images.map((img) => ({
-                type: 'image' as const,
+                type: 'image',
                 url: img.uploadedUrl || img.uri, // Use uploadedUrl if available
-                snapshot_url: img.uploadedUrl || img.uri,
+                snapshotUrl: img.uploadedUrl || img.uri,
                 width: img.width,
                 height: img.height,
             }));
 
-            await addMoment({
-                text: text.trim(),
-                medias,
-            });
+            await JuggleIMMoment.addMoment(text.trim(), medias);
 
             // Navigate back immediately after success
             navigation.goBack();
@@ -352,3 +348,4 @@ const styles = StyleSheet.create({
 });
 
 export default PublishMomentScreen;
+

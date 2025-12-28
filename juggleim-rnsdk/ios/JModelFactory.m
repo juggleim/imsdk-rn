@@ -391,7 +391,7 @@
   return @{
     @"url" : media.url ?: @"",
     @"type" : @(media.type),
-    @"snapshot_url" : media.snapshotUrl ?: @"",
+    @"snapshotUrl" : media.snapshotUrl ?: @"",
     @"height" : @(media.height),
     @"width" : @(media.width),
     @"duration" : @(media.duration)
@@ -412,13 +412,13 @@
   if (!comment)
     return @{};
   return @{
-    @"comment_id" : comment.commentId ?: @"",
-    @"moment_id" : comment.momentId ?: @"",
-    @"parent_comment_id" : comment.parentCommentId ?: @"",
+    @"commentId" : comment.commentId ?: @"",
+    @"momentId" : comment.momentId ?: @"",
+    @"parentCommentId" : comment.parentCommentId ?: @"",
     @"content" : comment.content ?: @"",
-    @"user_info" : [self userInfoToDic:comment.userInfo],
-    @"parent_user_info" : [self userInfoToDic:comment.parentUserInfo],
-    @"comment_time" : @(comment.createTime)
+    @"userInfo" : [self userInfoToDic:comment.userInfo],
+    @"parentUserInfo" : [self userInfoToDic:comment.parentUserInfo],
+    @"commentTime" : @(comment.createTime)
   };
 }
 
@@ -427,12 +427,12 @@
     return @{};
   NSMutableDictionary *resultDic = [NSMutableDictionary dictionary];
   NSString *momentId = moment.momentId ?: @"";
-  resultDic[@"moment_id"] = momentId;
+  resultDic[@"momentId"] = momentId;
   NSString *contentText = moment.content ?: @"";
-  resultDic[@"content"] = @{@"text" : contentText};
-  resultDic[@"moment_time"] = @(moment.createTime);
+  resultDic[@"content"] = contentText ?: @"";
+  resultDic[@"createTime"] = @(moment.createTime);
   if (moment.userInfo && [moment.userInfo isKindOfClass:[JUserInfo class]]) {
-    resultDic[@"user_info"] = [self userInfoToDic:moment.userInfo];
+    resultDic[@"userInfo"] = [self userInfoToDic:moment.userInfo];
   }
   NSArray *mediaArray = moment.mediaArray ?: @[];
   NSMutableArray *mediasDicArray =
@@ -442,7 +442,7 @@
       [mediasDicArray addObject:[self momentMediaToDic:media]];
     }
   }
-  resultDic[@"medias"] = mediasDicArray;
+  resultDic[@"mediaList"] = mediasDicArray;
 
   NSArray *reactionArray = moment.reactionArray ?: @[];
   NSMutableArray *reactionsDicArray =
@@ -462,7 +462,7 @@
       [commentsDicArray addObject:[self momentCommentToDic:comment]];
     }
   }
-  resultDic[@"top_comments"] = commentsDicArray;
+  resultDic[@"commentList"] = commentsDicArray;
 
   return [resultDic copy];
 }
@@ -543,7 +543,7 @@
   JMomentMedia *media = [[JMomentMedia alloc] init];
 
   media.url = dictionary[@"url"];
-  media.snapshotUrl = dictionary[@"snapshot_url"];
+  media.snapshotUrl = dictionary[@"snapshotUrl"];
   media.type = [dictionary[@"type"] intValue];
   media.height = [dictionary[@"height"] intValue];
   media.width = [dictionary[@"width"] intValue];

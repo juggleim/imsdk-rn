@@ -17,15 +17,13 @@ import {
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-    getMomentList,
-    deleteMoment,
-    addComment,
-    deleteComment,
-    addReaction,
-    deleteReaction,
-    MomentItem,
-    Comment,
-} from '../api/moment';
+    JuggleIMMoment,
+    Moment,
+    MomentComment,
+    MomentMedia,
+    MomentReaction,
+    UserInfo
+} from 'juggleim-rnsdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { USER_AVATAR_KEY, USER_ID_KEY, USER_NAME_KEY } from '../utils/auth';
 
@@ -59,7 +57,7 @@ const MomentScreen = () => {
     const navigation = useNavigation<NavigationProp>();
     const isFocused = useIsFocused();
 
-    const [moments, setMoments] = useState<MomentItem[]>([]);
+    const [moments, setMoments] = useState<Moment[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
@@ -74,7 +72,7 @@ const MomentScreen = () => {
     const [commentModalVisible, setCommentModalVisible] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [selectedMomentId, setSelectedMomentId] = useState<string>('');
-    const [replyToComment, setReplyToComment] = useState<Comment | null>(null);
+    const [replyToComment, setReplyToComment] = useState<MomentComment | null>(null);
 
     // Image preview state
     const [previewVisible, setPreviewVisible] = useState(false);
@@ -110,15 +108,28 @@ const MomentScreen = () => {
 
         try {
             setLoading(true);
-            const start = isRefresh ? 0 : (moments[moments.length - 1]?.moment_time || 0);
-            const response = await getMomentList(20, start);
+            const start = isRefresh ? 0 : (moments[moments.length - 1]?.createTime || 0);
+            const count = 20;
+            // direction: 0 for new, 1 for old (history)
+            const direction = isRefresh ? 0 : 1;
+
+            // If refreshing, we might want getCachedMomentList or just fetch new
+            // Assuming getMomentList fetches latest if timestamp 0
+            const { list, isFinished: finished } = await JuggleIMMoment.getMomentList({
+                count,
+                timestamp: start,
+                direction
+            });
+            // 按照时间倒序排序
+            list.sort((a, b) => b.createTime - a.createTime);
 
             if (isRefresh) {
-                setMoments(response.items);
+                setMoments(list);
             } else {
-                setMoments([...moments, ...response.items]);
+                setMoments(prev => [...prev, ...list]);
             }
-            setIsFinished(response.is_finished);
+            setIsFinished(finished);
+
         } catch (error) {
             console.error('Failed to load moments:', error);
             Alert.alert('Error', 'Failed to load moments');
@@ -142,27 +153,47 @@ const MomentScreen = () => {
 
     const handleLike = async (momentId: string, isLiked: boolean) => {
         try {
+            const reactionKey = 'like';
             if (isLiked) {
-                await deleteReaction(momentId, 'like');
+                await JuggleIMMoment.removeReaction(momentId, reactionKey);
             } else {
-                await addReaction(momentId, { key: 'like', value: 'like_v' });
+                await JuggleIMMoment.addReaction(momentId, reactionKey);
             }
 
             // Update local state
             setMoments(moments.map(moment => {
-                if (moment.moment_id === momentId) {
-                    const reactions = isLiked
-                        ? moment.reactions.filter(r => r.user_info.user_id !== currentUserId)
-                        : [...moment.reactions, {
-                            value: '👍',
-                            timestamp: Date.now(),
-                            user_info: {
-                                user_id: currentUserId,
-                                nickname: currentUserName,
-                                avatar: currentUserAvatar,
-                            },
-                        }];
-                    return { ...moment, reactions };
+                if (moment.momentId === momentId) {
+                    let reactionList = moment.reactionList || [];
+                    // Find 'like' reaction group
+                    let likeReactionIndex = reactionList.findIndex(r => r.key === reactionKey);
+                    let likeReaction = likeReactionIndex !== -1 ? reactionList[likeReactionIndex] : { key: reactionKey, userList: [] };
+
+                    let userList = likeReaction.userList || [];
+
+                    if (isLiked) {
+                        // Remove user
+                        userList = userList.filter(u => u.userId !== currentUserId);
+                    } else {
+                        // Add user
+                        userList = [...userList, {
+                            userId: currentUserId,
+                            nickname: currentUserName,
+                            avatar: currentUserAvatar,
+                        } as UserInfo];
+                    }
+
+                    // Update reaction list
+                    if (likeReactionIndex !== -1) {
+                        // Create a NEW object for replacement, don't mutate
+                        const newReaction = { ...likeReaction, userList };
+                        // Replace in list
+                        const newReactionList = [...reactionList];
+                        newReactionList[likeReactionIndex] = newReaction;
+                        return { ...moment, reactionList: newReactionList };
+                    } else {
+                        // Add new reaction group
+                        return { ...moment, reactionList: [...reactionList, { key: reactionKey, userList }] };
+                    }
                 }
                 return moment;
             }));
@@ -183,8 +214,8 @@ const MomentScreen = () => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await deleteMoment([momentId]);
-                            setMoments(moments.filter(m => m.moment_id !== momentId));
+                            await JuggleIMMoment.removeMoment(momentId);
+                            setMoments(moments.filter(m => m.momentId !== momentId));
                         } catch (error) {
                             console.error('Failed to delete moment:', error);
                             Alert.alert('Error', 'Failed to delete moment');
@@ -195,7 +226,7 @@ const MomentScreen = () => {
         );
     };
 
-    const handleCommentPress = (momentId: string, comment?: Comment) => {
+    const handleCommentPress = (momentId: string, comment?: MomentComment) => {
         setSelectedMomentId(momentId);
         setReplyToComment(comment || null);
         setCommentModalVisible(true);
@@ -205,27 +236,18 @@ const MomentScreen = () => {
         if (!commentText.trim()) return;
 
         try {
-            const response = await addComment(
+            const comment = await JuggleIMMoment.addComment(
                 selectedMomentId,
-                commentText.trim(),
-                replyToComment?.comment_id
+                replyToComment?.commentId || '',
+                commentText.trim()
             );
 
             // Update local state
             setMoments(moments.map(moment => {
-                if (moment.moment_id === selectedMomentId) {
-                    const newComment: Comment = {
-                        comment_id: response.comment_id,
-                        moment_id: selectedMomentId,
-                        parent_comment_id: replyToComment?.comment_id,
-                        content: { text: commentText.trim() },
-                        user_info: response.user_info,
-                        parent_user_info: replyToComment?.user_info,
-                        comment_time: response.comment_time,
-                    };
+                if (moment.momentId === selectedMomentId) {
                     return {
                         ...moment,
-                        top_comments: [...moment.top_comments, newComment],
+                        commentList: [...(moment.commentList || []), comment],
                     };
                 }
                 return moment;
@@ -251,12 +273,12 @@ const MomentScreen = () => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await deleteComment(momentId, [commentId]);
+                            await JuggleIMMoment.removeComment(momentId, commentId);
                             setMoments(moments.map(moment => {
-                                if (moment.moment_id === momentId) {
+                                if (moment.momentId === momentId) {
                                     return {
                                         ...moment,
-                                        top_comments: moment.top_comments.filter(c => c.comment_id !== commentId),
+                                        commentList: moment.commentList.filter(c => c.commentId !== commentId),
                                     };
                                 }
                                 return moment;
@@ -271,8 +293,8 @@ const MomentScreen = () => {
         );
     };
 
-    const handleImagePress = (medias: any[], index: number) => {
-        const images = medias.map(m => m.snapshot_url || m.url);
+    const handleImagePress = (medias: MomentMedia[], index: number) => {
+        const images = medias.map(m => m.snapshotUrl || m.url);
         setPreviewImages(images);
         setPreviewIndex(index);
         setPreviewVisible(true);
@@ -359,7 +381,7 @@ const MomentScreen = () => {
         );
     };
 
-    const renderMediaGrid = (medias: any[]) => {
+    const renderMediaGrid = (medias: MomentMedia[]) => {
         if (!medias || medias.length === 0) return null;
 
         const imageWidth = medias.length === 1 ? width * 0.6 : (width - 120) / 3;
@@ -377,13 +399,13 @@ const MomentScreen = () => {
                             medias.length === 1 && styles.singleMedia,
                         ]}>
                         <Image
-                            source={{ uri: media.snapshot_url || media.url }}
+                            source={{ uri: media.snapshotUrl || media.url }}
                             style={styles.mediaImage}
                         />
                         {media.type === 'video' && (
                             <View style={styles.videoOverlay}>
                                 <Text style={styles.videoDuration}>
-                                    {Math.floor(media.duration / 60)}:{(media.duration % 60).toString().padStart(2, '0')}
+                                    {Math.floor((media.duration || 0) / 60)}:{((media.duration || 0) % 60).toString().padStart(2, '0')}
                                 </Text>
                             </View>
                         )}
@@ -393,8 +415,11 @@ const MomentScreen = () => {
         );
     };
 
-    const renderReactions = (reactions: any[]) => {
+    const renderReactions = (reactions: MomentReaction[]) => {
         if (!reactions || reactions.length === 0) return null;
+
+        const likeReaction = reactions.find(r => r.key === 'like');
+        if (!likeReaction || !likeReaction.userList || likeReaction.userList.length === 0) return null;
 
         return (
             <View style={styles.reactionsContainer}>
@@ -403,36 +428,36 @@ const MomentScreen = () => {
                     style={styles.reactionIcon}
                 />
                 <Text style={styles.reactionText}>
-                    {reactions.map(r => r.user_info.nickname).join(', ')}
+                    {likeReaction.userList.map(u => u.nickname).join(', ')}
                 </Text>
             </View>
         );
     };
 
-    const renderComments = (comments: Comment[], momentId: string) => {
+    const renderComments = (comments: MomentComment[], momentId: string) => {
         if (!comments || comments.length === 0) return null;
 
         return (
             <View style={styles.commentsContainer}>
                 {comments.map((comment) => (
                     <TouchableOpacity
-                        key={comment.comment_id}
+                        key={comment.commentId}
                         style={styles.commentItem}
                         onPress={() => handleCommentPress(momentId, comment)}
                         onLongPress={() => {
-                            if (comment.user_info.user_id === currentUserId) {
-                                handleDeleteComment(momentId, comment.comment_id);
+                            if (comment.userInfo.userId === currentUserId) {
+                                handleDeleteComment(momentId, comment.commentId);
                             }
                         }}>
                         <Text style={styles.commentText}>
-                            <Text style={styles.commentAuthor}>{comment.user_info.nickname}</Text>
-                            {comment.parent_user_info && (
+                            <Text style={styles.commentAuthor}>{comment.userInfo.nickname}</Text>
+                            {comment.parentUserInfo && (
                                 <>
                                     <Text style={styles.commentReply}> 回复 </Text>
-                                    <Text style={styles.commentAuthor}>{comment.parent_user_info.nickname}</Text>
+                                    <Text style={styles.commentAuthor}>{comment.parentUserInfo.nickname}</Text>
                                 </>
                             )}
-                            <Text>: {comment.content.text}</Text>
+                            <Text>: {comment.content}</Text>
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -440,38 +465,40 @@ const MomentScreen = () => {
         );
     };
 
-    const renderMomentItem = ({ item }: { item: MomentItem }) => {
-        const isLiked = item.reactions.some(r => r.user_info.user_id === currentUserId);
-        const isOwnMoment = item.user_info.user_id === currentUserId;
-        const showBubble = activeBubbleMomentId === item.moment_id;
+    const renderMomentItem = ({ item }: { item: Moment }) => {
+        const likeReaction = item.reactionList?.find(r => r.key === 'like');
+        const isLiked = likeReaction?.userList?.some(u => u.userId === currentUserId) || false;
+
+        const isOwnMoment = item.userInfo?.userId === currentUserId;
+        const showBubble = activeBubbleMomentId === item.momentId;
 
         return (
             <View style={styles.momentItem}>
                 <Image
                     source={
-                        item.user_info.avatar
-                            ? { uri: item.user_info.avatar }
+                        item.userInfo?.avatar
+                            ? { uri: item.userInfo.avatar }
                             : require('../assets/icons/avatar.png')
                     }
                     style={styles.momentAvatar}
                 />
                 <View style={styles.momentContent}>
-                    <Text style={styles.momentAuthor}>{item.user_info.nickname}</Text>
-                    {item.content.text ? (
-                        <Text style={styles.momentText}>{item.content.text}</Text>
+                    <Text style={styles.momentAuthor}>{item.userInfo?.nickname}</Text>
+                    {item.content ? (
+                        <Text style={styles.momentText}>{item.content}</Text>
                     ) : null}
-                    {renderMediaGrid(item.content.medias)}
+                    {renderMediaGrid(item.mediaList)}
 
                     {/* Time and action bubble on same line */}
                     <View style={styles.timeActionRow}>
                         <View style={styles.timeDeleteRow}>
                             <Text style={styles.momentTime}>
-                                {formatRelativeTime(item.moment_time)}
+                                {formatRelativeTime(item.createTime)}
                             </Text>
                             {isOwnMoment && (
                                 <TouchableOpacity
                                     style={styles.deleteIconButton}
-                                    onPress={() => handleDeleteMoment(item.moment_id)}>
+                                    onPress={() => handleDeleteMoment(item.momentId)}>
                                     <Image
                                         source={require('../assets/icons/delete.png')}
                                         style={styles.deleteIcon}
@@ -485,7 +512,7 @@ const MomentScreen = () => {
                                     <TouchableOpacity
                                         style={styles.bubbleButton}
                                         onPress={() => {
-                                            handleLike(item.moment_id, isLiked);
+                                            handleLike(item.momentId, isLiked);
                                             setActiveBubbleMomentId(null);
                                         }}>
                                         <Image
@@ -498,7 +525,7 @@ const MomentScreen = () => {
                                     <TouchableOpacity
                                         style={styles.bubbleButton}
                                         onPress={() => {
-                                            handleCommentPress(item.moment_id);
+                                            handleCommentPress(item.momentId);
                                             setActiveBubbleMomentId(null);
                                         }}>
                                         <Image
@@ -511,16 +538,16 @@ const MomentScreen = () => {
                             )}
                             <TouchableOpacity
                                 style={styles.moreButton}
-                                onPress={() => setActiveBubbleMomentId(showBubble ? null : item.moment_id)}>
+                                onPress={() => setActiveBubbleMomentId(showBubble ? null : item.momentId)}>
                                 <Text style={styles.moreButtonText}>•••</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
-                    {(item.reactions.length > 0 || item.top_comments.length > 0) && (
+                    {((item.reactionList && item.reactionList.length > 0) || (item.commentList && item.commentList.length > 0)) && (
                         <View style={styles.interactionsContainer}>
-                            {renderReactions(item.reactions)}
-                            {renderComments(item.top_comments, item.moment_id)}
+                            {renderReactions(item.reactionList)}
+                            {renderComments(item.commentList, item.momentId)}
                         </View>
                     )}
                 </View>
@@ -533,7 +560,7 @@ const MomentScreen = () => {
             <FlatList
                 data={moments}
                 renderItem={renderMomentItem}
-                keyExtractor={(item) => item.moment_id}
+                keyExtractor={(item) => item.momentId}
                 ListHeaderComponent={renderHeader}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -560,7 +587,7 @@ const MomentScreen = () => {
                         {replyToComment && (
                             <View style={styles.replyToContainer}>
                                 <Text style={styles.replyToText}>
-                                    回复 {replyToComment.user_info.nickname}
+                                    回复 {replyToComment.userInfo.nickname}
                                 </Text>
                                 <TouchableOpacity onPress={() => setReplyToComment(null)}>
                                     <Image
@@ -798,76 +825,124 @@ const styles = StyleSheet.create({
         bottom: 4,
         right: 4,
         backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 3,
     },
     videoDuration: {
-        fontSize: 11,
         color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '500',
     },
     interactionsContainer: {
+        backgroundColor: '#F3F3F5',
         marginTop: 8,
-        backgroundColor: '#F7F7F7',
         borderRadius: 4,
-        padding: 8,
+        paddingHorizontal: 12,
     },
     reactionsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingBottom: 8,
+        paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5E5',
-        marginBottom: 8,
     },
     reactionIcon: {
-        width: 18,
-        height: 18,
-        marginRight: 8,
-    },
-    reactionAvatars: {
-        flexDirection: 'row',
-        marginRight: 8,
-    },
-    reactionAvatar: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#FFFFFF',
+        width: 14,
+        height: 14,
+        tintColor: '#576B95',
+        marginRight: 6,
     },
     reactionText: {
-        flex: 1,
-        fontSize: 13,
+        fontSize: 14,
         color: '#576B95',
+        flex: 1,
+        lineHeight: 20,
     },
     commentsContainer: {
-        marginTop: 4,
+        paddingVertical: 4,
+        paddingBottom: 8,
     },
     commentItem: {
-        marginBottom: 4,
+        marginTop: 4,
     },
     commentText: {
         fontSize: 14,
-        color: '#000000',
+        color: '#333333',
         lineHeight: 20,
     },
     commentAuthor: {
         color: '#576B95',
-        fontWeight: '500',
+        fontWeight: '600',
     },
     commentReply: {
-        color: '#999999',
+        color: '#333333',
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'flex-end',
     },
     modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
-    // Preview styles
+    commentInputContainer: {
+        backgroundColor: '#F5F5F5',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+    },
+    replyToContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+        paddingHorizontal: 4,
+    },
+    replyToText: {
+        fontSize: 12,
+        color: '#666666',
+    },
+    closeReplyIcon: {
+        width: 16,
+        height: 16,
+        tintColor: '#999999',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    commentInput: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 16,
+        maxHeight: 120,
+        marginRight: 12,
+    },
+    sendButton: {
+        backgroundColor: '#07C160',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#E5E5E5',
+    },
+    sendButtonText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    sendButtonTextDisabled: {
+        color: '#A8A8A8',
+    },
     previewContainer: {
         flex: 1,
         backgroundColor: '#000000',
@@ -880,8 +955,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     previewImage: {
-        width: '100%',
+        width: width,
         height: '100%',
+        resizeMode: 'contain',
     },
     previewIndicator: {
         position: 'absolute',
@@ -895,65 +971,6 @@ const styles = StyleSheet.create({
         height: 8,
         borderRadius: 4,
         backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    },
-    commentInputContainer: {
-        backgroundColor: '#FFFFFF',
-        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-    },
-    replyToContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        backgroundColor: '#F7F7F7',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E5E5',
-    },
-    replyToText: {
-        fontSize: 14,
-        color: '#576B95',
-    },
-    closeReplyIcon: {
-        width: 16,
-        height: 16,
-        tintColor: '#999999',
-    },
-    inputRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 8,
-    },
-    commentInput: {
-        flex: 1,
-        maxHeight: 100,
-        borderWidth: 1,
-        borderColor: '#E5E5E5',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        fontSize: 15,
-        backgroundColor: '#F7F7F7',
-    },
-    sendButton: {
-        marginLeft: 12,
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        backgroundColor: '#007AFF',
-        borderRadius: 20,
-    },
-    sendButtonDisabled: {
-        backgroundColor: '#E5E5E5',
-    },
-    sendButtonText: {
-        fontSize: 15,
-        color: '#FFFFFF',
-        fontWeight: '500',
-    },
-    sendButtonTextDisabled: {
-        color: '#999999',
     },
 });
 

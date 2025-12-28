@@ -1,6 +1,9 @@
 
 export * from './types';
 export * from './call';
+export * from './moment/index';
+export * from './moment/types';
+
 
 import {
   ConnectionStatusListener,

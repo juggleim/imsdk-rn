@@ -983,4 +983,11 @@ class JuggleIM {
 
 export * from './types';
 export * from './call';
+export * from './moment/types';
+import { JuggleIMMoment } from './moment/index';
+
+export {
+  JuggleIMMoment,
+  JuggleIM
+};
 export default JuggleIM;

@@ -498,6 +498,106 @@ session.useFrontCamera(true);
 session.setSpeakerEnable(true);
 ```
 
+## 朋友圈 (Moment)
+
+### 发布朋友圈
+
+```javascript
+import { JuggleIMMoment } from 'juggleim-rnsdk';
+
+const moment = await JuggleIMMoment.addMoment('今天是个好日子', [
+  {
+    type: 'image',
+    url: 'http://example.com/image.jpg',
+    width: 100,
+    height: 100
+  }
+]);
+```
+
+### 删除朋友圈
+
+```javascript
+await JuggleIMMoment.removeMoment('moment_id');
+```
+
+### 获取朋友圈列表
+
+```javascript
+const result = await JuggleIMMoment.getMomentList({
+  count: 10,
+  timestamp: Date.now(),
+  direction: 1 // 1: old, 0: new
+});
+// result.list: Moment[]
+// result.isFinished: boolean
+```
+
+### 获取缓存的朋友圈列表
+
+```javascript
+/**
+ * 获取缓存的朋友圈列表（缓存的数据不一定是最新版本，可用于第一时间渲染界面，优化用户体验）
+ * 根据返回的数据中 isFinished 判断是否获取完毕，上拉刷新继续获取
+ * @param count 获取的朋友圈数量
+ * @param timestamp 时间戳
+ * @param direction 1: old, 0: new
+ * @return 缓存的朋友圈列表
+ */
+const dataset = await JuggleIMMoment.getCachedMomentList({
+  count: 10,
+  timestamp: Date.now(),
+  direction: 1
+});
+```
+
+### 获取朋友圈详情
+
+```javascript
+const moment = await JuggleIMMoment.getMoment('moment_id');
+```
+
+### 发布评论
+
+```javascript
+const comment = await JuggleIMMoment.addComment('moment_id', 'parent_comment_id_or_empty', '评论内容');
+```
+
+### 删除评论
+
+```javascript
+await JuggleIMMoment.removeComment('moment_id', 'comment_id');
+```
+
+### 获取评论列表
+
+```javascript
+const result = await JuggleIMMoment.getCommentList({
+  momentId: 'moment_id',
+  count: 20,
+  timestamp: Date.now(),
+  direction: 1
+});
+```
+
+### 添加点赞
+
+```javascript
+await JuggleIMMoment.addReaction('moment_id', 'thumbsup');
+```
+
+### 取消点赞
+
+```javascript
+await JuggleIMMoment.removeReaction('moment_id', 'thumbsup');
+```
+
+### 获取点赞列表
+
+```javascript
+const reactions = await JuggleIMMoment.getReactionList('moment_id');
+```
+
 ## 类型定义
 
 ### 会话类型
@@ -660,4 +760,73 @@ JuggleIM.sendMessage({
  * @returns Promise<string> 上传成功后返回图片url
  */
 JuggleIM.uploadImage(localPath: string): Promise<string>;
+```
+
+### 朋友圈相关类型
+
+#### 朋友圈内容 (Moment)
+```typescript
+export interface Moment {
+  momentId: string;
+  content: string;
+  mediaList: MomentMedia[];
+  userInfo: UserInfo;
+  commentList: MomentComment[];
+  reactionList: MomentReaction[];
+  createTime: number;
+}
+```
+
+#### 媒体资源 (MomentMedia)
+```typescript
+export type MomentMediaType = 'image' | 'video';
+
+export interface MomentMedia {
+  type: MomentMediaType;
+  url: string;
+  snapshotUrl?: string; // 视频或图片的缩略图
+  height: number;
+  width: number;
+  duration?: number; // 仅视频有效
+}
+```
+
+#### 评论 (MomentComment)
+```typescript
+export interface MomentComment {
+  commentId: string;
+  momentId: string;
+  parentCommentId?: string;
+  content: string;
+  userInfo: UserInfo;
+  parentUserInfo?: UserInfo;
+  createTime: number;
+}
+```
+
+#### 互动/点赞 (MomentReaction)
+```typescript
+export interface MomentReaction {
+  key: string;
+  userList: UserInfo[];
+}
+```
+
+#### 获取列表选项 (GetMomentOption)
+```typescript
+export interface GetMomentOption {
+  count: number;
+  timestamp: number;
+  direction: number;
+}
+```
+
+#### 获取评论列表选项 (GetMomentCommentOption)
+```typescript
+export interface GetMomentCommentOption {
+  momentId: string;
+  count: number;
+  timestamp: number;
+  direction: number;
+}
 ```
