@@ -45,7 +45,7 @@ import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageList, { MessageListRef } from '../components/MessageList';
 
-const DEFAULT_MESSAGE_COUNT = 15;
+const DEFAULT_MESSAGE_COUNT = 30;
 
 const MessageItem = ({
   item,
@@ -151,12 +151,8 @@ const MessageListScreen = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingNewer, setLoadingNewer] = useState(false);
-  const [loadingInitial, setLoadingInitial] = useState(true);
+  const loadingInitial = useRef(false);
   const [hasPrev, setHasPrev] = useState(true);
-  const [hasNext, setHasNext] = useState(false); // Initially false until we support "middle" entry
-  const [oldestMessageTime, setOldestMessageTime] = useState<number>(0);
-  const [newestMessageTime, setNewestMessageTime] = useState<number>(0);
-
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | undefined>(undefined);
@@ -201,10 +197,7 @@ const MessageListScreen = () => {
         if (
           message.conversation.conversationId === conversation.conversationId
         ) {
-          // In inverted mode: new message goes to START (index 0)
           setMessages(prev => [message, ...prev]);
-          setNewestMessageTime(message.timestamp);
-          // Mark as read when received in active chat
           JuggleIM.clearUnreadCount(conversation);
         }
       },
@@ -249,92 +242,50 @@ const MessageListScreen = () => {
 
   const loadInitialMessages = async () => {
     try {
-      setLoadingInitial(true);
+      loadingInitial.current = true;
       const result = await JuggleIM.getMessageList(conversation, 1, {
         count: DEFAULT_MESSAGE_COUNT,
         startTime: 0,
       });
       if (result && result.messages) {
-        console.log('loadInitialMessages', result.messages.length, result.hasMore);
-        // Sort New -> Old (Descending) for inverted list
-        const sorted = result.messages.sort((a, b) => b.timestamp - a.timestamp);
+        // Sort Old -> New (Ascending) for normal list
+        const sorted = result.messages.sort((a, b) => a.timestamp - b.timestamp);
+        console.log('loadInitialMessages', sorted.length, result.hasMore, "n:" + sorted[sorted.length - 1].timestamp, "o:" + sorted[0].timestamp);
         setMessages(sorted);
-
-        // MessageList handles initial auto-scroll; no-op here to avoid races.
-
-        if (sorted.length > 0) {
-          setNewestMessageTime(sorted[0].timestamp);
-          setOldestMessageTime(sorted[sorted.length - 1].timestamp);
-          console.log('Initial Oldest:', new Date(oldestMessageTime).toLocaleString(), 'Newest:', new Date(newestMessageTime).toLocaleString());
-        }
-
-        // Check if there are more history
         setHasPrev(result.hasMore);
-
-        // Latest loaded, so likely no "newer" unless we didn't load all
-        setHasNext(false);
-
-        // No need to scroll - inverted list defaults to bottom (index 0 = newest)
-        // setTimeout(() => 
-        //   // listRef.current?.scrollToBottom()
-        // , 100);
-
+        requestAnimationFrame(() => {
+          console.log('loadInitialMessages end');
+          setTimeout(() => {
+            loadingInitial.current = false;
+          }, 300);
+        });
       }
     } catch (error) {
       console.error('Failed to load initial messages:', error);
-    } finally {
-      setLoadingInitial(false);
     }
   };
 
   const loadHistory = async () => {
-    if (loadingHistory || !hasPrev || loadingInitial) return;
+    if (loadingHistory || !hasPrev || loadingInitial.current) return;
     setLoadingHistory(true);
     try {
-      console.log('Loading history before: formate date=', new Date(oldestMessageTime).toLocaleString());
+      console.log('Loading history start: ', messages[0].timestamp);
       const result = await JuggleIM.getMessageList(conversation, 1, {
         count: DEFAULT_MESSAGE_COUNT,
-        startTime: oldestMessageTime - 1,
+        startTime: messages[0].timestamp - 1,
       });
       if (result && result.messages && result.messages.length > 0) {
-        const sorted = result.messages.sort((a, b) => b.timestamp - a.timestamp);
-        setMessages(prev => [...prev, ...sorted]);
-        setOldestMessageTime(sorted[sorted.length - 1].timestamp);
-        console.log('loadHistory sorted', sorted.length, result.hasMore, new Date(oldestMessageTime).toLocaleString());
+        const oldMessages = result.messages.sort((a, b) => a.timestamp - b.timestamp);
+        console.log('loadHistory sorted', oldMessages.length, result.hasMore, "n:" + oldMessages[oldMessages.length - 1].timestamp, "o:" + oldMessages[0].timestamp);
+        setMessages(prev => [...oldMessages, ...prev]);
         setHasPrev(result.hasMore);
       } else {
         setHasPrev(false);
       }
+      setLoadingHistory(false);
     } catch (error) {
       console.error('Failed to load history:', error);
     } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  const loadNewer = async () => {
-    if (loadingNewer || !hasNext) return;
-    setLoadingNewer(true);
-    try {
-      const result = await JuggleIM.getMessageList(conversation, 0, {
-        count: DEFAULT_MESSAGE_COUNT,
-        startTime: newestMessageTime,
-      });
-      if (result && result.messages && result.messages.length > 0) {
-        // Result messages are newer. Sort New -> Old for inverted list
-        const sorted = result.messages.sort((a, b) => b.timestamp - a.timestamp);
-        // In inverted mode: prepend newer messages to START of array
-        setMessages(prev => [...sorted, ...prev]);
-        setNewestMessageTime(sorted[sorted.length - 1].timestamp);
-        setHasNext(result.hasMore);
-      } else {
-        // No more newer messages
-        setHasNext(false);
-      }
-    } catch (error) {
-      console.error('Failed to load newer messages:', error);
-    } finally {
-      setLoadingNewer(false);
     }
   };
 
@@ -782,11 +733,8 @@ const MessageListScreen = () => {
         messages={messages}
         renderItem={renderMessageItem}
         onLoadPrev={loadHistory}
-        onLoadNext={loadNewer}
         hasPrev={hasPrev}
-        hasNext={hasNext}
         loadingPrev={loadingHistory} // Visual top loader (history)
-        loadingNext={loadingNewer}  // Not used in typical inverted chat
       />
 
       <MessageComposer

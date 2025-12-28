@@ -10,11 +10,6 @@ import {
 import CardMessageBubble from './CardMessageBubble';
 import BusinessCardBubble from './BusinessCardBubble';
 import { BusinessCardMessage } from '../messages/BusinessCardMessage';
-import { GroupNotifyMessage } from '../messages/GroupNotifyMessage';
-import { FriendNotifyMessage } from '../messages/FriendNotifyMessage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { USER_ID_KEY } from '../utils/auth';
-import UserInfoManager from '../manager/UserInfoManager';
 
 interface MessageBubbleProps {
   message: Message;
@@ -93,7 +88,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     );
   };
 
-  const renderContent = async () => {
+  const renderContent = () => {
     const { contentType } = message.content;
     switch (contentType) {
       case 'jg:text':
@@ -150,43 +145,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
-        if (!uri.startsWith('http')) {
-          uri = Platform.OS === 'android' ? 'file://' + uri : uri;
-        }
-
-        const originalWidth = imgContent.width || 0;
-        const originalHeight = imgContent.height || 0;
-
+        // 预先计算好尺寸，不要在渲染过程中使用异步获取
         const maxWidth = 200;
         const maxHeight = 300;
+        const originalWidth = imgContent.width || maxWidth;
+        const originalHeight = imgContent.height || maxHeight;
 
-        let width = originalWidth;
-        let height = originalHeight;
-        let w = width, h = height;
+        const aspectRatio = originalWidth / originalHeight;
+        let displayWidth = originalWidth;
+        let displayHeight = originalHeight;
 
-        if (width > 0 && height > 0) {
-          const aspectRatio = width / height;
-          if (width > maxWidth || height > maxHeight) {
-            if (width / maxWidth > height / maxHeight) {
-              width = maxWidth;
-              height = width / aspectRatio;
-              w = width + width * 0.6
-            } else {
-              height = maxHeight;
-              width = height * aspectRatio;
-              w = width + width * 0.6
-            }
+        if (originalWidth > maxWidth || originalHeight > maxHeight) {
+          if (aspectRatio > maxWidth / maxHeight) {
+            displayWidth = maxWidth;
+            displayHeight = maxWidth / aspectRatio;
+          } else {
+            displayHeight = maxHeight;
+            displayWidth = maxHeight * aspectRatio;
           }
-        } else {
-          width = maxWidth;
-          height = maxHeight;
         }
+
+        // 3. 这里的 View 容器必须有确定的宽高，防止图片加载延迟导致的闪烁
         return (
-          <View style={{ width: w, height }}>
+          <View style={{ width: displayWidth, height: displayHeight, backgroundColor: '#eee', borderRadius: 8, overflow: 'hidden' }}>
             <Image
-              source={{ uri }}
-              style={{ width: width, height, borderRadius: 8 }}
+              source={{ uri: imgContent.thumbnailUrl || imgContent.url }} // 简化 URI 处理逻辑
+              style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
           </View>
