@@ -1372,7 +1372,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 发送语音消息
      */
     @ReactMethod
-    public void sendVoiceMessage(ReadableMap messageMap, Promise promise) {
+    public void sendVoiceMessage(ReadableMap messageMap, String messageId, Promise promise) {
         try {
             Conversation conversation = convertMapToConversation(messageMap);
             VoiceMessage voiceMessage = new VoiceMessage();
@@ -1397,6 +1397,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onProgress(int progress, Message message) {
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putInt("progress", progress);
                             params.putMap("message", convertMessageToMap(message));
                             Log.d("JuggleIM", "onMediaMessageProgress: " + progress);
@@ -1406,6 +1407,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onSuccess(Message message) {
                             WritableMap result = convertMessageToMap(message);
+                            result.putString("messageId", messageId);
                             Log.d("JuggleIM", "onMediaMessageSent");
                             sendEvent("onMediaMessageSent", result);
                         }
@@ -1413,6 +1415,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onError(Message message, int errorCode) {
                             WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
                             params.putMap("message", convertMessageToMap(message));
                             params.putInt("errorCode", errorCode);
                             sendEvent("onMediaMessageSentError", params);
@@ -1421,11 +1424,13 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                         @Override
                         public void onCancel(Message message) {
                             WritableMap result = convertMessageToMap(message);
+                            result.putString("messageId", messageId);
                             sendEvent("onMediaMessageCancelled", result);
                         }
                     });
 
             WritableMap result = convertMessageToMap(message);
+            result.putString("messageId", messageId);
             promise.resolve(result);
         } catch (Exception e) {
             promise.reject("SEND_VOICE_MESSAGE_ERROR", e.getMessage());

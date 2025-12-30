@@ -7,8 +7,10 @@ import {
     FlatList,
     ActivityIndicator,
     Image,
+    Modal,
+    Dimensions,
+    TouchableWithoutFeedback,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import { Friend, getFriendList } from '../api/friends';
 
 interface FriendSelectionSheetProps {
@@ -73,40 +75,45 @@ const FriendSelectionSheet: React.FC<FriendSelectionSheetProps> = ({
 
     return (
         <Modal
-            isVisible={visible}
-            onBackdropPress={onClose}
-            onSwipeComplete={onClose}
-            swipeDirection="down"
-            style={styles.modal}
-            propagateSwipe>
-            <View style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.handleBar} />
-                    <Text style={styles.title}>选择好友</Text>
-                </View>
+            visible={visible}
+            transparent
+            animationType="slide"
+            onRequestClose={onClose}>
+            <TouchableWithoutFeedback onPress={onClose}>
+                <View style={styles.overlay}>
+                    <TouchableWithoutFeedback>
+                        <View style={styles.container}>
+                            <View style={styles.header}>
+                                <View style={styles.handleBar} />
+                                <Text style={styles.title}>选择好友</Text>
+                            </View>
 
-                {loading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#007AFF" />
-                    </View>
-                ) : (
-                    <FlatList
-                        data={friends}
-                        renderItem={renderFriendItem}
-                        keyExtractor={item => item.user_id}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
-            </View>
+                            {loading ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color="#007AFF" />
+                                </View>
+                            ) : (
+                                <FlatList
+                                    data={friends}
+                                    renderItem={renderFriendItem}
+                                    keyExtractor={item => item.user_id}
+                                    contentContainerStyle={styles.listContent}
+                                    showsVerticalScrollIndicator={false}
+                                />
+                            )}
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
-    modal: {
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
-        margin: 0,
     },
     container: {
         backgroundColor: '#fff',

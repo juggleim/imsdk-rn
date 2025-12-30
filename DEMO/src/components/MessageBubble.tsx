@@ -17,6 +17,11 @@ interface MessageBubbleProps {
   onLongPress?: (anchor: { x: number; y: number; width: number; height: number }) => void;
 }
 
+// 显示为灰条消息的白名单列表
+const HuiTiaoMessageTypes = [
+  'jgd:grpntf', 'jgd:friendntf'
+];
+
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOutgoing,
@@ -170,7 +175,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <View style={{ width: displayWidth, height: displayHeight, backgroundColor: '#eee', borderRadius: 8, overflow: 'hidden' }}>
             <Image
               source={{ uri: imgContent.thumbnailUrl || imgContent.url }} // 简化 URI 处理逻辑
-              style={{ width: '100%', height: '100%' }}
+              style={{ width: displayWidth, height: displayHeight }}
               resizeMode="cover"
             />
           </View>
@@ -298,7 +303,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         <TouchableOpacity
           onLongPress={handleLongPress}
           activeOpacity={0.6}
-          style={[
+          style={HuiTiaoMessageTypes.includes(message.content.contentType) ? styles.huitiaoBubble : [
             styles.bubble,
             isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
           ]}>
@@ -320,6 +325,14 @@ const styles = StyleSheet.create({
   incomingContainer: {
     justifyContent: 'flex-start',
   },
+
+  huitiaoBubble: {
+    backgroundColor: '#e1dfdfff',
+    flexDirection: 'column',
+    borderRadius: 3,
+    alignSelf: 'center',
+  },
+
   bubble: {
     padding: 6,
     borderRadius: 8,
@@ -333,7 +346,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   incomingBubble: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#fff',
     alignSelf: 'flex-start',
   },
   textRow: {
@@ -382,9 +395,11 @@ const styles = StyleSheet.create({
   },
   fileContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     minWidth: 150,
-    maxWidth: 250,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 6,
   },
   fileIcon: {
     width: 40,

@@ -348,20 +348,21 @@ export default class JuggleIM {
    * 示例
    * ```javascript
    * const voiceContent = {
-   *  contentType: 'voice',
+   *  contentType: 'jg:voice',
    *  localPath: '/path/to/voice',
    *  duration: 10, // 语音时长，单位秒
    * };
-   * @param {number} conversationType 会话类型
-   * @param {string} conversationId 会话ID
-   * @param {VoiceMessageContent} content 语音消息内容
+   * const message = {
+   *   conversationType: 1,
+   *   conversationId: 'user123',
+   *   content: voiceContent,
+   * };
+   * @param {SendMessageObject} message
    * @param {SendMediaMessageCallback} [callback] 发送消息回调函数
    * @returns {Promise<Message>} 发送的消息对象
    */
   static sendVoiceMessage(
-    conversationType: number,
-    conversationId: string,
-    content: VoiceMessageContent,
+    message: SendMessageObject,
     callback?: SendMediaMessageCallback
   ): Promise<Message>;
 

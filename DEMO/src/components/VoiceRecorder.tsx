@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
     Modal,
     TouchableWithoutFeedback
 } from 'react-native';
+import { useSoundRecorder } from 'react-native-nitro-sound';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 interface VoiceRecorderProps {
@@ -18,21 +19,27 @@ interface VoiceRecorderProps {
 }
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ visible, onClose, onSend }) => {
-    const [isRecording, setIsRecording] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
     const [recordTime, setRecordTime] = useState('00:00');
     const [recordSecs, setRecordSecs] = useState(0);
-    const recordPath = useRef('');
-    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordUri, setRecordUri] = useState('');
+    const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+    const { startRecorder, stopRecorder, mmssss } = useSoundRecorder({
+        onRecord: (e) => {
+            if (e.currentPosition !== undefined) {
+                setRecordSecs(Math.floor(e.currentPosition / 1000));
+                setRecordTime(mmssss(Math.floor(e.currentPosition)));
+            }
+        },
+    });
 
     useEffect(() => {
         if (visible) {
-            startRecording();
+            startRecordingWithPermission();
         } else {
-            stopRecording(false);
+            handleStopRecording(false);
         }
-        return () => {
-        };
     }, [visible]);
 
     useEffect(() => {
@@ -70,7 +77,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ visible, onClose, onSend 
         return requestResult === RESULTS.GRANTED;
     };
 
-    const startRecording = async () => {
+    const startRecordingWithPermission = async () => {
         const hasPermission = await checkPermission();
         if (!hasPermission) {
             console.log('Microphone permission denied');
@@ -79,43 +86,55 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ visible, onClose, onSend 
         }
 
         try {
-            const path = Platform.select({
-                ios: 'voice_recording.m4a',
-                android: 'sdcard/voice_recording.mp4',
+            const result = await startRecorder(undefined, {
+                AudioEncoderAndroid: 3, // AAC
+                AudioSourceAndroid: 1, // MIC
+                AVEncoderAudioQualityKeyIOS: 64, // Medium quality
+                AVNumberOfChannelsKeyIOS: 1, // Mono to reduce file size
+                AVFormatIDKeyIOS: 'aac',
             });
 
-            recordPath.current = path || '';
+            setRecordUri(result);
             setIsRecording(true);
+            console.log('Recording started at:', result);
         } catch (error) {
             console.error('Failed to start recording:', error);
             onClose();
         }
     };
 
-    const stopRecording = async (shouldSend: boolean) => {
+    const handleStopRecording = async (shouldSend: boolean) => {
         if (!isRecording) return;
 
         try {
             setIsRecording(false);
+            const result = await stopRecorder();
 
-            if (shouldSend && recordSecs > 0) {
+            const duration = recordSecs;
+            const uri = result;
+
+            if (shouldSend && duration > 0 && uri) {
                 onSend({
-                    uri: '',
-                    duration: recordSecs,
+                    uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+                    duration: duration,
                 });
             }
+
+            setRecordSecs(0);
+            setRecordTime('00:00');
+            setRecordUri('');
         } catch (error) {
             console.error('Failed to stop recording:', error);
         }
     };
 
     const handleCancel = () => {
-        stopRecording(false);
+        handleStopRecording(false);
         onClose();
     };
 
     const handleSend = () => {
-        stopRecording(true);
+        handleStopRecording(true);
         onClose();
     };
 

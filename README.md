@@ -354,21 +354,28 @@ const fileMessage = await JuggleIM.sendFileMessage({
 ### 发送语音消息
 
 ```javascript
-const voiceMessage = await JuggleIM.sendVoiceMessage(1, 'user123', {
-  contentType: 'jg:voice',
-  localPath: '/path/to/audio.mp3',
-  duration: 10
-} as VoiceMessageContent, {
-  onProgress: (progress, message) => {
-    console.log('Upload progress:', progress);
+const voiceMessage = await JuggleIM.sendVoiceMessage(
+  message: {
+    conversationType: 1,
+    conversationId: 'user123',
+    content: {
+      contentType: 'jg:voice',
+      localPath: '/path/to/audio.mp3',
+      duration: 10
+    } as VoiceMessageContent
   },
-  onSuccess: (message) => {
-    console.log('Voice sent successfully:', message);
-  },
-  onError: (message, errorCode) => {
-    console.log('Send voice failed with error:', errorCode);
+  {
+    onProgress: (progress, message) => {
+      console.log('Upload progress:', progress);
+    },
+    onSuccess: (message) => {
+      console.log('Voice sent successfully:', message);
+    },
+    onError: (message, errorCode) => {
+      console.log('Send voice failed with error:', errorCode);
+    }
   }
-});
+)
 ```
 
 ### 获取历史消息
@@ -404,6 +411,8 @@ const removeResult = await JuggleIM.removeMessageReaction('message_id', 'thumbs_
 ## 音视频通话 (Call)
 
 ### 初始化 (Initialization)
+
+> rn项目中需要在android目录的 gradle 中配置原生依赖： maven { url 'https://storage.zego.im/maven' }  
 
 ```javascript
 import { JuggleIMCall } from 'juggleim-rnsdk';

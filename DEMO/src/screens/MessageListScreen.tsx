@@ -2,42 +2,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
   SafeAreaView,
-  ActivityIndicator,
   Text,
-  RefreshControl,
-  ActionSheetIOS,
   Clipboard,
   Alert,
-  Platform,
   Image,
 } from 'react-native';
 // InteractionManager removed; auto-scrolling handled inside MessageList
 import JuggleIM, {
-  Conversation,
   Message,
-  MessageContent,
   TextMessageContent,
   ImageMessageContent,
   VoiceMessageContent,
   FileMessageContent,
   SendMessageObject,
-  MergeMessagePreviewUnit,
   MessageMentionInfo,
   UserInfo,
   JuggleIMCall,
   CallMediaType,
 } from 'juggleim-rnsdk';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getToken, USER_ID_KEY } from '../utils/auth';
+import { USER_ID_KEY } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
 import MessageBubble from '../components/MessageBubble';
 import GridMenu from '../components/GridMenu';
 import VoiceRecorder from '../components/VoiceRecorder';
 import MemberSelectionSheet from '../components/MemberSelectionSheet';
-import CardMessageBubble from '../components/CardMessageBubble';
 import UserInfoManager from '../manager/UserInfoManager';
 import { GroupMember } from '../api/groups';
 import { TextCardMessage } from '../messages/TextCardMessage';
@@ -196,6 +187,7 @@ const MessageListScreen = () => {
       onMessageReceive: (message: Message) => {
         if (
           message.conversation.conversationId === conversation.conversationId
+          && message.conversation.conversationType === conversation.conversationType
         ) {
           setMessages(prev => [message, ...prev]);
           JuggleIM.clearUnreadCount(conversation);
@@ -359,7 +351,7 @@ const MessageListScreen = () => {
     JuggleIM.sendMessage(messageToSend, {
       onSuccess: (message: Message) => {
         console.log('Message sent successfully', message);
-        setMessages(prev => [message, ...prev]);
+        setMessages(prev => [...prev, message]);
       },
       onError: (message: Message, errorCode: number) => {
         console.error('Failed to send message:', errorCode);
@@ -406,7 +398,7 @@ const MessageListScreen = () => {
           };
           try {
             const sentMessage = await JuggleIM.sendImageMessage(messageToSend);
-            setMessages(prev => [sentMessage, ...prev]);
+            setMessages(prev => [...prev, sentMessage]);
           } catch (error) {
             console.error('Failed to send image:', error);
           }
@@ -415,31 +407,6 @@ const MessageListScreen = () => {
     ]);
   };
 
-  const handleVoicePress = async () => {
-    Alert.alert('Voice', 'Sending mock voice message...', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Send Mock Voice',
-        onPress: async () => {
-          const voiceContent: VoiceMessageContent = {
-            contentType: 'jg:voice',
-            localPath: 'mock_path.aac',
-            duration: 5,
-          };
-          try {
-            const sentMessage = await JuggleIM.sendVoiceMessage(
-              conversation.conversationType,
-              conversation.conversationId,
-              voiceContent,
-            );
-            setMessages(prev => [sentMessage, ...prev]);
-          } catch (error) {
-            console.error('Failed to send voice:', error);
-          }
-        },
-      },
-    ]);
-  };
 
   const handleMessageLongPress = (message: Message, anchor?: { x: number; y: number; width: number; height: number }) => {
     setSelectedMessage(message);
@@ -604,7 +571,7 @@ const MessageListScreen = () => {
     };
     try {
       const sentMessage = await JuggleIM.sendImageMessage(message);
-      setMessages(prev => [sentMessage, ...prev]);
+      setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send image:', error);
     }
@@ -630,7 +597,7 @@ const MessageListScreen = () => {
     };
     try {
       const sentMessage = await JuggleIM.sendFileMessage(message);
-      setMessages(prev => [sentMessage, ...prev]);
+      setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send file:', error);
     }
@@ -642,13 +609,14 @@ const MessageListScreen = () => {
       localPath: file.uri,
       duration: file.duration,
     };
+    const message: SendMessageObject = {
+      conversationType: conversation.conversationType,
+      conversationId: conversation.conversationId,
+      content: voiceContent,
+    };
     try {
-      const sentMessage = await JuggleIM.sendVoiceMessage(
-        conversation.conversationType,
-        conversation.conversationId,
-        voiceContent,
-      );
-      setMessages(prev => [sentMessage, ...prev]);
+      const sentMessage = await JuggleIM.sendVoiceMessage(message);
+      setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send voice:', error);
     }
@@ -666,7 +634,7 @@ const MessageListScreen = () => {
       JuggleIM.sendMessage(messageToSend, {
         onSuccess: (message: Message) => {
           console.log('Message sent successfully', message);
-          setMessages(prev => [message, ...prev]);
+          setMessages(prev => [...prev, message]);
         },
         onError: (message: Message, errorCode: number) => {
           console.error('Failed to send message:', errorCode);
@@ -690,7 +658,7 @@ const MessageListScreen = () => {
       JuggleIM.sendMessage(messageToSend, {
         onSuccess: (message: Message) => {
           console.log('Message sent successfully', message);
-          setMessages(prev => [message, ...prev]);
+          setMessages(prev => [...prev, message]);
         },
         onError: (message: Message, errorCode: number) => {
           console.error('Failed to send message:', errorCode);

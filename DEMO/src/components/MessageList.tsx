@@ -1,5 +1,5 @@
 import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, InteractionManager, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Message } from 'juggleim-rnsdk';
 

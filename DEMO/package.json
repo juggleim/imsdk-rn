@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
+    "android": "react-native run-android --extra-params=\"-x lint -x test\"",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
@@ -22,6 +22,8 @@
     "react-native": "0.82.1",
     "react-native-image-picker": "^5.4.0",
     "react-native-modal": "^14.0.0-rc.1",
+    "react-native-nitro-modules": "^0.32.0",
+    "react-native-nitro-sound": "^0.2.10",
     "react-native-permissions": "^3.9.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.16.0"

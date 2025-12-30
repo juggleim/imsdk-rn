@@ -6,8 +6,9 @@ import {
     FlatList,
     TouchableOpacity,
     Image,
+    Modal,
+    TouchableWithoutFeedback,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import { GroupMember } from '../api/groups';
 
 interface MemberSelectionSheetProps {
@@ -76,33 +77,36 @@ const MemberSelectionSheet: React.FC<MemberSelectionSheetProps> = ({
 
     return (
         <Modal
-            isVisible={visible}
-            onBackdropPress={onClose}
-            onBackButtonPress={onClose}
-            onSwipeComplete={onClose}
-            swipeDirection={['down']}
-            style={styles.modal}
-            propagateSwipe={true}
-            backdropOpacity={0.5}>
-            <View style={styles.container}>
-                <View style={styles.handleBar} />
-                <FlatList
-                    data={members}
-                    keyExtractor={(item: GroupMember) => item.user_id}
-                    renderItem={renderMemberItem}
-                    ListHeaderComponent={renderHeader}
-                    contentContainerStyle={styles.contentContainer}
-                    showsVerticalScrollIndicator={false}
-                />
-            </View>
+            visible={visible}
+            transparent
+            animationType="slide"
+            onRequestClose={onClose}>
+            <TouchableWithoutFeedback onPress={onClose}>
+                <View style={styles.overlay}>
+                    <TouchableWithoutFeedback>
+                        <View style={styles.container}>
+                            <View style={styles.handleBar} />
+                            <FlatList
+                                data={members}
+                                keyExtractor={(item: GroupMember) => item.user_id}
+                                renderItem={renderMemberItem}
+                                ListHeaderComponent={renderHeader}
+                                contentContainerStyle={styles.contentContainer}
+                                showsVerticalScrollIndicator={false}
+                            />
+                        </View>
+                    </TouchableWithoutFeedback>
+                </View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
-    modal: {
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
-        margin: 0,
     },
     container: {
         backgroundColor: '#fff',
