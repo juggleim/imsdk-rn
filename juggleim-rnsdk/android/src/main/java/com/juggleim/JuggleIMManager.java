@@ -1381,7 +1381,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("localPath")) {
                 String path = FileUtils.convertContentUriToFile(getReactApplicationContext(),
                         contentMap.getString("localPath"));
-                voiceMessage.setLocalPath(path);
+                voiceMessage.setLocalPath(path.replace("file://", ""));
             }
             if (contentMap.hasKey("url")) {
                 voiceMessage.setUrl(contentMap.getString("url"));
