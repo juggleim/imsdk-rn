@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Platform, Alert } from 'react-native';
 import {
   Message,
   TextMessageContent,
@@ -9,6 +9,7 @@ import {
 } from 'juggleim-rnsdk';
 import CardMessageBubble from './CardMessageBubble';
 import BusinessCardBubble from './BusinessCardBubble';
+import VoiceMessageBubble from './VoiceMessageBubble';
 import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 
 interface MessageBubbleProps {
@@ -28,6 +29,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onLongPress,
 }) => {
   const bubbleRef = React.useRef<View>(null);
+  const [currentPlayingVoice, setCurrentPlayingVoice] = useState<string | null>(null);
 
   const handleLongPress = () => {
     if (onLongPress && bubbleRef.current) {
@@ -150,31 +152,33 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        // 预先计算好尺寸，不要在渲染过程中使用异步获取
-        const maxWidth = 200;
-        const maxHeight = 300;
-        const originalWidth = imgContent.width || maxWidth;
-        const originalHeight = imgContent.height || maxHeight;
+        let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
+        if (!uri.startsWith('http')) {
+          uri = Platform.OS === 'android' ? 'file://' + uri : uri;
+        }
 
+        const originalWidth = imgContent.width || 0;
+        const originalHeight = imgContent.height || 0;
+        const maxWidth = 250;
+        const maxHeight = 300;
         const aspectRatio = originalWidth / originalHeight;
-        let displayWidth = originalWidth;
-        let displayHeight = originalHeight;
+        let displayWidth = maxWidth;
+        let displayHeight = maxHeight;
 
         if (originalWidth > maxWidth || originalHeight > maxHeight) {
           if (aspectRatio > maxWidth / maxHeight) {
             displayWidth = maxWidth;
-            displayHeight = maxWidth / aspectRatio;
+            displayHeight = maxHeight;
           } else {
             displayHeight = maxHeight;
             displayWidth = maxHeight * aspectRatio;
           }
         }
 
-        // 3. 这里的 View 容器必须有确定的宽高，防止图片加载延迟导致的闪烁
         return (
-          <View style={{ width: displayWidth, height: displayHeight, backgroundColor: '#eee', borderRadius: 8, overflow: 'hidden' }}>
+          <View style={{ width: maxWidth, height: maxHeight, backgroundColor: '#eee', borderRadius: 8, overflow: 'hidden' }}>
             <Image
-              source={{ uri: imgContent.thumbnailUrl || imgContent.url }} // 简化 URI 处理逻辑
+              source={{ uri }}
               style={{ width: displayWidth, height: displayHeight }}
               resizeMode="cover"
             />
@@ -182,37 +186,34 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:voice':
         const voiceContent = message.content as VoiceMessageContent;
+        const voiceUrl = voiceContent.url || voiceContent.localPath;
+        const isPlaying = currentPlayingVoice === message.messageId;
+        console.log('MessageBubble: voiceUrl', message.messageId, isPlaying);
+        const handleVoicePress = () => {
+          if (!voiceUrl) {
+            console.log('语音文件路径不存在', message);
+            Alert.alert('错误', '语音文件路径不存在');
+            return;
+          }
+
+          if (isPlaying) {
+            // 停止播放
+            setCurrentPlayingVoice(null);
+          } else {
+            // 开始播放
+            setCurrentPlayingVoice(message.messageId);
+          }
+        };
+
         return (
-          <View style={styles.voiceContainer}>
-            <Image
-              source={require('../assets/icons/microphone.png')}
-              style={[
-                styles.voiceIcon,
-                isOutgoing
-                  ? styles.outgoingVoiceIcon
-                  : styles.incomingVoiceIcon,
-              ]}
-            />
-            <Text
-              style={[
-                styles.text,
-                isOutgoing ? styles.outgoingText : styles.incomingText,
-              ]}>
-              {voiceContent.duration}s
-            </Text>
-            <Text
-              style={[
-                styles.timestamp,
-                isOutgoing
-                  ? styles.outgoingTimestamp
-                  : styles.incomingTimestamp,
-              ]}>
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          </View>
+          <VoiceMessageBubble
+            voiceUrl={voiceUrl}
+            duration={voiceContent.duration}
+            timestamp={message.timestamp}
+            isOutgoing={isOutgoing}
+            isPlaying={isPlaying}
+            onPress={handleVoicePress}
+          />
         );
       case 'jg:file':
         const fileContent = message.content as FileMessageContent;
@@ -306,6 +307,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           style={HuiTiaoMessageTypes.includes(message.content.contentType) ? styles.huitiaoBubble : [
             styles.bubble,
             isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
+            // 图片消息不需要padding，避免溢出
+            message.content.contentType === 'jg:img' && styles.imageBubble,
           ]}>
           {renderContent()}
         </TouchableOpacity>
@@ -341,6 +344,10 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     minWidth: 50,
   },
+  imageBubble: {
+    padding: 0,
+    overflow: 'hidden',
+  },
   outgoingBubble: {
     backgroundColor: '#3399ff',
     alignSelf: 'flex-end',
@@ -355,9 +362,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap', // 长文本自动换行
   },
   text: {
-    fontSize: 16,
-    lineHeight: 22,
-    flexShrink: 0, // 不被压缩
+    fontSize: Platform.OS === 'android' ? 15 : 16,
+    lineHeight: Platform.OS === 'android' ? 20 : 22,
+    flexShrink: 1, // 允许文本收缩以适应容器
   },
   outgoingText: {
     color: '#fff',
@@ -366,10 +373,10 @@ const styles = StyleSheet.create({
     color: '#141414',
   },
   timestamp: {
-    fontSize: 10,
+    fontSize: Platform.OS === 'android' ? 9 : 10,
     marginLeft: 4,
-    minWidth: 50,
     alignSelf: 'flex-end',
+    flexShrink: 0, // 时间戳不被压缩
   },
   outgoingTimestamp: {
     color: 'rgba(255,255,255,0.7)',
@@ -386,6 +393,9 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     marginRight: 8,
+  },
+  voiceIconPlaying: {
+    opacity: 0.6,
   },
   outgoingVoiceIcon: {
     tintColor: '#fff',
@@ -410,11 +420,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fileName: {
-    fontSize: 14,
+    fontSize: Platform.OS === 'android' ? 13 : 14,
     fontWeight: '500',
   },
   fileSize: {
-    fontSize: 11,
+    fontSize: Platform.OS === 'android' ? 10 : 11,
     marginTop: 2,
   },
   systemMessageContainer: {
@@ -423,12 +433,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   systemMessageText: {
-    fontSize: 10,
+    fontSize: Platform.OS === 'android' ? 9 : 10,
     color: '#999',
     width: '90%',
-    height: 18,
     paddingHorizontal: 15,
     textAlign: 'center',
+    lineHeight: Platform.OS === 'android' ? 16 : 18,
   },
   quotedContainer: {
     marginBottom: 6,
@@ -453,12 +463,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quotedSender: {
-    fontSize: 12,
+    fontSize: Platform.OS === 'android' ? 11 : 12,
     fontWeight: '600',
     marginBottom: 2,
   },
   quotedPreview: {
-    fontSize: 11,
+    fontSize: Platform.OS === 'android' ? 10 : 11,
   },
   quotedDivider: {
     height: 1,

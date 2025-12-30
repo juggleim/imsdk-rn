@@ -41,19 +41,15 @@ const BusinessCardBubble: React.FC<BusinessCardBubbleProps> = ({
 const styles = StyleSheet.create({
     container: {
         maxWidth: 260,
-        borderRadius: 12,
+        borderRadius: 8,
         overflow: 'hidden',
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: 'transparent', // 使用透明背景，继承外层气泡颜色
     },
     outgoingContainer: {
-        backgroundColor: '#95EC69',
-        borderColor: '#95EC69',
+        // 移除独立背景色，使用外层气泡的蓝色
     },
     incomingContainer: {
-        backgroundColor: '#fff',
-        borderColor: 'rgba(0,0,0,0.1)',
+        // 移除独立背景色，使用外层气泡的白色
     },
     card: {
         flexDirection: 'row',
