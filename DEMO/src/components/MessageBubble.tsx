@@ -154,6 +154,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         const imgContent = message.content as ImageMessageContent;
         let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
         if (!uri.startsWith('http')) {
+        if (uri && !uri.startsWith('http')) {
           uri = Platform.OS === 'android' ? 'file://' + uri : uri;
         }
 

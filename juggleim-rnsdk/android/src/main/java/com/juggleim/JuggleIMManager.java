@@ -30,6 +30,8 @@ import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.GroupMessageReadInfo;
 import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.messages.*;
+import com.juggle.im.model.PushData;
+import com.juggle.im.model.MessageOptions;
 import com.juggle.im.JIM;
 import com.juggle.im.internal.logger.JLogConfig;
 import com.juggle.im.internal.logger.JLogLevel;
@@ -1025,9 +1027,19 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     public void sendMessage(ReadableMap messageMap, String messageId, Promise promise) {
         Message message = convertMapToMessage(messageMap);
         Log.d("JuggleIM", "sendMessage: " + messageId);
+        PushData pushData = convertMapToPushData(messageMap);
+
+        MessageOptions options = new MessageOptions();
+        options.setPushData(pushData);
+        options.setMentionInfo(message.getMentionInfo());
+        if (messageMap.hasKey("referredMessageId")) {
+            options.setReferredMessageId(messageMap.getString("referredMessageId"));
+        }
+
         Message sendMsg = JIM.getInstance().getMessageManager().sendMessage(
                 message.getContent(),
                 message.getConversation(),
+                options,
                 new IMessageManager.ISendMessageCallback() {
                     @Override
                     public void onSuccess(Message sentMessage) {
@@ -1245,9 +1257,24 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 imageMessage.setHeight(contentMap.getInt("height"));
             }
 
+            MessageOptions options = new MessageOptions();
+            PushData pushData = convertMapToPushData(messageMap);
+            if (pushData != null) {
+                options.setPushData(pushData);
+            }
+            ReadableMap mentionInfoMap = messageMap.getMap("mentionInfo");
+            if (mentionInfoMap != null) {
+                MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+                options.setMentionInfo(mentionInfo);
+            }
+            if (messageMap.hasKey("referredMessageId")) {
+                options.setReferredMessageId(messageMap.getString("referredMessageId"));
+            }
+
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     imageMessage,
                     conversation,
+                    options,
                     new IMessageManager.ISendMediaMessageCallback() {
                         @Override
                         public void onProgress(int progress, Message message) {
@@ -1320,10 +1347,24 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("type")) {
                 fileMessage.setType(contentMap.getString("type"));
             }
+            MessageOptions options = new MessageOptions();
+            PushData pushData = convertMapToPushData(messageMap);
+            if (pushData != null) {
+                options.setPushData(pushData);
+            }
+            ReadableMap mentionInfoMap = messageMap.getMap("mentionInfo");
+            if (mentionInfoMap != null) {
+                MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+                options.setMentionInfo(mentionInfo);
+            }
+            if (messageMap.hasKey("referredMessageId")) {
+                options.setReferredMessageId(messageMap.getString("referredMessageId"));
+            }
 
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     fileMessage,
                     conversation,
+                    options,
                     new IMessageManager.ISendMediaMessageCallback() {
                         @Override
                         public void onProgress(int progress, Message message) {
@@ -1389,10 +1430,23 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             if (contentMap.hasKey("duration")) {
                 voiceMessage.setDuration(contentMap.getInt("duration"));
             }
-
+            MessageOptions options = new MessageOptions();
+            PushData pushData = convertMapToPushData(messageMap);
+            if (pushData != null) {
+                options.setPushData(pushData);
+            }
+            ReadableMap mentionInfoMap = messageMap.getMap("mentionInfo");
+            if (mentionInfoMap != null) {
+                MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+                options.setMentionInfo(mentionInfo);
+            }
+            if (messageMap.hasKey("referredMessageId")) {
+                options.setReferredMessageId(messageMap.getString("referredMessageId"));
+            }
             Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
                     voiceMessage,
                     conversation,
+                    options,
                     new IMessageManager.ISendMediaMessageCallback() {
                         @Override
                         public void onProgress(int progress, Message message) {
@@ -1500,7 +1554,23 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
             message.setMentionInfo(mentionInfo);
         }
+
         return message;
+    }
+
+    private PushData convertMapToPushData(ReadableMap map) {
+        if (!map.hasKey("pushData")) {
+            return null;
+        }
+        ReadableMap pushDataMap = map.getMap("pushData");
+        PushData pushData = new PushData();
+        if (pushDataMap.hasKey("content")) {
+            pushData.setContent(pushDataMap.getString("content"));
+        }
+        if (pushDataMap.hasKey("extra")) {
+            pushData.setExtra(pushDataMap.getString("extra"));
+        }
+        return pushData;
     }
 
     private MessageMentionInfo convertMapToMentionInfo(ReadableMap mentionInfoMap) {

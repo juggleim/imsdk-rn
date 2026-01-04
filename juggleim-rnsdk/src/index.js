@@ -662,6 +662,9 @@ class JuggleIM {
       (event) => {
         console.log("onMediaMessageSent msg:", event);
         if (event.messageId === messageId) {
+          if (event.message.content?.local) {
+            event.message.content.localPath = event.message.content.local;
+          }
           callback.onProgress?.(event.progress, event.message);
         }
       }
@@ -672,6 +675,9 @@ class JuggleIM {
       (event) => {
         console.log("onMediaMessageSent msg:", event);
         if (event.messageId === messageId) {
+          if (event.message.content?.local) {
+            event.message.content.localPath = event.message.content.local;
+          }
           callback.onSuccess?.(event.message);
           progressListener.remove();
           successListener.remove();
@@ -685,6 +691,9 @@ class JuggleIM {
       "onMediaMessageSentError",
       (event) => {
         if (event.messageId === messageId) {
+          if (event.message.content?.local) {
+            event.message.content.localPath = event.message.content.local;
+          }
           callback.onError?.(event.message, event.errorCode || -1);
           progressListener.remove();
           successListener.remove();
@@ -698,6 +707,9 @@ class JuggleIM {
       "onMediaMessageCancelled",
       (event) => {
         if (event.messageId === messageId) {
+          if (event.message.content?.local) {
+            event.message.content.localPath = event.message.content.local;
+          }
           callback.onCancel?.(event.message);
           progressListener.remove();
           successListener.remove();
@@ -709,6 +721,10 @@ class JuggleIM {
 
     try {
       const localMsg = await JMI.sendImageMessage(message, messageId);
+      console.log("sendImageMessage localMsg:", localMsg);
+      if (localMsg.content?.local) {
+        localMsg.content.localPath = localMsg.content.local;
+      }
       return localMsg;
     } catch (error) {
       progressListener.remove();
