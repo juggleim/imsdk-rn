@@ -42,10 +42,12 @@ const MessageItem = ({
   item,
   currentUserId,
   onLongPress,
+  messageStatus,
 }: {
   item: Message;
   currentUserId: string;
   onLongPress: (message: Message, event?: any) => void;
+  messageStatus?: { progress: number; error: boolean };
 }) => {
   const isOutgoing = item.direction === 1;
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
@@ -117,6 +119,7 @@ const MessageItem = ({
         message={item}
         isOutgoing={isOutgoing}
         onLongPress={(anchor) => onLongPress(item, anchor)}
+        messageStatus={messageStatus}
       />
 
       {isOutgoing && (
@@ -150,6 +153,9 @@ const MessageListScreen = () => {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [voiceRecorderVisible, setVoiceRecorderVisible] = useState(false);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+
+  // Track message sending status: { messageId: { progress: number, error: boolean } }
+  const [messageStatus, setMessageStatus] = useState<Map<number, { progress: number; error: boolean }>>(new Map());
 
   const listRef = useRef<MessageListRef>(null);
   const [memberSheetVisible, setMemberSheetVisible] = useState(false);
@@ -396,8 +402,33 @@ const MessageListScreen = () => {
             conversationId: conversation.conversationId,
             content: imageContent,
           };
+
           try {
-            const sentMessage = await JuggleIM.sendImageMessage(messageToSend);
+            // 先发送消息并添加到列表
+            const sentMessage = await JuggleIM.sendImageMessage(messageToSend, {
+              onProgress: (progress: number, msg: Message) => {
+                // 通过messageId更新已存在消息的进度
+                setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress, error: false }));
+              },
+              onSuccess: (msg: Message) => {
+                // 发送成功,清除进度状态
+                setMessageStatus(prev => {
+                  const newMap = new Map(prev);
+                  newMap.delete(msg.clientMsgNo);
+                  return newMap;
+                });
+                // 更新消息列表中的消息状态
+                setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+              },
+              onError: (msg: Message, errorCode: number) => {
+                console.error('Failed to send image:', errorCode);
+                // 标记消息为错误状态
+                setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress: 0, error: true }));
+                // 更新消息列表中的消息状态
+                setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+              },
+            });
+            // 立即添加到消息列表
             setMessages(prev => [...prev, sentMessage]);
           } catch (error) {
             console.error('Failed to send image:', error);
@@ -544,11 +575,13 @@ const MessageListScreen = () => {
 
   const renderMessageItem = ({ item }: { item: Message }) => {
     // console.log('renderMessageItem', item.messageId);
+    const status = messageStatus.get(item.clientMsgNo);
     return (
       <MessageItem
         item={item}
         currentUserId={currentUserId}
         onLongPress={handleMessageLongPress}
+        messageStatus={status}
       />
     );
   };
@@ -569,8 +602,33 @@ const MessageListScreen = () => {
       conversationId: conversation.conversationId,
       content: imageContent,
     };
+
     try {
-      const sentMessage = await JuggleIM.sendImageMessage(message);
+      // 先发送消息并添加到列表
+      const sentMessage = await JuggleIM.sendImageMessage(message, {
+        onProgress: (progress: number, msg: Message) => {
+          // 通过messageId更新已存在消息的进度
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress, error: false }));
+        },
+        onSuccess: (msg: Message) => {
+          // 发送成功,清除进度状态
+          setMessageStatus(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(msg.clientMsgNo);
+            return newMap;
+          });
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+        onError: (msg: Message, errorCode: number) => {
+          console.error('Failed to send image:', errorCode);
+          // 标记消息为错误状态
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress: 0, error: true }));
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+      });
+      // 立即添加到消息列表
       setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send image:', error);
@@ -595,8 +653,33 @@ const MessageListScreen = () => {
       conversationId: conversation.conversationId,
       content: fileContent,
     };
+
     try {
-      const sentMessage = await JuggleIM.sendFileMessage(message);
+      // 先发送消息并添加到列表
+      const sentMessage = await JuggleIM.sendFileMessage(message, {
+        onProgress: (progress: number, msg: Message) => {
+          // 通过messageId更新已存在消息的进度
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress, error: false }));
+        },
+        onSuccess: (msg: Message) => {
+          // 发送成功,清除进度状态
+          setMessageStatus(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(msg.clientMsgNo);
+            return newMap;
+          });
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+        onError: (msg: Message, errorCode: number) => {
+          console.error('Failed to send file:', errorCode);
+          // 标记消息为错误状态
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress: 0, error: true }));
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+      });
+      // 立即添加到消息列表
       setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send file:', error);
@@ -614,8 +697,33 @@ const MessageListScreen = () => {
       conversationId: conversation.conversationId,
       content: voiceContent,
     };
+
     try {
-      const sentMessage = await JuggleIM.sendVoiceMessage(message);
+      // 先发送消息并添加到列表
+      const sentMessage = await JuggleIM.sendVoiceMessage(message, {
+        onProgress: (progress: number, msg: Message) => {
+          // 通过messageId更新已存在消息的进度
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress, error: false }));
+        },
+        onSuccess: (msg: Message) => {
+          // 发送成功,清除进度状态
+          setMessageStatus(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(msg.clientMsgNo);
+            return newMap;
+          });
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+        onError: (msg: Message, errorCode: number) => {
+          console.error('Failed to send voice:', errorCode);
+          // 标记消息为错误状态
+          setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress: 0, error: true }));
+          // 更新消息列表中的消息状态
+          setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+        },
+      });
+      // 立即添加到消息列表
       setMessages(prev => [...prev, sentMessage]);
     } catch (error) {
       console.error('Failed to send voice:', error);

@@ -9,6 +9,7 @@ interface VoiceMessageBubbleProps {
     isOutgoing: boolean;
     isPlaying: boolean;
     onPress: () => void;
+    progress?: number;
 }
 
 const VoiceMessageBubble: React.FC<VoiceMessageBubbleProps> = ({
@@ -18,6 +19,7 @@ const VoiceMessageBubble: React.FC<VoiceMessageBubbleProps> = ({
     isOutgoing,
     isPlaying,
     onPress,
+    progress,
 }) => {
     const sound: any = useSound(voiceUrl as any);
     console.log('VoiceMessageBubble: voiceUrl', voiceUrl, sound);
@@ -50,7 +52,7 @@ const VoiceMessageBubble: React.FC<VoiceMessageBubbleProps> = ({
                     styles.text,
                     isOutgoing ? styles.outgoingText : styles.incomingText,
                 ]}>
-                {duration}s
+                {progress && progress > 0 && progress < 100 ? `${Math.round(progress)}%` : `${duration}s`}
             </Text>
             <Text
                 style={[

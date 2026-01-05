@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
 import {
   Message,
   TextMessageContent,
@@ -16,6 +16,7 @@ interface MessageBubbleProps {
   message: Message;
   isOutgoing: boolean;
   onLongPress?: (anchor: { x: number; y: number; width: number; height: number }) => void;
+  messageStatus?: { progress: number; error: boolean };
 }
 
 // 显示为灰条消息的白名单列表
@@ -27,6 +28,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOutgoing,
   onLongPress,
+  messageStatus,
 }) => {
   const bubbleRef = React.useRef<View>(null);
   const [currentPlayingVoice, setCurrentPlayingVoice] = useState<string | null>(null);
@@ -151,8 +153,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         );
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
-        let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
-        // console.log('MessageBubble: uri', uri, imgContent);
+        let uri = imgContent.localPath || (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url);
+        console.log('MessageBubble: uri', uri, imgContent);
         if (uri && !uri.startsWith('http')) {
           uri = Platform.OS === 'android' ? 'file://' + uri : uri;
         }
@@ -182,6 +184,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               style={{ width: displayWidth, height: displayHeight }}
               resizeMode="cover"
             />
+            {messageStatus && messageStatus.progress > 0 && messageStatus.progress < 100 && (
+              <View style={styles.progressOverlay}>
+                <View style={styles.progressContainer}>
+                  <ActivityIndicator size="large" color="#fff" />
+                  <Text style={styles.progressText}>{Math.round(messageStatus.progress)}%</Text>
+                </View>
+              </View>
+            )}
           </View>
         );
       case 'jg:voice':
@@ -213,6 +223,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             isOutgoing={isOutgoing}
             isPlaying={isPlaying}
             onPress={handleVoicePress}
+            progress={messageStatus?.progress}
           />
         );
       case 'jg:file':
@@ -251,6 +262,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 ]}>
                 {formatFileSize(fileContent.size)}
               </Text>
+              {messageStatus && messageStatus.progress > 0 && messageStatus.progress < 100 && (
+                <View style={styles.fileProgressBar}>
+                  <View style={[styles.fileProgressFill, { width: `${messageStatus.progress}%` }]} />
+                </View>
+              )}
             </View>
           </View>
         );
@@ -300,6 +316,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         styles.container,
         isOutgoing ? styles.outgoingContainer : styles.incomingContainer,
       ]}>
+      {/* Error indicator - red dot on the left */}
+      {messageStatus?.error && (
+        <View style={styles.errorIndicatorContainer}>
+          <View style={styles.errorDot} />
+          <View style={styles.errorDotPulse} />
+        </View>
+      )}
+
       <View ref={bubbleRef} collapsable={false}>
         <TouchableOpacity
           onLongPress={handleLongPress}
@@ -479,6 +503,65 @@ const styles = StyleSheet.create({
   },
   incomingDivider: {
     backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  // Progress and error indicators
+  progressOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  progressContainer: {
+    alignItems: 'center',
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  fileProgressBar: {
+    height: 3,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 1.5,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  fileProgressFill: {
+    height: '100%',
+    backgroundColor: '#3399ff',
+    borderRadius: 1.5,
+  },
+  errorIndicatorContainer: {
+    width: 12,
+    height: 12,
+    marginRight: 8,
+    alignSelf: 'center',
+    position: 'relative',
+  },
+  errorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ff4444',
+    shadowColor: '#ff4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  errorDotPulse: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ff4444',
+    opacity: 0.4,
   },
 });
 

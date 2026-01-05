@@ -498,7 +498,14 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         byte[] bytes = content.encode();
         String str = new String(bytes, StandardCharsets.UTF_8);
         Log.d("JuggleIM", "convertMessageContentToMap: " + str);
-        return RNTypeConverter.stringToWritableMap(str);
+        WritableMap map = RNTypeConverter.stringToWritableMap(str);
+        if (content instanceof ImageMessage) {
+            ImageMessage img = (ImageMessage) content;
+            map.putString("localPath", img.getLocalPath());
+            map.putString("thumbnailLocalPath", img.getThumbnailLocalPath());
+            map.putString("thumbnailUrl", img.getThumbnailUrl());
+        }
+        return map;
     }
 
     private MessageContent convertMapToMessageContent(ReadableMap map) {
