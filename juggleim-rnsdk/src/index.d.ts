@@ -26,7 +26,10 @@ import {
   CustomMessageConstructor,
   UpdateMessageCallback,
   GetMessageOptions,
-  MessageResponse
+  MessageResponse,
+  GroupInfo,
+  GroupMember,
+  UserInfo
 } from './types';
 
 /**
@@ -429,6 +432,28 @@ export default class JuggleIM {
     conversation: Conversation,
     messageIds: string[],
   ): Promise<Boolean>;
+
+  /**
+   * 获取用户信息
+   * @param userId 用户ID
+   * @returns {Promise<UserInfo | null>} 用户信息
+   */
+  static getUserInfo(userId: string): Promise<UserInfo | null>;
+
+  /**
+   * 获取群组信息
+   * @param groupId 群组ID
+   * @returns {Promise<GroupInfo | null>} 群组信息
+   */
+  static getGroupInfo(groupId: string): Promise<GroupInfo | null>;
+
+  /**
+   * 获取群成员信息
+   * @param groupId 群组ID
+   * @param userId 用户ID
+   * @returns {Promise<GroupMember | null>} 群成员信息
+   */
+  static getGroupMember(groupId: string, userId: string): Promise<GroupMember | null>;
 
   /**
    * 更新消息

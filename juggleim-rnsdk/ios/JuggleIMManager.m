@@ -532,8 +532,37 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 - (NSDictionary *)convertUserInfoToDictionary:(JUserInfo *)userInfo {
   return @{
     @"userId" : userInfo.userId ?: @"",
-    @"userName" : userInfo.userName ?: @"",
-    @"avatar" : userInfo.portrait ?: @""
+    @"nickname" : userInfo.userName ?: @"",
+    @"avatar" : userInfo.portrait ?: @"",
+    @"extra" : userInfo.extraDic ?: @{},
+    @"type" : @(userInfo.type),
+    @"updatedTime" : @(userInfo.updatedTime)
+  };
+}
+
+/**
+ * 将群组信息转换为字典
+ */
+- (NSDictionary *)convertGroupInfoToDictionary:(JGroupInfo *)groupInfo {
+  return @{
+    @"groupId" : groupInfo.groupId ?: @"",
+    @"groupName" : groupInfo.groupName ?: @"",
+    @"portrait" : groupInfo.portrait ?: @"",
+    @"extra" : groupInfo.extraDic ?: @{},
+    @"updatedTime" : @(groupInfo.updatedTime)
+  };
+}
+
+/**
+ * 将群成员信息转换为字典
+ */
+- (NSDictionary *)convertGroupMemberToDictionary:(JGroupMember *)groupMember {
+  return @{
+    @"groupId" : groupMember.groupId ?: @"",
+    @"userId" : groupMember.userId ?: @"",
+    @"groupDisplayName" : groupMember.groupDisplayName ?: @"",
+    @"extra" : groupMember.extraDic ?: @{},
+    @"updatedTime" : @(groupMember.updatedTime)
   };
 }
 
@@ -647,6 +676,38 @@ RCT_EXPORT_METHOD(getConversationInfo : (NSDictionary *)
 
   if (info) {
     resolve([self convertConversationInfoToDictionary:info]);
+  } else {
+    resolve([NSNull null]);
+  }
+}
+
+RCT_EXPORT_METHOD(getUserInfo : (NSString *)userId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JUserInfo *userInfo = [JIM.shared.userInfoManager getUserInfo:userId];
+  if (userInfo) {
+    resolve([self convertUserInfoToDictionary:userInfo]);
+  } else {
+    resolve([NSNull null]);
+  }
+}
+
+RCT_EXPORT_METHOD(getGroupInfo : (NSString *)groupId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JGroupInfo *groupInfo = [JIM.shared.userInfoManager getGroupInfo:groupId];
+  if (groupInfo) {
+    resolve([self convertGroupInfoToDictionary:groupInfo]);
+  } else {
+    resolve([NSNull null]);
+  }
+}
+
+RCT_EXPORT_METHOD(getGroupMember : (NSString *)groupId userId : (NSString *)
+                      userId resolver : (RCTPromiseResolveBlock)
+                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JGroupMember *groupMember =
+      [JIM.shared.userInfoManager getGroupMember:groupId userId:userId];
+  if (groupMember) {
+    resolve([self convertGroupMemberToDictionary:groupMember]);
   } else {
     resolve([NSNull null]);
   }
@@ -845,12 +906,12 @@ RCT_EXPORT_METHOD(setUnread : (NSDictionary *)conversationMap resolver : (
 /**
  * 获取置顶会话列表
  */
-RCT_EXPORT_METHOD(getTopConversationInfoList:(int)count
-          timestamp:(double)timestamp
-        pullDirection:(int)pullDirection
-          resolver:(RCTPromiseResolveBlock)resolve
-          rejecter:(RCTPromiseRejectBlock)reject) {
-  JPullDirection direction = pullDirection == 0 ? JPullDirectionNewer : JPullDirectionOlder;
+RCT_EXPORT_METHOD(getTopConversationInfoList : (int)count timestamp : (double)
+                      timestamp pullDirection : (int)pullDirection resolver : (
+                          RCTPromiseResolveBlock)
+                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  JPullDirection direction =
+      pullDirection == 0 ? JPullDirectionNewer : JPullDirectionOlder;
 
   NSArray<JConversationInfo *> *conversationInfos =
       [JIM.shared.conversationManager
@@ -952,8 +1013,10 @@ RCT_EXPORT_METHOD(sendMessage : (NSDictionary *)messageDict messageId : (
       return;
     }
 
+    JMessageOptions *options = [self getOptionsFromDictionary:messageDict];
     // 发送消息
     JMessage *message = [JIM.shared.messageManager sendMessage:msg.content
+        messageOption:options
         inConversation:msg.conversation
         success:^(JMessage *message) {
           [self sendEventWithName:@"onMessageSent"
@@ -1011,7 +1074,9 @@ RCT_EXPORT_METHOD(sendImageMessage : (NSDictionary *)messageDict messageId : (
       imageMessage.height = [contentDict[@"height"] integerValue];
     }
 
+    JMessageOptions *options = [self getOptionsFromDictionary:messageDict];
     JMessage *message = [JIM.shared.messageManager sendMediaMessage:imageMessage
+        messageOption:options
         inConversation:conversation
         progress:^(int progress, JMessage *_Nonnull message) {
           NSMutableDictionary *params = [NSMutableDictionary dictionary];
@@ -1076,7 +1141,9 @@ RCT_EXPORT_METHOD(sendFileMessage : (NSDictionary *)messageDict messageId : (
       fileMessage.type = contentDict[@"type"];
     }
 
+    JMessageOptions *options = [self getOptionsFromDictionary:messageDict];
     JMessage *message = [JIM.shared.messageManager sendMediaMessage:fileMessage
+        messageOption:options
         inConversation:conversation
         progress:^(int progress, JMessage *_Nonnull message) {
           NSMutableDictionary *params = [NSMutableDictionary dictionary];
@@ -1135,7 +1202,9 @@ RCT_EXPORT_METHOD(sendVoiceMessage : (NSDictionary *)messageDict messageId : (
       voiceMessage.duration = [contentDict[@"duration"] integerValue];
     }
 
+    JMessageOptions *options = [self getOptionsFromDictionary:messageDict];
     JMessage *message = [JIM.shared.messageManager sendMediaMessage:voiceMessage
+        messageOption:options
         inConversation:conversation
         progress:^(int progress, JMessage *_Nonnull message) {
           NSMutableDictionary *params = [NSMutableDictionary dictionary];
@@ -1559,6 +1628,38 @@ RCT_EXPORT_METHOD(
         reject(@"error",
                [NSString stringWithFormat:@"Error code: %ld", (long)code], nil);
       }];
+}
+
+- (JMessageOptions *)getOptionsFromDictionary:(NSDictionary *)dict {
+  JMessageOptions *options = [[JMessageOptions alloc] init];
+  if (dict[@"mentionInfo"]) {
+    options.mentionInfo =
+        [self convertDictToMessageMentionInfo:dict[@"mentionInfo"]];
+  }
+  if (dict[@"referredMessageId"]) {
+    options.referredMsgId = dict[@"referredMessageId"];
+  }
+  if (dict[@"pushData"]) {
+    options.pushData = [self convertDictToPushData:dict[@"pushData"]];
+  }
+  if (dict[@"lifeTime"]) {
+    options.lifeTime = [dict[@"lifeTime"] longLongValue];
+  }
+  if (dict[@"lifeTimeAfterRead"]) {
+    options.lifeTimeAfterRead = [dict[@"lifeTimeAfterRead"] longLongValue];
+  }
+  return options;
+}
+
+- (JPushData *)convertDictToPushData:(NSDictionary *)dict {
+  JPushData *pushData = [[JPushData alloc] init];
+  if (dict[@"content"]) {
+    pushData.content = dict[@"content"];
+  }
+  if (dict[@"extra"]) {
+    pushData.extra = dict[@"extra"];
+  }
+  return pushData;
 }
 
 @end

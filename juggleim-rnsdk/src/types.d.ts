@@ -178,6 +178,9 @@ export class VoiceMessageContent extends MessageContent {
  * @property {number} direction - 消息方向: 1-发送, 2-接收
  * @property {boolean} isDelete - 是否已删除
  * @property {string} senderUserId - 发送者用户ID
+ * @property {string} senderUserName - 发送者用户昵称
+ * @property {string} senderUserAvatar - 发送者用户头像
+ * @property {object} senderUserExtra - 发送者用户扩展信息
  * @property {string} messageId - 消息ID
  * @property {boolean} hasRead - 是否已读
  * @property {number} timestamp - 消息时间戳
@@ -195,6 +198,9 @@ export interface Message {
     direction: number;
     isDelete: boolean;
     senderUserId: string;
+    senderUserName?: string;
+    senderUserAvatar?: string;
+    senderUserExtra?: { [key: string]: string };
     messageId: string;
     hasRead: boolean;
     timestamp: number;
@@ -221,11 +227,56 @@ export interface MessageResponse {
 
 /**
  * 用户信息
+ * @property {string} userId - 用户ID
+ * @property {string} nickname - 昵称
+ * @property {string} [userName] - 用户名
+ * @property {string} avatar - 头像
+ * @property {string} [portrait] - 头像 (同 avatar)
+ * @property {string | object} [extra] - 扩展信息
+ * @property {number} [updateTime] - 更新时间
+ * @property {number} [type] - 用户类型
  */
 export interface UserInfo {
     userId: string;
     nickname: string;
+    userName?: string;
     avatar: string;
+    portrait?: string;
+    extra?: string | object;
+    updateTime?: number;
+    type?: number;
+}
+
+/**
+ * 群组信息
+ * @property {string} groupId - 群组ID
+ * @property {string} groupName - 群组名称
+ * @property {string} portrait - 群组头像
+ * @property {object} [extra] - 扩展信息
+ * @property {number} [updatedTime] - 更新时间
+ */
+export interface GroupInfo {
+    groupId: string;
+    groupName: string;
+    portrait: string;
+    extra?: { [key: string]: string };
+    updatedTime?: number;
+}
+
+/**
+ * 群成员信息
+ * @property {string} groupId - 群组ID
+ * @property {string} userId - 用户ID
+ * @property {string} groupDisplayName - 群昵称
+ * @property {object} [extra] - 扩展信息
+ * @property {number} [updatedTime] - 更新时间
+ */
+export interface GroupMember {
+    groupId: string;
+    userId: string;
+    groupDisplayName: string;
+    extra?: { [key: string]: string };
+    updatedTime?: number;
 }
 
 export interface MessageReactionItem {
@@ -290,6 +341,22 @@ export interface MentionMsg {
     type: number;
 }
 
+/**
+ * 会话信息
+ * @property {Conversation} conversation - 会话
+ * @property {number} unreadCount - 未读消息数
+ * @property {boolean} isTop - 是否置顶
+ * @property {boolean} isMute - 是否静音
+ * @property {Message} [lastMessage] - 最后一条消息
+ * @property {number} topTime - 置顶时间
+ * @property {number} sortTime - 排序时间
+ * @property {boolean} hasUnread - 是否有未读消息
+ * @property {string} draft - 草稿
+ * @property {ConversationMentionInfo} [mentionInfo] - 会话提及信息
+ * @property {string} [name] - 会话名称
+ * @property {string} [avatar] - 会话头像
+ * @property {object} [extra] - 会话"头像/名称"扩展信息
+ */
 export interface ConversationInfo {
     conversation: Conversation;
     unreadCount: number;
@@ -301,6 +368,9 @@ export interface ConversationInfo {
     hasUnread: boolean;
     draft: string;
     mentionInfo?: ConversationMentionInfo;
+    name?: string;
+    avatar?: string;
+    extra?: {};
 }
 
 /**

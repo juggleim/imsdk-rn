@@ -36,6 +36,8 @@ import com.juggle.im.JIM;
 import com.juggle.im.internal.logger.JLogConfig;
 import com.juggle.im.internal.logger.JLogLevel;
 import com.juggle.im.model.MessageContent.*;
+import com.juggle.im.model.GroupInfo;
+import com.juggle.im.model.GroupMember;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -710,6 +712,53 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         map.putString("userId", userInfo.getUserId());
         map.putString("nickname", userInfo.getUserName());
         map.putString("avatar", userInfo.getPortrait());
+        if (userInfo.getExtra() != null) {
+            WritableMap extra = new WritableNativeMap();
+            for (Map.Entry<String, String> entry : userInfo.getExtra().entrySet()) {
+                extra.putString(entry.getKey(), entry.getValue());
+            }
+            map.putMap("extra", extra);
+        }
+        map.putDouble("updatedTime", userInfo.getUpdatedTime());
+
+        return map;
+    }
+
+    /**
+     * 将群组信息转换为Map
+     */
+    private WritableMap convertGroupInfoToMap(GroupInfo groupInfo) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("groupId", groupInfo.getGroupId());
+        map.putString("groupName", groupInfo.getGroupName());
+        map.putString("portrait", groupInfo.getPortrait());
+        if (groupInfo.getExtra() != null) {
+            WritableMap extra = new WritableNativeMap();
+            for (Map.Entry<String, String> entry : groupInfo.getExtra().entrySet()) {
+                extra.putString(entry.getKey(), entry.getValue());
+            }
+            map.putMap("extra", extra);
+        }
+        map.putDouble("updatedTime", groupInfo.getUpdatedTime());
+        return map;
+    }
+
+    /**
+     * 将群成员信息转换为Map
+     */
+    private WritableMap convertGroupMemberToMap(GroupMember groupMember) {
+        WritableMap map = new WritableNativeMap();
+        map.putString("groupId", groupMember.getGroupId());
+        map.putString("userId", groupMember.getUserId());
+        map.putString("groupDisplayName", groupMember.getGroupDisplayName());
+        if (groupMember.getExtra() != null) {
+            WritableMap extra = new WritableNativeMap();
+            for (Map.Entry<String, String> entry : groupMember.getExtra().entrySet()) {
+                extra.putString(entry.getKey(), entry.getValue());
+            }
+            map.putMap("extra", extra);
+        }
+        map.putDouble("updatedTime", groupMember.getUpdatedTime());
         return map;
     }
 
@@ -785,6 +834,45 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         } catch (Exception e) {
             e.printStackTrace();
             promise.reject(e);
+        }
+    }
+
+    /**
+     * 获取用户信息
+     */
+    @ReactMethod
+    public void getUserInfo(String userId, Promise promise) {
+        UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(userId);
+        if (userInfo != null) {
+            promise.resolve(convertUserInfoToMap(userInfo));
+        } else {
+            promise.resolve(null);
+        }
+    }
+
+    /**
+     * 获取群组信息
+     */
+    @ReactMethod
+    public void getGroupInfo(String groupId, Promise promise) {
+        GroupInfo groupInfo = JIM.getInstance().getUserInfoManager().getGroupInfo(groupId);
+        if (groupInfo != null) {
+            promise.resolve(convertGroupInfoToMap(groupInfo));
+        } else {
+            promise.resolve(null);
+        }
+    }
+
+    /**
+     * 获取群成员信息
+     */
+    @ReactMethod
+    public void getGroupMember(String groupId, String userId, Promise promise) {
+        GroupMember groupMember = JIM.getInstance().getUserInfoManager().getGroupMember(groupId, userId);
+        if (groupMember != null) {
+            promise.resolve(convertGroupMemberToMap(groupMember));
+        } else {
+            promise.resolve(null);
         }
     }
 
@@ -1603,6 +1691,16 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
         if (userMap.hasKey("avatar")) {
             userInfo.setPortrait(userMap.getString("avatar"));
+        }
+        if (userMap.hasKey("extra")) {
+            Map<String, String> extra = new HashMap<>();
+            ReadableMap extraMap = userMap.getMap("extra");
+            ReadableMapKeySetIterator iterator = extraMap.keySetIterator();
+            while (iterator.hasNextKey()) {
+                String key = iterator.nextKey();
+                extra.put(key, extraMap.getString(key));
+            }
+            userInfo.setExtra(extra);
         }
         return userInfo;
     }

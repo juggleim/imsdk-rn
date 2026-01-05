@@ -411,12 +411,37 @@ class JuggleIM {
    * @returns {Promise<ConversationInfo[]>} 会话信息列表
    */
   static getConversationInfoList(option) {
-    console.log("getConversationInfoList called with option:", option);
-    return JMI.getConversationInfoList(
-      option.count,
-      option.timestamp,
-      option.direction
-    );
+    return new Promise((resolve, reject) => {
+      JMI.getConversationInfoList(
+        option.count,
+        option.timestamp,
+        option.direction
+      ).then(convs => {
+        convs?.forEach(async (conv) => {
+          if (conv.conversation?.conversationType === 1) {
+            const userInfo = await JMI.getUserInfo(conv.conversation?.conversationId);
+            conv.name = userInfo?.nickname;
+            conv.avatar = userInfo?.avatar;
+            conv.extra = userInfo?.extra;
+          } else if (conv.conversation?.conversationType === 2) {
+            const groupInfo = await JMI.getGroupInfo(conv.conversation?.conversationId);
+            conv.name = groupInfo?.groupName;
+            conv.avatar = groupInfo?.portrait;
+            conv.extra = groupInfo?.extra;
+          }
+          if (conv.lastMessage) {
+            const userInfo = await JMI.getUserInfo(conv.lastMessage.senderUserId);
+            conv.lastMessage.senderUserName = userInfo?.nickname;
+            conv.lastMessage.senderUserAvatar = userInfo?.avatar;
+            conv.lastMessage.senderUserExtra = userInfo?.extra;
+          }
+        });
+        resolve(convs || []);
+      }).catch(err => {
+        console.error(err);
+        reject(err);
+      });
+    });
   }
 
   /**
@@ -425,7 +450,61 @@ class JuggleIM {
    * @returns {Promise<object>} 会话信息
    */
   static getConversationInfo(conversation) {
-    return JMI.getConversationInfo(conversation);
+    return new Promise((resolve, reject) => {
+      JMI.getConversationInfo(conversation).then(async conv => {
+        if (conv) {
+          if (conv.conversation?.conversationType === 1) {
+            const userInfo = await JMI.getUserInfo(conv.conversation?.conversationId);
+            conv.name = userInfo?.nickname;
+            conv.avatar = userInfo?.avatar;
+            conv.extra = userInfo?.extra;
+          } else if (conv.conversation?.conversationType === 2) {
+            const groupInfo = await JMI.getGroupInfo(conv.conversation?.conversationId);
+            conv.name = groupInfo?.groupName;
+            conv.avatar = groupInfo?.portrait;
+            conv.extra = groupInfo?.extra;
+          }
+          if (conv.lastMessage) {
+            const userInfo = await JMI.getUserInfo(conv.lastMessage.senderUserId);
+            conv.lastMessage.senderUserName = userInfo?.nickname;
+            conv.lastMessage.senderUserAvatar = userInfo?.avatar;
+            conv.lastMessage.senderUserExtra = userInfo?.extra;
+          }
+        }
+        resolve(conv);
+      }).catch(err => {
+        console.error(err);
+        reject(err);
+      });
+    });
+  }
+
+  /**
+   * 获取用户信息
+   * @param {string} userId - 用户ID
+   * @returns {Promise<UserInfo>} 用户信息
+   */
+  static getUserInfo(userId) {
+    return JMI.getUserInfo(userId);
+  }
+
+  /**
+   * 获取群组信息
+   * @param {string} groupId - 群组ID
+   * @returns {Promise<GroupInfo>} 群组信息
+   */
+  static getGroupInfo(groupId) {
+    return JMI.getGroupInfo(groupId);
+  }
+
+  /**
+   * 获取群成员信息
+   * @param {string} groupId - 群组ID
+   * @param {string} userId - 用户ID
+   * @returns {Promise<GroupMember>} 群成员信息
+   */
+  static getGroupMember(groupId, userId) {
+    return JMI.getGroupMember(groupId, userId);
   }
 
   /**
@@ -551,7 +630,33 @@ class JuggleIM {
    * @returns {Promise<Array>} 置顶会话列表
    */
   static getTopConversationInfoList(count = 20, timestamp = 0, direction = 0) {
-    return JMI.getTopConversationInfoList(count, timestamp, direction);
+    return new Promise((resolve, reject) => {
+      JMI.getTopConversationInfoList(count, timestamp, direction).then(convs => {
+        convs?.forEach(async (conv) => {
+          if (conv.conversation?.conversationType === 1) {
+            const userInfo = await JMI.getUserInfo(conv.conversation?.userId);
+            conv.name = userInfo?.nickname;
+            conv.avatar = userInfo?.avatar;
+            conv.extra = userInfo?.extra;
+          } else if (conv.conversation?.conversationType === 2) {
+            const groupInfo = await JMI.getGroupInfo(conv.conversation?.groupId);
+            conv.name = groupInfo?.groupName;
+            conv.avatar = groupInfo?.portrait;
+            conv.extra = groupInfo?.extra;
+          }
+          if (conv.lastMessage) {
+            const userInfo = await JMI.getUserInfo(conv.lastMessage.senderUserId);
+            conv.lastMessage.senderUserName = userInfo?.nickname;
+            conv.lastMessage.senderUserAvatar = userInfo?.avatar;
+            conv.lastMessage.senderUserExtra = userInfo?.extra;
+          }
+        });
+        resolve(convs || []);
+      }).catch(err => {
+        console.error(err);
+        reject(err);
+      });
+    });
   }
 
   /**
@@ -838,6 +943,7 @@ class JuggleIM {
       "onMediaMessageSent",
       (event) => {
         if (event.messageId === messageId) {
+          console.log("onMediaMessageSent msg:", event);
           callback.onSuccess?.(event.message);
           progressListener.remove();
           successListener.remove();
@@ -874,9 +980,7 @@ class JuggleIM {
     );
 
     try {
-      console.log("sendVoiceMessage message...:", message);
       const localMsg = await JMI.sendVoiceMessage(message, messageId);
-      console.log("sendVoiceMessage localMsg:", localMsg);
       return localMsg;
     } catch (error) {
       progressListener.remove();
@@ -910,7 +1014,21 @@ class JuggleIM {
    * @param {Object} options - 获取选项
    */
   static getMessageList(conversation, direction, options) {
-    return JMI.getMessages(conversation, direction, options);
+    return new Promise((resolve, reject) => {
+      JMI.getMessages(conversation, direction, options).then(res => {
+        const msgs = res?.messages;
+        msgs?.forEach(async (msg) => {
+          const userInfo = await JMI.getUserInfo(msg.senderUserId);
+          msg.senderUserName = userInfo?.nickname;
+          msg.senderUserAvatar = userInfo?.avatar;
+          msg.senderUserExtra = userInfo?.extra;
+        });
+        resolve(res);
+      }).catch(err => {
+        console.error(err);
+        reject(err);
+      });
+    });
   }
 
   /**

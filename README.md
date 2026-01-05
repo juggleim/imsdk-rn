@@ -135,7 +135,22 @@ const unsubscribe = JuggleIM.addConversationListener('listener_key', {
 ### 获取会话列表
 
 ```javascript
-// 获取会话信息列表
+/**
+ * 会话信息列表
+ * @property {Conversation} conversation - 会话
+ * @property {number} unreadCount - 未读消息数
+ * @property {boolean} isTop - 是否置顶
+ * @property {boolean} isMute - 是否静音
+ * @property {Message} [lastMessage] - 最后一条消息
+ * @property {number} topTime - 置顶时间
+ * @property {number} sortTime - 排序时间
+ * @property {boolean} hasUnread - 是否有未读消息
+ * @property {string} draft - 草稿
+ * @property {ConversationMentionInfo} [mentionInfo] - 会话提及信息
+ * @property {string} [name] - 会话名称
+ * @property {string} [avatar] - 会话头像
+ * @property {object} [extra] - 会话"头像/名称"扩展信息
+ */
 const conversations = await JuggleIM.getConversationInfoList({
   count: 20,
   timestamp: Date.now(),
@@ -146,6 +161,24 @@ const conversations = await JuggleIM.getConversationInfoList({
 ### 获取单个会话
 
 ```javascript
+/**
+ * 会话信息
+ * 注意：会话信息中包含会话的头像和名称，可以直接显示使用
+ * 
+ * @property {Conversation} conversation - 会话
+ * @property {number} unreadCount - 未读消息数
+ * @property {boolean} isTop - 是否置顶
+ * @property {boolean} isMute - 是否静音
+ * @property {Message} [lastMessage] - 最后一条消息
+ * @property {number} topTime - 置顶时间
+ * @property {number} sortTime - 排序时间
+ * @property {boolean} hasUnread - 是否有未读消息
+ * @property {string} draft - 草稿
+ * @property {ConversationMentionInfo} [mentionInfo] - 会话提及信息
+ * @property {string} [name] - 会话名称
+ * @property {string} [avatar] - 会话头像
+ * @property {object} [extra] - 会话"头像/名称"扩展信息
+ */
 const conversationInfo = await JuggleIM.getConversationInfo({
   conversationType: 1, // ConversationType.PRIVATE
   conversationId: 'user123'
@@ -272,6 +305,10 @@ const removeResult = await JuggleIM.removeConversationsFromTag({
 ### 获取置顶会话列表
 
 ```javascript
+/**
+ * 置顶会话列表
+ * @property {ConversationInfo[]} conversations - 会话列表
+ */
 const topConversations = await JuggleIM.getTopConversationInfoList(
   20,         // 获取数量
   Date.now(), // 时间戳
@@ -381,6 +418,36 @@ const voiceMessage = await JuggleIM.sendVoiceMessage(
 ### 获取历史消息
 
 ```javascript
+/**
+ * 消息对象
+ * 注意：消息对象中包含发送者用户信息，可以直接显示使用
+ * @interface Message
+ * @property {number} clientMsgNo - 客户端消息序号
+ * @property {string} localAttribute - 本地属性
+ * @property {number} messageState - 消息状态 : 0未知, 1-发送中, 2-已发送, 3-发送失败, 4-上传中
+ * @property {boolean} isEdited - 是否已编辑
+ * @property {number} direction - 消息方向: 1-发送, 2-接收
+ * @property {boolean} isDelete - 是否已删除
+ * @property {string} senderUserId - 发送者用户ID
+ * @property {string} senderUserName - 发送者用户昵称
+ * @property {string} senderUserAvatar - 发送者用户头像
+ * @property {object} senderUserExtra - 发送者用户扩展信息
+ * @property {string} messageId - 消息ID
+ * @property {boolean} hasRead - 是否已读
+ * @property {number} timestamp - 消息时间戳
+ * @property {Conversation} conversation - 会话对象
+ * @property {MessageContent} content - 消息内容
+ * @property {GroupMessageReadInfo} [groupMessageReadInfo] - 群消息阅读信息（可选）
+ * @property {MessageMentionInfo} mentionInfo - 消息提及信息
+ * @property {Message} [referredMessage] - 引用的消息
+ */
+/**
+ * 消息响应对象
+ * @interface MessageResponse
+ * @property {Message[]} messages - 消息列表
+ * @property {number} timestamp - 时间戳
+ * @property {boolean} hasMore - 是否有更多消息
+ */
 const messageResponse = await JuggleIM.getMessageList({
   conversationType: 1,
   conversationId: 'user123'
@@ -838,4 +905,42 @@ export interface GetMomentCommentOption {
   timestamp: number;
   direction: number;
 }
+```
+
+### 用户/群组信息相关
+* 【服务端】应用服务注册用户到IM服务时，用户信息会记录到IM服务并同步到客户端SDK
+* 【客户端】当客户端显示会话列表时，会话的用户/群组信息可以通过客户端SDK返回（会话的最后一条消息中也有发送者的用户信息）
+* 【客户端】当客户端显示消息列表时，消息的用户信息可以通过客户端SDK返回
+* 【服务端】为了保证应用服务中的用户信息与IM服务中的用户信息一致，当用户更新了用户信息时，你的应用服务需要将更新后的用户信息同步到IM服务
+* 【客户端】为了保证客户端上始终使用最新的用户信息，你需要在进入“个人信息”页面的时候，调用SDK接口 同步最新的用户信息到客户端SDK中
+
+#### 获取用户信息
+```typescript
+JuggleIM.getUserInfo(userId: string): Promise<UserInfo>;
+```
+
+#### 获取群组信息
+```typescript
+JuggleIM.getGroupInfo(groupId: string): Promise<GroupInfo>;
+```
+
+#### 获取群组成员
+```typescript
+JuggleIM.getGroupMemberList(groupId: string): Promise<UserInfo[]>;
+```
+
+#### 同步用户信息
+```typescript
+/**
+ * 进入个人信息页面时，调用此接口同步最新的用户信息到客户端SDK中
+ */
+JuggleIM.fetchUserInfo(userInfo: UserInfo): Promise<void>;
+```
+
+#### 同步群组信息
+```typescript
+/**
+ * 进入群组信息页面时，调用此接口同步最新的群组信息到客户端SDK中
+ */
+JuggleIM.fetchGroupInfo(groupId: string): Promise<void>;
 ```

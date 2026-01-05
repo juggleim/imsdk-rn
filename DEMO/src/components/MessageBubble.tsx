@@ -30,7 +30,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 }) => {
   const bubbleRef = React.useRef<View>(null);
   const [currentPlayingVoice, setCurrentPlayingVoice] = useState<string | null>(null);
-
   const handleLongPress = () => {
     if (onLongPress && bubbleRef.current) {
       // Measure the position relative to the window
@@ -153,7 +152,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       case 'jg:img':
         const imgContent = message.content as ImageMessageContent;
         let uri = (imgContent.thumbnailUrl || imgContent.thumbnailLocalPath) || (imgContent.url || imgContent.localPath);
-        if (!uri.startsWith('http')) {
+        // console.log('MessageBubble: uri', uri, imgContent);
         if (uri && !uri.startsWith('http')) {
           uri = Platform.OS === 'android' ? 'file://' + uri : uri;
         }
@@ -189,7 +188,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         const voiceContent = message.content as VoiceMessageContent;
         const voiceUrl = voiceContent.url || voiceContent.localPath;
         const isPlaying = currentPlayingVoice === message.messageId;
-        console.log('MessageBubble: voiceUrl', message.messageId, isPlaying);
+        // console.log('MessageBubble: voiceUrl', message.messageId, isPlaying);
         const handleVoicePress = () => {
           if (!voiceUrl) {
             console.log('语音文件路径不存在', message);
