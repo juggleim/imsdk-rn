@@ -30,6 +30,7 @@ import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.GroupMessageReadInfo;
 import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.messages.*;
+import com.juggle.im.model.MergeMessagePreviewUnit;
 import com.juggle.im.model.PushData;
 import com.juggle.im.model.MessageOptions;
 import com.juggle.im.JIM;
@@ -536,6 +537,32 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 voice.setLocalPath(map.getString("localPath"));
                 voice.setDuration(map.getInt("duration"));
                 return voice;
+            case "jg:merge":
+                String title = map.getString("title");
+                Conversation conversation = convertMapToConversation(map.getMap("conversation"));
+                ReadableArray messageIdArray = map.getArray("messageIdList");
+                List<String> messageIdList = new ArrayList<>();
+                if (messageIdArray != null) {
+                    for (int i = 0; i < messageIdArray.size(); i++) {
+                        messageIdList.add(messageIdArray.getString(i));
+                    }
+                }
+
+                ReadableArray previewArray = map.getArray("previewList");
+                List<MergeMessagePreviewUnit> previewList = new ArrayList<>();
+                if (previewArray != null) {
+                    for (int i = 0; i < previewArray.size(); i++) {
+                        previewList.add(convertMapToMergeMessagePreviewUnit(previewArray.getMap(i)));
+                    }
+                }
+                MergeMessage merge = new MergeMessage(title, conversation, messageIdList, previewList);
+                if (map.hasKey("containerMsgId")) {
+                    merge.setContainerMsgId(map.getString("containerMsgId"));
+                }
+                if (map.hasKey("extra")) {
+                    merge.setExtra(map.getString("extra"));
+                }
+                return merge;
             default:
                 // 检查是否是自定义消息
                 if (customMessageTypes.containsKey(contentType)) {
@@ -1712,6 +1739,21 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         return userInfo;
     }
 
+    private MergeMessagePreviewUnit convertMapToMergeMessagePreviewUnit(ReadableMap map) {
+        String previewContent = "";
+        if (map.hasKey("previewContent")) {
+            previewContent = map.getString("previewContent");
+        }
+        UserInfo sender = new UserInfo();
+        if (map.hasKey("sender")) {
+            sender = convertMapToUserInfo(map.getMap("sender"));
+        }
+        MergeMessagePreviewUnit unit = new MergeMessagePreviewUnit();
+        unit.setPreviewContent(previewContent);
+        unit.setSender(sender);
+        return unit;
+    }
+
     /**
      * 发送消息已读回执
      * 
@@ -1807,5 +1849,117 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             e.printStackTrace();
             promise.reject(e);
         }
+    }
+
+    /**
+     * 获取合并消息列表
+     * 
+     * @param messageId 合并消息ID
+     * @param promise   Promise对象
+     */
+    @ReactMethod
+    public void getMergedMessageList(String messageId, Promise promise) {
+        JIM.getInstance().getMessageManager().getMergedMessageList(messageId,
+                new IMessageManager.IGetMessagesCallback() {
+                    @Override
+                    public void onSuccess(List<Message> list) {
+                        WritableArray array = new WritableNativeArray();
+                        for (Message msg : list) {
+                            array.pushMap(convertMessageToMap(msg));
+                        }
+                        promise.resolve(array);
+                    }
+
+                    @Override
+                    public void onError(int i) {
+                        promise.reject(String.valueOf(i), "getMergedMessageList failed");
+                    }
+                });
+    }
+
+    /**
+     * 从服务端获取用户信息
+     * 
+     * @param userId 用户ID
+     */
+    @ReactMethod
+    public void fetchUserInfo(String userId, Promise promise) {
+        JIM.getInstance().getUserInfoManager().fetchUserInfo(userId, new JIMConst.IResultCallback<UserInfo>() {
+            @Override
+            public void onSuccess(UserInfo userInfo) {
+                if (userInfo != null) {
+                    promise.resolve(convertUserInfoToMap(userInfo));
+                } else {
+                    promise.resolve(null);
+                }
+            }
+
+            @Override
+            public void onError(int i) {
+                promise.reject(String.valueOf(i), "fetchUserInfo failed");
+            }
+        });
+    }
+
+    /**
+     * 从服务端获取群组信息
+     * 
+     * @param groupId 群组ID
+     */
+    @ReactMethod
+    public void fetchGroupInfo(String groupId, Promise promise) {
+        JIM.getInstance().getUserInfoManager().fetchGroupInfo(groupId, new JIMConst.IResultCallback<GroupInfo>() {
+            @Override
+            public void onSuccess(GroupInfo groupInfo) {
+                if (groupInfo != null) {
+                    promise.resolve(convertGroupInfoToMap(groupInfo));
+                } else {
+                    promise.resolve(null);
+                }
+            }
+
+            @Override
+            public void onError(int i) {
+                promise.reject(String.valueOf(i), "fetchGroupInfo failed");
+            }
+        });
+    }
+
+    /**
+     * 批量获取用户信息
+     * 
+     * @param userIdList 用户ID列表
+     */
+    @ReactMethod
+    public void getUserInfoList(ReadableArray userIdList, Promise promise) {
+        List<String> ids = new ArrayList<>();
+        for (int i = 0; i < userIdList.size(); i++) {
+            ids.add(userIdList.getString(i));
+        }
+        List<UserInfo> users = JIM.getInstance().getUserInfoManager().getUserInfoList(ids);
+        WritableArray array = new WritableNativeArray();
+        for (UserInfo user : users) {
+            array.pushMap(convertUserInfoToMap(user));
+        }
+        promise.resolve(array);
+    }
+
+    /**
+     * 批量获取群组信息
+     * 
+     * @param groupIdList 群组ID列表
+     */
+    @ReactMethod
+    public void getGroupInfoList(ReadableArray groupIdList, Promise promise) {
+        List<String> ids = new ArrayList<>();
+        for (int i = 0; i < groupIdList.size(); i++) {
+            ids.add(groupIdList.getString(i));
+        }
+        List<GroupInfo> groups = JIM.getInstance().getUserInfoManager().getGroupInfoList(ids);
+        WritableArray array = new WritableNativeArray();
+        for (GroupInfo group : groups) {
+            array.pushMap(convertGroupInfoToMap(group));
+        }
+        promise.resolve(array);
     }
 }

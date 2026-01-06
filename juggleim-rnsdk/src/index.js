@@ -981,7 +981,7 @@ class JuggleIM {
 
   /**
    * 发送合并消息（构建 MergeMessage 并发送）
-   * @param {MergedMessageContent} mergedMessage - 要合并转发的消息 ID 列表
+   * @param {MergeMessageContent} mergedMessage - 要合并转发的消息 ID 列表
    * @param {Conversation} conversation - 目标会话（同时作为 MergeMessage 中的 conversation 字段）
    * @param {SendMessageCallback} callback - 回调对象，包含 onSuccess/onError
    */
@@ -1100,6 +1100,51 @@ class JuggleIM {
    */
   static setMessageTop(messageId, conversation, isTop) {
     return JMI.setMessageTop(messageId, conversation, isTop);
+  }
+
+  /**
+   * 获取合并消息列表
+   * @param {string} messageId - 合并消息ID
+   * @returns {Promise<Message[]>} 消息列表
+   */
+  static getMergedMessageList(messageId) {
+    return JMI.getMergedMessageList(messageId);
+  }
+
+  /**
+   * 从服务端获取用户信息
+   * @param {string} userId - 用户ID
+   * @returns {Promise<UserInfo>} 用户信息
+   */
+  static fetchUserInfo(userId) {
+    return JMI.fetchUserInfo(userId);
+  }
+
+  /**
+   * 从服务端获取群组信息
+   * @param {string} groupId - 群组ID
+   * @returns {Promise<GroupInfo>} 群组信息
+   */
+  static fetchGroupInfo(groupId) {
+    return JMI.fetchGroupInfo(groupId);
+  }
+
+  /**
+   * 批量获取用户信息
+   * @param {Array<string>} userIdList - 用户ID列表
+   * @returns {Promise<UserInfo[]>} 用户信息列表
+   */
+  static getUserInfoList(userIdList) {
+    return JMI.getUserInfoList(userIdList);
+  }
+
+  /**
+   * 批量获取群组信息
+   * @param {Array<string>} groupIdList - 群组ID列表
+   * @returns {Promise<GroupInfo[]>} 群组信息列表
+   */
+  static getGroupInfoList(groupIdList) {
+    return JMI.getGroupInfoList(groupIdList);
   }
 }
 

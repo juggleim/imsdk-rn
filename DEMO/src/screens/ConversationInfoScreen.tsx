@@ -40,14 +40,16 @@ const ConversationInfoScreen = () => {
 
     const loadConversationInfo = async (forceUpdate: boolean = false) => {
         if (isPrivateChat) {
-            const user = await UserInfoManager.getUserInfo(conversation.conversationId);
-            setUserInfo(user);
+            JuggleIM.fetchUserInfo(conversation.conversationId).then(res => {
+                setUserInfo(res);
+                console.log('fetchUserInfo', res);
+            });
         } else if (isGroupChat) {
             const group = forceUpdate
                 ? await UserInfoManager.getGroupInfoForceSync(conversation.conversationId)
                 : await UserInfoManager.getGroupInfo(conversation.conversationId);
             setGroupInfo(group);
-
+            JuggleIM.fetchGroupInfo(conversation.conversationId);
             // Load announcement
             try {
                 const announcementData = await getGroupAnnouncement(conversation.conversationId);
@@ -71,6 +73,7 @@ const ConversationInfoScreen = () => {
             console.error('Failed to load conversation settings:', error);
         }
     };
+
 
     const handlePinToggle = async (value: boolean) => {
         setIsPinned(value);

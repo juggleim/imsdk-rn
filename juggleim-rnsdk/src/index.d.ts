@@ -483,6 +483,42 @@ export default class JuggleIM {
     conversation: Conversation,
     isTop: boolean,
   ): Promise<Boolean>;
+  /**
+   * 获取合并消息列表
+   * @param messageId 合并消息ID
+   * @returns {Promise<Message[]>} 消息列表
+   */
+  static getMergedMessageList(messageId: string): Promise<Message[]>;
+
+  /**
+   * 从服务端获取用户信息同时更新本地缓存为最新数据
+   * 注意：可以在进入会话页面/个人详情页面时使用此接口
+   * @param userId 用户ID
+   * @returns {Promise<UserInfo | null>} 用户信息
+   */
+  static fetchUserInfo(userId: string): Promise<UserInfo | null>;
+
+  /**
+   * 从服务端获取群组信息同时更新本地缓存为最新数据
+   * 注意：可以在进入群组页面时使用此接口
+   * @param groupId 群组ID
+   * @returns {Promise<GroupInfo | null>} 群组信息
+   */
+  static fetchGroupInfo(groupId: string): Promise<GroupInfo | null>;
+
+  /**
+   * 批量获取用户信息
+   * @param userIdList 用户ID列表
+   * @returns {Promise<UserInfo[]>} 用户信息列表
+   */
+  static getUserInfoList(userIdList: string[]): Promise<UserInfo[]>;
+
+  /**
+   * 批量获取群组信息
+   * @param groupIdList 群组ID列表
+   * @returns {Promise<GroupInfo[]>} 群组信息列表
+   */
+  static getGroupInfoList(groupIdList: string[]): Promise<GroupInfo[]>;
 }
 
 

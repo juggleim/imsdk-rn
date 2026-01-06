@@ -68,7 +68,11 @@ export class RecallInfoMessageContent extends MessageContent {
 }
 
 /**
- * 合并消息内容
+ * 合并消息内容:jg:merge
+ * @property {string} title - 合并消息标题
+ * @property {Conversation} conversation - 会话对象
+ * @property {string[]} messageIdList - 消息ID列表
+ * @property {MergeMessagePreviewUnit[]} previewList - 预览列表
  */
 export class MergeMessageContent extends MessageContent {
     contentType: string;
@@ -101,6 +105,8 @@ export class MergeMessageContent extends MessageContent {
 
 /**
  * 合并消息预览单元
+ * @property {string} previewContent - 预览内容
+ * @property {UserInfo} sender - 发送者
  */
 export class MergeMessagePreviewUnit {
     constructor(previewContent?: string, sender?: UserInfo);

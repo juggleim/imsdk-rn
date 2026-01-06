@@ -476,6 +476,14 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
+  } else if ([content isKindOfClass:[JMergeMessage class]]) {
+    JMergeMessage *mergeMsg = (JMergeMessage *)content;
+    dict[@"title"] = mergeMsg.title ?: @"";
+    dict[@"conversation"] = mergeMsg.conversation;
+    dict[@"messageIdList"] = mergeMsg.messageIdList;
+    dict[@"previewList"] = mergeMsg.previewList;
+    dict[@"containerMsgId"] = mergeMsg.containerMsgId;
+    dict[@"extra"] = mergeMsg.extra ?: @"";
   } else if (self.customMessageTypes[contentType]) {
     // 处理自定义消息:解析 JSON 数据
     JUnknownMessage *customMsg = (JUnknownMessage *)content;
@@ -1431,6 +1439,28 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     voice.localPath = messageDict[@"localPath"];
     voice.duration = [messageDict[@"duration"] integerValue];
     return voice;
+  } else if ([contentType isEqualToString:@"jg:merge"]) {
+    NSString *title = messageDict[@"title"];
+    JConversation *conversation =
+        [self convertDictionaryToConversation:messageDict[@"conversation"]];
+    NSArray *messageIdList = messageDict[@"messageIdList"];
+    NSArray *previewListDict = messageDict[@"previewList"];
+    NSMutableArray *previewList = [NSMutableArray array];
+    for (NSDictionary *previewDict in previewListDict) {
+      [previewList addObject:[self convertDictionaryToPreviewUnit:previewDict]];
+    }
+
+    JMergeMessage *merge = [[JMergeMessage alloc] initWithTitle:title
+                                                   conversation:conversation
+                                                  MessageIdList:messageIdList
+                                                    previewList:previewList];
+    if (messageDict[@"containerMsgId"]) {
+      merge.containerMsgId = messageDict[@"containerMsgId"];
+    }
+    if (messageDict[@"extra"]) {
+      merge.extra = messageDict[@"extra"];
+    }
+    return merge;
   } else if (self.customMessageTypes[contentType]) {
     NSString *contenType = messageDict[@"contentType"];
     NSError *error = nil;
@@ -1544,7 +1574,7 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     for (NSDictionary *userDict in mentionedUsers) {
       if ([userDict isKindOfClass:[NSDictionary class]] &&
           userDict[@"userId"]) {
-        JUserInfo *userInfo = [self convertDictToUserInfo:userDict[@"userId"]];
+        JUserInfo *userInfo = [self convertDictionaryToJUserInfo:userDict];
         [userArray addObject:userInfo];
       }
     }
@@ -1552,11 +1582,34 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
 
   return mentionInfo;
 }
-// convert dict userinfo
-- (JUserInfo *)convertDictToUserInfo:(NSString *)userId {
+
+- (JUserInfo *)convertDictionaryToJUserInfo:(NSDictionary *)dict {
   JUserInfo *userInfo = [[JUserInfo alloc] init];
-  userInfo.userId = userId;
+  if (dict[@"userId"]) {
+    userInfo.userId = dict[@"userId"];
+  }
+  if (dict[@"nickname"]) {
+    userInfo.userName = dict[@"nickname"];
+  }
+  if (dict[@"avatar"]) {
+    userInfo.portrait = dict[@"avatar"];
+  }
+  if (dict[@"extra"]) {
+    userInfo.extraDic = dict[@"extra"];
+  }
   return userInfo;
+}
+
+- (JMergeMessagePreviewUnit *)convertDictionaryToPreviewUnit:
+    (NSDictionary *)dict {
+  JMergeMessagePreviewUnit *unit = [[JMergeMessagePreviewUnit alloc] init];
+  if (dict[@"previewContent"]) {
+    unit.previewContent = dict[@"previewContent"];
+  }
+  if (dict[@"sender"]) {
+    unit.sender = [self convertDictionaryToJUserInfo:dict[@"sender"]];
+  }
+  return unit;
 }
 
 /**
@@ -1660,6 +1713,91 @@ RCT_EXPORT_METHOD(
     pushData.extra = dict[@"extra"];
   }
   return pushData;
+}
+
+/**
+ * 获取合并消息列表
+ */
+RCT_EXPORT_METHOD(getMergedMessageList : (NSString *)messageId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  [[JIM shared].messageManager getMergedMessageList:messageId
+      success:^(NSArray<JMessage *> *mergedMessages) {
+        NSMutableArray *array = [NSMutableArray new];
+        for (JMessage *msg in mergedMessages) {
+          [array addObject:[self convertMessageToDictionary:msg]];
+        }
+        resolve(array);
+      }
+      error:^(JErrorCode code) {
+        reject([NSString stringWithFormat:@"%ld", (long)code],
+               @"getMergedMessageList failed", nil);
+      }];
+}
+
+/**
+ * 从服务端获取用户信息
+ */
+RCT_EXPORT_METHOD(fetchUserInfo : (NSString *)userId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  [[JIM shared].userInfoManager fetchUserInfo:userId
+      success:^(JUserInfo *userInfo) {
+        if (userInfo) {
+          resolve([self convertUserInfoToDictionary:userInfo]);
+        } else {
+          resolve([NSNull null]);
+        }
+      }
+      error:^(JErrorCode code) {
+        reject([NSString stringWithFormat:@"%ld", (long)code],
+               @"fetchUserInfo failed", nil);
+      }];
+}
+
+/**
+ * 从服务端获取群组信息
+ */
+RCT_EXPORT_METHOD(fetchGroupInfo : (NSString *)groupId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  [[JIM shared].userInfoManager fetchGroupInfo:groupId
+      success:^(JGroupInfo *groupInfo) {
+        if (groupInfo) {
+          resolve([self convertGroupInfoToDictionary:groupInfo]);
+        } else {
+          resolve([NSNull null]);
+        }
+      }
+      error:^(JErrorCode code) {
+        reject([NSString stringWithFormat:@"%ld", (long)code],
+               @"fetchGroupInfo failed", nil);
+      }];
+}
+
+/**
+ * 批量获取用户信息
+ */
+RCT_EXPORT_METHOD(getUserInfoList : (NSArray *)userIdList resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  NSArray<JUserInfo *> *users =
+      [[JIM shared].userInfoManager getUserInfoList:userIdList];
+  NSMutableArray *array = [NSMutableArray new];
+  for (JUserInfo *user in users) {
+    [array addObject:[self convertUserInfoToDictionary:user]];
+  }
+  resolve(array);
+}
+
+/**
+ * 批量获取群组信息
+ */
+RCT_EXPORT_METHOD(getGroupInfoList : (NSArray *)groupIdList resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  NSArray<JGroupInfo *> *groups =
+      [[JIM shared].userInfoManager getGroupInfoList:groupIdList];
+  NSMutableArray *array = [NSMutableArray new];
+  for (JGroupInfo *group in groups) {
+    [array addObject:[self convertGroupInfoToDictionary:group]];
+  }
+  resolve(array);
 }
 
 @end
