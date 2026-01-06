@@ -571,11 +571,18 @@ class JuggleIM {
    * @returns {Promise<boolean>} 清除结果
    */
   static clearUnreadCount(conversation) {
-    if (Platform.OS === "android") {
-      return JMI.clearUnreadCount(conversation);
-    } else if (Platform.OS === "ios") {
-      return JMI.clearUnreadCount(conversation);
-    }
+    // 参数检查
+    return new Promise((resolve, reject) => {
+      if (!conversation || !conversation.conversationId || !conversation.conversationType) {
+        reject('error', '会话参数错误');
+        return;
+      }
+      if (Platform.OS === "android") {
+        JMI.clearUnreadCount(conversation).then(resolve).catch(reject);
+      } else if (Platform.OS === "ios") {
+        JMI.clearUnreadCount(conversation).then(resolve).catch(reject);
+      }
+    });
   }
 
   /**

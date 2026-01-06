@@ -10,12 +10,16 @@ import {
     Alert,
     ActionSheetIOS,
     Platform,
+    Modal,
+    TextInput,
+    ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import JuggleIM, { Conversation } from 'juggleim-rnsdk';
 import UserInfoManager from '../manager/UserInfoManager';
 import { UserInfo } from '../api/users';
-import { GroupInfo, GroupMember, getGroupAnnouncement, inviteGroupMembers, removeGroupMembers } from '../api/groups';
+import { GroupInfo, GroupMember, getGroupAnnouncement, inviteGroupMembers, removeGroupMembers, updateGroupInfo } from '../api/groups';
+import { launchImageLibrary } from 'react-native-image-picker';
 import FriendSelectionSheet from '../components/FriendSelectionSheet';
 
 const ConversationInfoScreen = () => {
@@ -29,6 +33,9 @@ const ConversationInfoScreen = () => {
     const [groupInfo, setGroupInfo] = useState<GroupInfo | null>(null);
     const [announcement, setAnnouncement] = useState<string>('');
     const [inviteSheetVisible, setInviteSheetVisible] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [nameModalVisible, setNameModalVisible] = useState(false);
+    const [editName, setEditName] = useState('');
 
     const isPrivateChat = conversation.conversationType === 1;
     const isGroupChat = conversation.conversationType === 2;
@@ -40,14 +47,11 @@ const ConversationInfoScreen = () => {
 
     const loadConversationInfo = async (forceUpdate: boolean = false) => {
         if (isPrivateChat) {
-            JuggleIM.fetchUserInfo(conversation.conversationId).then(res => {
-                setUserInfo(res);
-                console.log('fetchUserInfo', res);
-            });
+            const user = await UserInfoManager.getUserInfoForceSync(conversation.conversationId);
+            setUserInfo(user);
+            JuggleIM.fetchUserInfo(conversation.conversationId);
         } else if (isGroupChat) {
-            const group = forceUpdate
-                ? await UserInfoManager.getGroupInfoForceSync(conversation.conversationId)
-                : await UserInfoManager.getGroupInfo(conversation.conversationId);
+            let group = await UserInfoManager.getGroupInfoForceSync(conversation.conversationId)
             setGroupInfo(group);
             JuggleIM.fetchGroupInfo(conversation.conversationId);
             // Load announcement
@@ -71,6 +75,59 @@ const ConversationInfoScreen = () => {
             }
         } catch (error) {
             console.error('Failed to load conversation settings:', error);
+        }
+    };
+
+    const handleUpdatePortrait = async () => {
+        const result = await launchImageLibrary({
+            mediaType: 'photo',
+            selectionLimit: 1,
+        });
+
+        if (result.assets && result.assets.length > 0) {
+            const asset = result.assets[0];
+            const localPath = Platform.OS === 'android' ? asset.uri?.replace('file://', '') : asset.uri;
+
+            if (localPath) {
+                setUploading(true);
+                try {
+                    const remoteUrl = await JuggleIM.uploadImage(localPath);
+                    setGroupInfo({
+                        ...groupInfo,
+                        group_portrait: remoteUrl,
+                    });
+                    await updateGroupInfo({
+                        group_id: conversation.conversationId,
+                        group_portrait: remoteUrl,
+                        group_name: groupInfo?.group_name,
+                    });
+                    // Reload group info
+                    loadConversationInfo(true);
+                    Alert.alert('Success', 'Group portrait updated');
+                } catch (e) {
+                    console.error('Group portrait update failed', e);
+                    Alert.alert('Error', 'Failed to update group portrait');
+                } finally {
+                    setUploading(false);
+                }
+            }
+        }
+    };
+
+    const handleUpdateName = async () => {
+        if (!editName.trim()) return;
+        try {
+            await updateGroupInfo({
+                group_id: conversation.conversationId,
+                group_name: editName,
+            });
+            // Reload group info
+            loadConversationInfo(true);
+            setNameModalVisible(false);
+            Alert.alert('Success', 'Group name updated');
+        } catch (e) {
+            console.error('Group name update failed', e);
+            Alert.alert('Error', 'Failed to update group name');
         }
     };
 
@@ -204,8 +261,30 @@ const ConversationInfoScreen = () => {
                 )}
                 {isGroupChat && groupInfo && (
                     <>
-                        {renderAvatar(groupInfo.group_portrait, groupInfo.group_name)}
-                        <Text style={styles.name}>{groupInfo.group_name || groupInfo.group_id}</Text>
+                        <TouchableOpacity onPress={handleUpdatePortrait} disabled={uploading}>
+                            <View>
+                                {renderAvatar(groupInfo.group_portrait, groupInfo.group_name)}
+                                {uploading && (
+                                    <View style={styles.avatarOverlay}>
+                                        <ActivityIndicator color="#fff" />
+                                    </View>
+                                )}
+                                {!uploading && (
+                                    <View style={styles.editIconContainer}>
+                                        <Image source={require('../assets/icons/camera.png')} style={styles.cameraIcon} />
+                                    </View>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.nameContainer}
+                            onPress={() => {
+                                setEditName(groupInfo.group_name || '');
+                                setNameModalVisible(true);
+                            }}>
+                            <Text style={styles.name}>{groupInfo.group_name || groupInfo.group_id}</Text>
+                            <Image source={require('../assets/icons/edit.png')} style={styles.editIcon} />
+                        </TouchableOpacity>
                         <Text style={styles.userId}>群成员: {groupInfo.member_count}人</Text>
                     </>
                 )}
@@ -298,12 +377,38 @@ const ConversationInfoScreen = () => {
                 </>
             )}
 
-            {/* Friend Selection Sheet for Inviting Members */}
             <FriendSelectionSheet
                 visible={inviteSheetVisible}
                 onClose={() => setInviteSheetVisible(false)}
                 onSelectFriend={handleInviteMembers}
             />
+
+            <Modal
+                visible={nameModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setNameModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Edit Group Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={editName}
+                            onChangeText={setEditName}
+                            placeholder="Enter new group name"
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => setNameModalVisible(false)}>
+                                <Text style={styles.modalButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleUpdateName}>
+                                <Text style={[styles.modalButtonText, styles.saveButtonText]}>Save</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 };
@@ -445,6 +550,98 @@ const styles = StyleSheet.create({
         width: 16,
         height: 16,
         tintColor: '#C7C7CC',
+    },
+    avatarOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 12, // match marginBottom of largeAvatar
+        borderRadius: 40,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        height: 80,
+    },
+    editIconContainer: {
+        position: 'absolute',
+        right: -6,
+        bottom: 6, // Adjusted for avatar margin
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 4,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.20,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    cameraIcon: {
+        width: 16,
+        height: 16,
+        tintColor: '#555',
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    editIcon: {
+        width: 16,
+        height: 16,
+        marginLeft: 8,
+        tintColor: '#888',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        width: '80%',
+        borderRadius: 14,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 16,
+    },
+    input: {
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#e5e5e5',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 20,
+        fontSize: 16,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        alignItems: 'center',
+    },
+    saveButton: {
+        borderLeftWidth: 1,
+        borderLeftColor: '#e5e5e5',
+    },
+    modalButtonText: {
+        fontSize: 17,
+        color: '#007AFF',
+    },
+    saveButtonText: {
+        fontWeight: '600',
     },
 });
 

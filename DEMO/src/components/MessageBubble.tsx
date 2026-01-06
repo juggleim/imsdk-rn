@@ -331,7 +331,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           style={HuiTiaoMessageTypes.includes(message.content.contentType) ? styles.huitiaoBubble : [
             styles.bubble,
             isOutgoing ? styles.outgoingBubble : styles.incomingBubble,
-            // 图片消息不需要padding，避免溢出
             message.content.contentType === 'jg:img' && styles.imageBubble,
           ]}>
           {renderContent()}

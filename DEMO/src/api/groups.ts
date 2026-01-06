@@ -106,3 +106,17 @@ export async function createGroup(request: CreateGroupRequest): Promise<CreateGr
         data: request
     });
 }
+
+export interface UpdateGroupRequest {
+    group_id: string;
+    group_name?: string;
+    group_portrait?: string;
+}
+
+export async function updateGroupInfo(request: UpdateGroupRequest): Promise<void> {
+    return fetchData<void>({
+        url: '/jim/groups/update',
+        method: 'POST',
+        data: request
+    });
+}

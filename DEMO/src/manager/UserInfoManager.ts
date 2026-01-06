@@ -34,6 +34,16 @@ class UserInfoManager {
         }
     }
 
+    public async getUserInfoForceSync(userId: string): Promise<UserInfo | null> {
+        const userInfo = await getUserInfo(userId);
+        if (userInfo) {
+            this.userCache.set(userId, { data: userInfo, timestamp: Date.now() });
+            this.enforceCacheLimit(this.userCache);
+            return userInfo;
+        }
+        return null;
+    }
+
     public async getUserInfo(userId: string): Promise<UserInfo | null> {
         if (this.userCache.has(userId)) {
             const item = this.userCache.get(userId);

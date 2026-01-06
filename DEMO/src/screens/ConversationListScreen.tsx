@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import JuggleIM, { ConversationInfo, JuggleIMCall } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
-import UserInfoManager from '../manager/UserInfoManager';
 import CustomMenu from '../components/CustomMenu';
 
 const ConversationItem = ({
@@ -25,9 +24,8 @@ const ConversationItem = ({
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
   const time = new Date(item.lastMessage?.timestamp || Date.now()).toLocaleTimeString();
-
-  const [name, setName] = useState(conversationId);
-  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+  const name = item.name || conversationId;
+  const avatar = item.avatar || ""
   const itemRef = useRef<View>(null);
 
   // Get display content based on message type
@@ -61,50 +59,6 @@ const ConversationItem = ({
 
   const lastMsgContent = getMessageDisplay();
   const hasMention = item.mentionInfo && item.mentionInfo.mentionMsgList && item.mentionInfo.mentionMsgList.length > 0;
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadInfo = async () => {
-      if (conversationType === 1) { // Private
-        const user = await UserInfoManager.getUserInfo(conversationId);
-        if (isMounted && user) {
-          setName(user.nickname || user.user_id);
-          setAvatar(user.avatar);
-        }
-      } else if (conversationType === 2) { // Group
-        const group = await UserInfoManager.getGroupInfo(conversationId);
-        if (isMounted && group) {
-          setName(group.group_name || group.group_id);
-          setAvatar(group.group_portrait);
-        }
-      }
-    };
-
-    // Try sync first to avoid flicker
-    if (conversationType === 1) {
-      const user = UserInfoManager.getUserInfoSync(conversationId);
-      if (user) {
-        setName(user.nickname || user.user_id);
-        setAvatar(user.avatar);
-      } else {
-        loadInfo();
-      }
-    } else if (conversationType === 2) {
-      const group = UserInfoManager.getGroupInfoSync(conversationId);
-      if (group) {
-        setName(group.group_name || group.group_id);
-        setAvatar(group.group_portrait);
-      } else {
-        loadInfo();
-      }
-    } else {
-      loadInfo();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [conversationId, conversationType]);
 
   const handleLongPress = () => {
     if (itemRef.current) {

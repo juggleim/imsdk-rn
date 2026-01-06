@@ -50,39 +50,11 @@ const MessageItem = ({
   messageStatus?: { progress: number; error: boolean };
 }) => {
   const isOutgoing = item.direction === 1;
-  const [avatar, setAvatar] = useState<string | undefined>(undefined);
-  const [name, setName] = useState<string>(item.senderUserId || '');
+  const name = item.senderUserName || item.senderUserId || '';
+  const avatar = item.senderUserAvatar || '';
 
   // Check if this is a system message
   const isSystemMessage = item.content.contentType === 'jgd:grpntf' || item.content.contentType === 'jgd:friendntf';
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadUserInfo = async () => {
-      if (item.senderUserId) {
-        const user = await UserInfoManager.getUserInfo(item.senderUserId);
-        if (isMounted && user) {
-          setAvatar(user.avatar);
-          setName(user.nickname || user.user_id);
-        }
-      }
-    };
-
-    if (item.senderUserId) {
-      const user = UserInfoManager.getUserInfoSync(item.senderUserId);
-      if (user) {
-        setAvatar(user.avatar);
-        setName(user.nickname || user.user_id);
-      } else {
-        loadUserInfo();
-      }
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [item.senderUserId]);
-
 
   // Render system messages centered without avatars
   if (isSystemMessage) {
@@ -124,14 +96,15 @@ const MessageItem = ({
 
       {isOutgoing && (
         <View style={styles.avatarContainer}>
-          {/* For current user we might also want to show avatar, but usually it's from profile. 
-               For consistency let's try to load it too or just keep it simple. 
-               The prompt asked to cache user info and use it. 
-               Let's use the same logic for current user if available, or fallback to simple.
-           */}
-          <Text style={styles.avatarText}>
-            {currentUserId?.substring(0, 1).toUpperCase() || 'Me'}
-          </Text>
+          {
+            avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {currentUserId?.substring(0, 1).toUpperCase() || 'Me'}
+              </Text>
+            )
+          }
         </View>
       )}
     </View>
@@ -184,9 +157,7 @@ const MessageListScreen = () => {
     loadGroupMembers();
 
     // Clear unread count on entry
-    if (unreadCount > 0) {
-      JuggleIM.clearUnreadCount(conversation);
-    }
+    JuggleIM.clearUnreadCount(conversation);
 
     loadInitialMessages();
     const msgUpdateListener = JuggleIM.addMessageListener('MessageListScreen', {
@@ -248,6 +219,7 @@ const MessageListScreen = () => {
       if (result && result.messages) {
         // Sort Old -> New (Ascending) for normal list
         const sorted = result.messages.sort((a, b) => a.timestamp - b.timestamp);
+        console.log('消息列表', result);
         console.log('loadInitialMessages', sorted.length, result.hasMore, "n:" + sorted[sorted.length - 1].timestamp, "o:" + sorted[0].timestamp);
         setMessages(sorted);
         setHasPrev(result.hasMore);
