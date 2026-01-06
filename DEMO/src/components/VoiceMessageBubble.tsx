@@ -22,7 +22,7 @@ const VoiceMessageBubble: React.FC<VoiceMessageBubbleProps> = ({
     progress,
 }) => {
     const sound: any = useSound(voiceUrl as any);
-    console.log('VoiceMessageBubble: voiceUrl', voiceUrl, sound);
+    // console.log('VoiceMessageBubble: voiceUrl', voiceUrl, sound);
 
     const onVoicePress = () => {
         if (sound && voiceUrl && !sound.state.isPlaying) {

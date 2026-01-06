@@ -152,9 +152,10 @@ class JuggleIM {
     if (listener.onMessageReceive) {
       const subscription = juggleIMEmitter.addListener(
         "MessageReceived",
-        (event) => {
+        async (event) => {
+          const message = await this.buildMessageInfo(event.message);
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onMessageReceive(event.message);
+          listener.onMessageReceive(message);
         }
       );
       subscriptions.push(subscription);
@@ -356,8 +357,10 @@ class JuggleIM {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoAdded",
         (event) => {
+          const convsList = this.buildConversationInfoList(event.conversations);
+          console.log("ConversationInfoAdded", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onConversationInfoAdd(event.conversations);
+          listener.onConversationInfoAdd(convsList);
         }
       );
       subscriptions.push(subscription);
@@ -368,8 +371,10 @@ class JuggleIM {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoUpdated",
         (event) => {
+          const convsList = this.buildConversationInfoList(event.conversations);
+          console.log("ConversationInfoUpdated", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onConversationInfoUpdate(event.conversations);
+          listener.onConversationInfoUpdate(convsList);
         }
       );
       subscriptions.push(subscription);
@@ -380,8 +385,10 @@ class JuggleIM {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoDeleted",
         (event) => {
+          const convsList = this.buildConversationInfoList(event.conversations);
+          console.log("ConversationInfoDeleted", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onConversationInfoDelete(event.conversations);
+          listener.onConversationInfoDelete(convsList);
         }
       );
       subscriptions.push(subscription);
@@ -442,6 +449,37 @@ class JuggleIM {
         reject(err);
       });
     });
+  }
+
+  static buildConversationInfoList(convs) {
+    convs?.forEach(async (conv) => {
+      if (conv.conversation?.conversationType === 1) {
+        const userInfo = await JMI.getUserInfo(conv.conversation?.conversationId);
+        conv.name = userInfo?.nickname;
+        conv.avatar = userInfo?.avatar;
+        conv.extra = userInfo?.extra;
+      } else if (conv.conversation?.conversationType === 2) {
+        const groupInfo = await JMI.getGroupInfo(conv.conversation?.conversationId);
+        conv.name = groupInfo?.groupName;
+        conv.avatar = groupInfo?.portrait;
+        conv.extra = groupInfo?.extra;
+      }
+      if (conv.lastMessage) {
+        const userInfo = await JMI.getUserInfo(conv.lastMessage.senderUserId);
+        conv.lastMessage.senderUserName = userInfo?.nickname;
+        conv.lastMessage.senderUserAvatar = userInfo?.avatar;
+        conv.lastMessage.senderUserExtra = userInfo?.extra;
+      }
+    });
+    return convs;
+  }
+
+  static async buildMessageInfo(message) {
+    const userInfo = await JMI.getUserInfo(message.senderUserId);
+    message.senderUserName = userInfo?.nickname;
+    message.senderUserAvatar = userInfo?.avatar;
+    message.senderUserExtra = userInfo?.extra;
+    return message;
   }
 
   /**

@@ -8,7 +8,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
-import JuggleIM, { ConversationInfo, JuggleIMCall } from 'juggleim-rnsdk';
+import JuggleIM, { ConversationInfo, ConversationType, JuggleIMCall } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import CustomMenu from '../components/CustomMenu';
 
@@ -24,38 +24,53 @@ const ConversationItem = ({
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
   const time = new Date(item.lastMessage?.timestamp || Date.now()).toLocaleTimeString();
-  const name = item.name || conversationId;
+  const name = item.name || "";
   const avatar = item.avatar || ""
   const itemRef = useRef<View>(null);
+  // console.log('ConversationItem', item);
 
   // Get display content based on message type
   const getMessageDisplay = () => {
     const contentType = item.lastMessage?.content?.contentType;
     const content = (item.lastMessage?.content as any)?.content;
 
+    let c = ''
     switch (contentType) {
       case 'jg:text':
-        return content || '[Message]';
+        c = content;
+        break;
       case 'jg:img':
-        return '[Image]';
+        c = '[Image]';
+        break;
       case 'jg:file':
-        return '[File]';
+        c = '[File]';
+        break;
       case 'jg:video':
-        return '[Video]';
+        c = '[Video]';
+        break;
       case 'jg:voice':
-        return '[Voice]';
+        c = '[Voice]';
+        break;
       case 'jgd:grpntf':
         return '[群通知]';
       case 'jgd:friendntf':
         return '[好友通知]';
       case 'demo:businesscard':
-        return '[BusinessCard]';
+        c = '[BusinessCard]';
+        break;
       case 'demo:textcard':
-        return '[TextCard]';
+        c = '[TextCard]';
+        break;
       default:
-        return '[Message]';
+        c = '[Message]';
+        break;
     }
-  };
+    if (2 == item.conversation.conversationType) {
+      return (item.lastMessage?.senderUserName) + ": " + c;
+    } else {
+      return c;
+    }
+  }
 
   const lastMsgContent = getMessageDisplay();
   const hasMention = item.mentionInfo && item.mentionInfo.mentionMsgList && item.mentionInfo.mentionMsgList.length > 0;
@@ -130,7 +145,7 @@ const ConversationListScreen = () => {
         return a.isTop ? -1 : 1;
       }
       if (a.isTop) {
-        return b.topTime - a.topTime;
+        return b.sortTime - a.sortTime;
       }
       return b.sortTime - a.sortTime;
     });
@@ -191,14 +206,13 @@ const ConversationListScreen = () => {
               const index = updated.findIndex(
                 c =>
                   c.conversation.conversationId ===
-                  updatedConv.conversation.conversationId &&
-                  c.conversation.conversationType ===
-                  updatedConv.conversation.conversationType,
+                  updatedConv.conversation.conversationId
               );
               if (index !== -1) {
                 updated[index] = updatedConv;
               }
             });
+            console.log('onConversationInfoUpdate', updated);
             return sortConversations(updated);
           });
         },
@@ -209,9 +223,7 @@ const ConversationListScreen = () => {
                 !deletedConversations.some(
                   dc =>
                     dc.conversation.conversationId ===
-                    c.conversation.conversationId &&
-                    dc.conversation.conversationType ===
-                    c.conversation.conversationType,
+                    c.conversation.conversationId
                 ),
             ),
           );
@@ -256,7 +268,9 @@ const ConversationListScreen = () => {
       if (list == null || list.length === 0) {
         return;
       }
-      setConversations(sortConversations(list));
+      //只保留私聊和群组
+      const filteredList = list.filter(c => c.conversation.conversationType === 1 || c.conversation.conversationType === 2);
+      setConversations(sortConversations(filteredList));
     } catch (e) {
       console.error('Failed to load conversations', e);
     }
@@ -272,8 +286,8 @@ const ConversationListScreen = () => {
     return (
       <ConversationItem
         item={item}
-        onPress={(name) => {
-          navigation.navigate('MessageList', { conversation: item.conversation, title: name, unreadCount: item.unreadCount });
+        onPress={() => {
+          navigation.navigate('MessageList', { conversation: item.conversation, title: item.name, unreadCount: item.unreadCount });
         }}
         onLongPress={handleLongPress}
       />
@@ -286,7 +300,7 @@ const ConversationListScreen = () => {
         data={conversations}
         renderItem={renderItem}
         keyExtractor={item =>
-          item.conversation?.conversationId || Math.random().toString()
+          item.conversation.conversationId
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
