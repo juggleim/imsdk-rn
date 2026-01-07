@@ -37,6 +37,25 @@ JuggleIM.connect('your_token');
 ### 连接状态监听
 
 ```javascript
+/**
+ * 连接状态监听器回调函数
+ * @param {ConnectionStatus} status - 连接状态
+ * @param {number} code - 状态码
+ *        0: CONNECT_SUCCESS 链接成功
+ *        11000: CONNECT_ERROR 默认错误
+ *        11001: CONNECT_APPKEY_IS_REQUIRE 未传 Appkey
+ *        11002: CONNECT_TOKEN_NOT_EXISTS 未传 Token
+ *        11003: CONNECT_APPKEY_NOT_EXISTS Appkey 不存在
+ *        11004: CONNECT_TOKEN_ILLEGAL Token 不合法
+ *        11005: CONNECT_TOKEN_UNAUTHORIZED Token 未授权
+ *        11006: CONNECT_TOKEN_EXPIRE Token 已过期
+ *        11008: CONNECT_UNSUPPORT_PLATFORM 不支持的平台类型
+ *        11009: CONNECT_APP_BLOCKED App已封禁
+ *        11010: CONNECT_USER_BLOCKED 用户已封禁
+ *        11011: CONNECT_USER_KICKED 被踢下线
+ *        11012: CONNECT_USER_LOGOUT 注销下线
+ * @param {string} extra - 扩展信息
+ */
 const unsubscribe = JuggleIM.addConnectionStatusListener('listener_key', (status, code, extra) => {
   console.log('Connection status:', status);
 });
