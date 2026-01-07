@@ -236,8 +236,8 @@ const ConversationListScreen = () => {
     );
     const connectionListener = JuggleIM.addConnectionStatusListener(
       'connectionStatusListener',
-      status => {
-        console.log('Connection status:', status);
+      (status, code, extra) => {
+        console.log('Connection status:', status, code, extra);
         loadConversations();
       },
     );
@@ -250,8 +250,8 @@ const ConversationListScreen = () => {
     });
 
     return () => {
-      removeListener();
-      removeCallListener();
+      // removeListener();
+      // removeCallListener();
       // connectionListener();
     };
   }, []);
