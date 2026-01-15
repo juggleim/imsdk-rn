@@ -447,7 +447,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
 
         // 添加消息状态
         if (message.getState() != null) {
-            map.putInt("state", message.getState().getValue());
+            map.putInt("messageState", message.getState().getValue());
         }
 
         // 添加是否已读

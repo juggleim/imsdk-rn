@@ -62,6 +62,11 @@ export class TextMessageContent extends MessageContent {
 
 /**
  * 撤回消息内容: 'jg:recallinfo';
+ * 最佳实践：设置【撤回监听】，根据onMessageRecall中消息的 senderUserId
+ * 判断是否自己，然后显示【撤回了一条消息】/【xxx撤回了一条消息】
+ * 
+ * @property {string} contentType - 消息内容类型
+ * @property {string} content - 消息内容
  */
 export class RecallInfoMessageContent extends MessageContent {
     contentType: string;
