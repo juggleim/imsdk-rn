@@ -165,9 +165,10 @@ class JuggleIM {
     if (listener.onMessageRecall) {
       const subscription = juggleIMEmitter.addListener(
         "MessageRecalled",
-        (event) => {
+        async (event) => {
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onMessageRecall(event.message);
+          const message = await this.buildMessageInfo(event.message);
+          listener.onMessageRecall(message);
         }
       );
       subscriptions.push(subscription);
@@ -177,9 +178,10 @@ class JuggleIM {
     if (listener.onMessageUpdate) {
       const subscription = juggleIMEmitter.addListener(
         "MessageUpdated",
-        (event) => {
+        async (event) => {
           if (Platform.OS === "android" && event.key !== key) return;
-          listener.onMessageUpdate(event.message);
+          const message = await this.buildMessageInfo(event.message);
+          listener.onMessageUpdate(message);
         }
       );
       subscriptions.push(subscription);

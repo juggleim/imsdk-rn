@@ -18,9 +18,12 @@ import java.util.Locale;
 
 public class FileUtils {
     public static String convertContentUriToFile(Context context, String contentUri) {
+        if (contentUri.startsWith("file://")) {
+            return contentUri.substring(7);
+        }
         if (!contentUri.startsWith("content://")) {
             return contentUri;
-        }
+        }        
         InputStream inputStream = null;
         OutputStream outputStream = null;
         File tempFile = null;
