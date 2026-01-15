@@ -10,6 +10,8 @@ import { TextCardMessage } from './src/messages/TextCardMessage';
 import { BusinessCardMessage } from './src/messages/BusinessCardMessage';
 import { GroupNotifyMessage } from './src/messages/GroupNotifyMessage';
 import { FriendNotifyMessage } from './src/messages/FriendNotifyMessage';
+// 注册消息渲染器
+import './src/message-renderers';
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);

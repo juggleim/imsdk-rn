@@ -25,7 +25,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { USER_ID_KEY } from '../utils/auth';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
-import MessageBubble from '../components/MessageBubble';
+import { MessageBubbleContainer } from '../message-renderers';
 import GridMenu from '../components/GridMenu';
 import VoiceRecorder from '../components/VoiceRecorder';
 import MemberSelectionSheet from '../components/MemberSelectionSheet';
@@ -50,64 +50,15 @@ const MessageItem = ({
   messageStatus?: { progress: number; error: boolean };
 }) => {
   const isOutgoing = item.direction === 1;
-  const name = item.senderUserName || item.senderUserId || '';
-  const avatar = item.senderUserAvatar || '';
-
-  // Check if this is a system message
-  const isSystemMessage = item.content.contentType === 'jgd:grpntf' || item.content.contentType === 'jgd:friendntf';
-
-  // Render system messages centered without avatars
-  if (isSystemMessage) {
-    return (
-      <View style={styles.systemMessageRow}>
-        <MessageBubble
-          message={item}
-          isOutgoing={isOutgoing}
-          onLongPress={(anchor) => onLongPress(item, anchor)}
-        />
-      </View>
-    );
-  }
 
   return (
-    <View
-      style={[
-        styles.messageRow,
-        isOutgoing ? styles.outgoingRow : styles.incomingRow,
-      ]}>
-      {!isOutgoing && (
-        <View style={styles.avatarContainer}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatarImage} />
-          ) : (
-            <Text style={styles.avatarText}>
-              {name.substring(0, 1).toUpperCase() || '?'}
-            </Text>
-          )}
-        </View>
-      )}
-
-      <MessageBubble
-        message={item}
-        isOutgoing={isOutgoing}
-        onLongPress={(anchor) => onLongPress(item, anchor)}
-        messageStatus={messageStatus}
-      />
-
-      {isOutgoing && (
-        <View style={styles.avatarContainer}>
-          {
-            avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatarImage} />
-            ) : (
-              <Text style={styles.avatarText}>
-                {currentUserId?.substring(0, 1).toUpperCase() || 'Me'}
-              </Text>
-            )
-          }
-        </View>
-      )}
-    </View>
+    <MessageBubbleContainer
+      message={item}
+      isOutgoing={isOutgoing}
+      currentUserId={currentUserId}
+      onLongPress={(anchor) => onLongPress(item, anchor)}
+      messageStatus={messageStatus}
+    />
   );
 };
 
@@ -827,46 +778,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   listContent: {
-    // backgroundColor: 'red',
     paddingVertical: 16,
     paddingHorizontal: 16,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    alignItems: 'flex-end',
-  },
-  systemMessageRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  outgoingRow: {
-    justifyContent: 'flex-end',
-  },
-  incomingRow: {
-    justifyContent: 'flex-start',
-  },
-  avatarContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 8,
-    marginBottom: 4,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 32,
-    height: 32,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   spinner: {
     marginVertical: 10,
