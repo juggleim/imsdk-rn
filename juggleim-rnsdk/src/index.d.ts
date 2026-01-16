@@ -519,6 +519,39 @@ export default class JuggleIM {
    * @returns {Promise<GroupInfo[]>} 群组信息列表
    */
   static getGroupInfoList(groupIdList: string[]): Promise<GroupInfo[]>;
+
+  /**
+   * 重发消息
+   * @param {Message} message - 消息对象
+   * @param {SendMessageCallback} [callback] - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static resendMessage(
+    message: Message,
+    callback?: SendMessageCallback
+  ): Promise<Message>;
+
+  /**
+   * 重发媒体消息
+   * @param {Message} message - 消息对象
+   * @param {SendMediaMessageCallback} [callback] - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static resendMediaMessage(
+    message: Message,
+    callback?: SendMediaMessageCallback
+  ): Promise<Message>;
+
+  /**
+   * 发送媒体消息
+   * @param {SendMessageObject} message - 消息内容
+   * @param {SendMediaMessageCallback} [callback] - 回调对象
+   * @returns {Promise<Message>} - 消息对象
+   */
+  static sendMediaMessage(
+    message: SendMessageObject,
+    callback?: SendMediaMessageCallback
+  ): Promise<Message>;
 }
 
 

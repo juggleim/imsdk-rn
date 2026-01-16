@@ -17,6 +17,7 @@ interface MessageBubbleContainerProps {
   currentUserId?: string;
   messageStatus?: { progress: number; error: boolean };
   onLongPress?: (anchor: { x: number; y: number; width: number; height: number }) => void;
+  onResend?: () => void;
   /** 自定义渲染器（可选，用于临时覆盖） */
   overrideRenderer?: React.FC;
 }
@@ -36,6 +37,7 @@ const MessageBubbleContainer: React.FC<MessageBubbleContainerProps> = ({
   currentUserId,
   messageStatus,
   onLongPress,
+  onResend,
   overrideRenderer,
 }) => {
   const bubbleRef = useRef<View>(null);
@@ -44,6 +46,14 @@ const MessageBubbleContainer: React.FC<MessageBubbleContainerProps> = ({
   const lookupResult = messageRendererRegistry.findBestRenderer(message);
   const renderer = lookupResult.renderer;
 
+  const handleLongPress = () => {
+    if (onLongPress && bubbleRef.current) {
+      bubbleRef.current.measureInWindow((x, y, width, height) => {
+        onLongPress({ x, y, width, height });
+      });
+    }
+  };
+
   // 构建渲染上下文
   const context: MessageRenderContext = {
     message,
@@ -51,14 +61,6 @@ const MessageBubbleContainer: React.FC<MessageBubbleContainerProps> = ({
     currentUserId,
     messageStatus,
     onLongPress: handleLongPress,
-  };
-
-  const handleLongPress = () => {
-    if (onLongPress && bubbleRef.current) {
-      bubbleRef.current.measureInWindow((x, y, width, height) => {
-        onLongPress({ x, y, width, height });
-      });
-    }
   };
 
   // 如果没有找到渲染器，显示未知消息
@@ -120,11 +122,11 @@ const MessageBubbleContainer: React.FC<MessageBubbleContainerProps> = ({
         containerStyle,
       ]}>
       {/* 错误指示器 (仅发送方显示在左侧) */}
-      {isOutgoing && messageStatus?.error && (
-        <View style={styles.errorIndicatorContainer}>
+      {isOutgoing && message.messageState === 3 && (
+        <TouchableOpacity onPress={onResend} style={styles.errorIndicatorContainer}>
           <View style={styles.errorDot} />
           <View style={styles.errorDotPulse} />
-        </View>
+        </TouchableOpacity>
       )}
 
       {/* 接收方头像 */}
@@ -141,7 +143,7 @@ const MessageBubbleContainer: React.FC<MessageBubbleContainerProps> = ({
       {/* 消息气泡 */}
       <View ref={bubbleRef} collapsable={false} style={styles.bubbleWrapper}>
         {/* 昵称 (仅群聊且接收方显示) */}
-        {!isOutgoing && message.conversationType === 'group' && (
+        {!isOutgoing && message.conversation.conversationType === 2 && (
              <Text style={styles.senderName}>{name}</Text>
         )}
 
@@ -248,7 +250,6 @@ const styles = StyleSheet.create({
   errorIndicatorContainer: {
     width: 20,
     height: 20,
-    marginRight: 8,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',

@@ -394,6 +394,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
   dict[@"content"] = contentDic;
   dict[@"direction"] = @(message.direction);
   dict[@"messageState"] = @(message.messageState);
+  dict[@"contentType"] = message.contentType;
 
   // 添加是否已读
   dict[@"hasRead"] = @(message.hasRead);
@@ -1001,11 +1002,20 @@ RCT_EXPORT_METHOD(removeConversationsFromTag : (NSArray *)
  * 将字典转换为会话对象
  */
 - (JConversation *)convertDictionaryToConversation:(NSDictionary *)dict {
-  JConversationType type =
-      (JConversationType)[dict[@"conversationType"] intValue];
-  NSString *conversationId = dict[@"conversationId"];
-  return [[JConversation alloc] initWithConversationType:type
+  if (dict[@"conversation"]) {
+    NSDictionary* conversationDict = dict[@"conversation"];
+    JConversationType type =
+        (JConversationType)[conversationDict[@"conversationType"] intValue];
+    NSString *conversationId = conversationDict[@"conversationId"];
+    return [[JConversation alloc] initWithConversationType:type
                                           conversationId:conversationId];
+  } else {
+    JConversationType type =
+        (JConversationType)[dict[@"conversationType"] intValue];
+    NSString *conversationId = dict[@"conversationId"];
+    return [[JConversation alloc] initWithConversationType:type
+                                          conversationId:conversationId];
+  }
 }
 
 /**
@@ -1479,6 +1489,141 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
   return nil;
 }
 
+/**
+ * 重发消息
+ */
+RCT_EXPORT_METHOD(resendMessage : (NSDictionary *)messageDict messageId : (
+    NSString *)messageId resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    JMessage *message = [self convertDictToMessage:messageDict];
+    JMessage *sendMsg = [JIM.shared.messageManager resend:message
+        success:^(JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMessageSent" body:params];
+        }
+        error:^(JErrorCode errorCode, JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          params[@"errorCode"] = @(errorCode);
+          [self sendEventWithName:@"onMessageSentError" body:params];
+        }];
+    NSMutableDictionary *result = [self convertMessageToDictionary:sendMsg];
+    result[@"messageId"] = messageId;
+    resolve(result);
+  } @catch (NSException *exception) {
+    reject(@"RESEND_MESSAGE_ERROR", exception.reason, nil);
+  }
+}
+
+/**
+ * 重发媒体消息
+ */
+RCT_EXPORT_METHOD(resendMediaMessage : (NSDictionary *)messageDict messageId : (
+    NSString *)messageId resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    JMessage *message = [self convertDictToMessage:messageDict];
+    JMessage *sendMsg = [JIM.shared.messageManager resendMediaMessage:message
+        progress:^(int progress, JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"progress"] = @(progress);
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageProgress" body:params];
+        }
+        success:^(JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageSent" body:params];
+        }
+        error:^(JErrorCode errorCode, JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          params[@"errorCode"] = @(errorCode);
+          [self sendEventWithName:@"onMediaMessageSentError" body:params];
+        }
+        cancel:^(JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageCancelled" body:params];
+    }];
+    NSMutableDictionary *result = [self convertMessageToDictionary:sendMsg];
+    result[@"messageId"] = messageId;
+    resolve(result);
+  } @catch (NSException *exception) {
+    reject(@"RESEND_MEDIA_MESSAGE_ERROR", exception.reason, nil);
+  }
+}
+
+/**
+ * 发送媒体消息
+ */
+RCT_EXPORT_METHOD(sendMediaMessage : (NSDictionary *)messageDict resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    NSString *messageId = [NSString stringWithFormat:@"%f%d", [[NSDate date] timeIntervalSince1970], arc4random() % 10000];
+    if (messageDict[@"messageId"]) {
+        messageId = messageDict[@"messageId"];
+    }
+
+    JMessageContent *content = [self convertDictToMessageContent:messageDict[@"content"]];
+    if (!content) {
+        reject(@"SEND_MEDIA_MESSAGE_ERROR", @"Invalid message content", nil);
+        return;
+    }
+    
+    if (![content isKindOfClass:[JMediaMessageContent class]]) {
+        reject(@"SEND_MEDIA_MESSAGE_ERROR", @"Content must be MediaMessageContent", nil);
+        return;
+    }
+
+    JConversation *conversation =
+        [self convertDictionaryToConversation:messageDict];
+        
+    JMessage *message = [JIM.shared.messageManager sendMediaMessage:(JMediaMessageContent *)content
+        inConversation:conversation
+        progress:^(int progress, JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"progress"] = @(progress);
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageProgress" body:params];
+        }
+        success:^(JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageSent" body:params];
+        }
+        error:^(JErrorCode errorCode, JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          params[@"errorCode"] = @(errorCode);
+          [self sendEventWithName:@"onMediaMessageSentError" body:params];
+        }
+        cancel:^(JMessage *message) {
+          NSMutableDictionary *params = [NSMutableDictionary dictionary];
+          params[@"messageId"] = messageId;
+          params[@"message"] = [self convertMessageToDictionary:message];
+          [self sendEventWithName:@"onMediaMessageCancelled" body:params];
+        }];
+
+    NSMutableDictionary *result = [self convertMessageToDictionary:message];
+    result[@"messageId"] = messageId;
+    resolve(result);
+  } @catch (NSException *exception) {
+    reject(@"SEND_MEDIA_MESSAGE_ERROR", exception.reason, nil);
+  }
+}
+
 - (JMessage *)convertDictToMessage:(NSDictionary *)messageDict {
   if (![messageDict isKindOfClass:[NSDictionary class]]) {
     return nil;
@@ -1516,6 +1661,7 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
   if ([contentDict isKindOfClass:[NSDictionary class]]) {
     JMessageContent *content = [self convertDictToMessageContent:contentDict];
     message.content = content;
+    message.contentType = contentDict[@"contentType"];
   }
 
   // 7. direction

@@ -25,6 +25,7 @@ import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.MessageMentionInfo;
 import com.juggle.im.model.MessageReaction;
+import com.juggle.im.model.MediaMessageContent;
 import com.juggle.im.model.MessageReactionItem;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.GroupMessageReadInfo;
@@ -498,7 +499,6 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     private WritableMap convertMessageContentToMap(MessageContent content) {
         byte[] bytes = content.encode();
         String str = new String(bytes, StandardCharsets.UTF_8);
-        Log.d("JuggleIM", "convertMessageContentToMap: " + str);
         WritableMap map = RNTypeConverter.stringToWritableMap(str);
         if (content instanceof ImageMessage) {
             ImageMessage img = (ImageMessage) content;
@@ -1077,9 +1077,17 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
      * 将 ReadableMap 转换为 Conversation 对象
      */
     private Conversation convertMapToConversation(ReadableMap map) {
-        Conversation.ConversationType type = Conversation.ConversationType.values()[map.getInt("conversationType")];
-        Conversation conversation = new Conversation(type, map.getString("conversationId"));
-        return conversation;
+        if (map.hasKey("conversationType") && map.hasKey("conversationId")) {
+            Conversation.ConversationType type = Conversation.ConversationType.values()[map.getInt("conversationType")];
+            Conversation conversation = new Conversation(type, map.getString("conversationId"));
+            return conversation;
+        } else if (map.hasKey("conversation")) {
+            ReadableMap conversationMap = map.getMap("conversation");
+            Conversation.ConversationType type = Conversation.ConversationType.values()[conversationMap.getInt("conversationType")];
+            Conversation conversation = new Conversation(type, conversationMap.getString("conversationId"));
+            return conversation;
+        }
+        return null;
     }
 
     /**
@@ -1613,6 +1621,166 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
     }
 
+    /**
+     * 发送媒体消息
+     */
+    @ReactMethod
+    public void sendMediaMessage(ReadableMap messageMap, String messageId, Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(messageMap);
+            ReadableMap contentMap = messageMap.getMap("content");
+            MessageContent content = convertMapToMessageContent(contentMap);
+            
+            if (!(content instanceof MediaMessageContent)) {
+                promise.reject("SEND_MEDIA_MESSAGE_ERROR", "Content is not a media message");
+                return;
+            }
+
+            MessageOptions options = new MessageOptions();
+            PushData pushData = convertMapToPushData(messageMap);
+            if (pushData != null) {
+                options.setPushData(pushData);
+            }
+            ReadableMap mentionInfoMap = messageMap.getMap("mentionInfo");
+            if (mentionInfoMap != null) {
+                MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+                options.setMentionInfo(mentionInfo);
+            }
+            if (messageMap.hasKey("referredMessageId")) {
+                options.setReferredMessageId(messageMap.getString("referredMessageId"));
+            }
+
+            Message message = JIM.getInstance().getMessageManager().sendMediaMessage(
+                    (MediaMessageContent) content,
+                    conversation,
+                    options,
+                    new IMessageManager.ISendMediaMessageCallback() {
+                        @Override
+                        public void onProgress(int progress, Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putInt("progress", progress);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageProgress", params);
+                        }
+
+                        @Override
+                        public void onSuccess(Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageSent", params);
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            params.putInt("errorCode", errorCode);
+                            sendEvent("onMediaMessageSentError", params);
+                        }
+
+                        @Override
+                        public void onCancel(Message message) {
+                            WritableMap params = new WritableNativeMap();
+                            params.putString("messageId", messageId);
+                            params.putMap("message", convertMessageToMap(message));
+                            sendEvent("onMediaMessageCancelled", params);
+                        }
+                    });
+
+            WritableMap result = convertMessageToMap(message);
+            result.putString("messageId", messageId);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("SEND_MEDIA_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 重发消息
+     */
+    @ReactMethod
+    public void resendMessage(ReadableMap messageMap, String messageId, Promise promise) {
+        try {
+            Message message = convertMapToMessage(messageMap);
+            Message sendMsg = JIM.getInstance().getMessageManager().resendMessage(message, new IMessageManager.ISendMessageCallback() {
+                @Override
+                public void onSuccess(Message message) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putMap("message", convertMessageToMap(message));
+                    sendEvent("onMessageSent", params);
+                }
+
+                @Override
+                public void onError(Message message, int errorCode) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putMap("message", convertMessageToMap(message));
+                    params.putInt("errorCode", errorCode);
+                    sendEvent("onMessageSentError", params);
+                }
+            });
+            WritableMap result = convertMessageToMap(sendMsg);
+            result.putString("messageId", messageId);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("RESEND_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 重发媒体消息
+     */
+    @ReactMethod
+    public void resendMediaMessage(ReadableMap messageMap, String messageId, Promise promise) {
+        try {
+            Message message = convertMapToMessage(messageMap);
+            Message sendMsg = JIM.getInstance().getMessageManager().resendMediaMessage(message, new IMessageManager.ISendMediaMessageCallback() {
+                @Override
+                public void onProgress(int progress, Message message) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putInt("progress", progress);
+                    params.putMap("message", convertMessageToMap(message));
+                    sendEvent("onMediaMessageProgress", params);
+                }
+
+                @Override
+                public void onSuccess(Message message) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putMap("message", convertMessageToMap(message));
+                    sendEvent("onMediaMessageSent", params);
+                }
+
+                @Override
+                public void onError(Message message, int errorCode) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putMap("message", convertMessageToMap(message));
+                    params.putInt("errorCode", errorCode);
+                    sendEvent("onMediaMessageSentError", params);
+                }
+
+                @Override
+                public void onCancel(Message message) {
+                    WritableMap params = new WritableNativeMap();
+                    params.putString("messageId", messageId);
+                    params.putMap("message", convertMessageToMap(message));
+                    sendEvent("onMediaMessageCancelled", params);
+                }
+            });
+            WritableMap result = convertMessageToMap(sendMsg);
+            result.putString("messageId", messageId);
+            promise.resolve(result);
+        } catch (Exception e) {
+            promise.reject("RESEND_MEDIA_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
     private Message convertMapToMessage(ReadableMap messageMap) {
         Message message = new Message();
         Conversation conversation = convertMapToConversation(messageMap);
@@ -1637,6 +1805,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             ReadableMap contentMap = messageMap.getMap("content");
             MessageContent content = convertMapToMessageContent(contentMap);
             message.setContent(content);
+            message.setContentType(content.getContentType());
         }
 
         // 设置消息方向

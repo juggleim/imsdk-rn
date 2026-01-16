@@ -47,7 +47,11 @@ export class SystemMessageRenderer extends BaseMessageRenderer {
    * 支持所有 jgd: 开头的系统消息
    */
   canRender(message: Message): boolean {
-    return message.content.contentType.startsWith('jgd:');
+    const r = message.content.contentType?.startsWith('jgd:') || false;
+    if (! r) {
+      console.log('SystemMessageRenderer canRender:', r, message);
+    }
+    return r;
   }
 
   estimateHeight(message: Message): number {

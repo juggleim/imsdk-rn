@@ -42,11 +42,13 @@ const MessageItem = ({
   item,
   currentUserId,
   onLongPress,
+  onResend,
   messageStatus,
 }: {
   item: Message;
   currentUserId: string;
   onLongPress: (message: Message, event?: any) => void;
+  onResend?: () => void;
   messageStatus?: { progress: number; error: boolean };
 }) => {
   const isOutgoing = item.direction === 1;
@@ -57,6 +59,7 @@ const MessageItem = ({
       isOutgoing={isOutgoing}
       currentUserId={currentUserId}
       onLongPress={(anchor) => onLongPress(item, anchor)}
+      onResend={onResend}
       messageStatus={messageStatus}
     />
   );
@@ -277,15 +280,21 @@ const MessageListScreen = () => {
       referredMessageId: quotedMessage?.messageId,
     };
 
-    JuggleIM.sendMessage(messageToSend, {
+    const sendingMsg = await JuggleIM.sendMessage(messageToSend, {
       onSuccess: (message: Message) => {
-        console.log('Message sent successfully', message);
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => 
+          prev.map(m => m.clientMsgNo === message.clientMsgNo ? message : m)
+        )
       },
       onError: (message: Message, errorCode: number) => {
-        console.error('Failed to send message:', errorCode);
+        setMessages(prev => 
+          prev.map(m => m.clientMsgNo === message.clientMsgNo ? message : m)
+        )
       },
     });
+    if (sendingMsg) {
+      setMessages(prev => [...prev, sendingMsg]);
+    }
     if (quotedMessage) {
       setQuotedMessage(null);
       messageComposerRef.current?.setQuotedMessage(null, '');
@@ -496,6 +505,82 @@ const MessageListScreen = () => {
     return options;
   };
 
+  /* ... existing code ... */
+
+  const handleResend = async (failedMessage: Message) => {
+    // 1. Identify message type
+    const isMedia = 
+      failedMessage.content.contentType === 'jg:img' ||
+      failedMessage.content.contentType === 'jg:file' ||
+      failedMessage.content.contentType === 'jg:voice' ||
+      failedMessage.content.contentType === 'jg:video' ||
+      // Assume custom types might be media or text, defaulting to media if not strictly text
+      failedMessage.content.contentType !== 'jg:text';
+
+    try {
+      if (isMedia) {
+        // Resend Media Message
+         await JuggleIM.resendMediaMessage(failedMessage, {
+          onProgress: (progress: number, msg: Message) => {
+            setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress, error: false }));
+          },
+          onSuccess: (msg: Message) => {
+            setMessageStatus(prev => {
+              const newMap = new Map(prev);
+              newMap.delete(msg.clientMsgNo);
+              return newMap;
+            });
+            // Update message list and sort by timestamp
+            setMessages(prev => {
+               // Remove old message (by clientMsgNo) and add new one
+               // But wait, resend usually returns the updated message object which might have same clientMsgNo but different state
+               // Or potentially different messageId if native SDK regenerates it (though usually resend keeps same ID or returns new object)
+               // The prompt says "update page messages (pay attention to time sorting)".
+               // Let's replace the old message with new one, then re-sort.
+               const filtered = prev.filter(m => m.clientMsgNo !== failedMessage.clientMsgNo);
+               return [...filtered, msg].sort((a, b) => a.timestamp - b.timestamp);
+            });
+          },
+          onError: (msg: Message, errorCode: number) => {
+             console.error('Failed to resend media:', errorCode);
+             setMessageStatus(prev => new Map(prev).set(msg.clientMsgNo, { progress: 0, error: true }));
+             // Update logic to ensure error state is reflected if needed (though status map handles 'error' indicator generally, 
+             // but message state in message object also matters)
+             setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+          },
+          onCancel: (msg: Message) => {
+             // Handle cancel
+          }
+        });
+      } else {
+        // Resend Text Message
+        const resendMsg = await JuggleIM.resendMessage(failedMessage, {
+          onSuccess: (msg: Message) => {
+             console.log('Resend success', msg);
+             setMessages(prev => {
+               const filtered = prev.filter(m => m.clientMsgNo !== failedMessage.clientMsgNo);
+               return [...filtered, msg].sort((a, b) => a.timestamp - b.timestamp);
+            });
+          },
+          onError: (msg: Message, errorCode: number) => {
+             console.error('Failed to resend message:', errorCode);
+             // Update message state in list to failed
+             setMessages(prev => prev.map(m => m.clientMsgNo === msg.clientMsgNo ? msg : m));
+          }
+        });
+        if (resendMsg) {
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.clientMsgNo !== failedMessage.clientMsgNo);
+            return [...filtered, resendMsg].sort((a, b) => a.timestamp - b.timestamp);
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Resend exception:', e);
+      Alert.alert('Error', 'Failed to resend message');
+    }
+  };
+
   const renderMessageItem = ({ item }: { item: Message }) => {
     // console.log('renderMessageItem', item.messageId);
     const status = messageStatus.get(item.clientMsgNo);
@@ -504,10 +589,13 @@ const MessageListScreen = () => {
         item={item}
         currentUserId={currentUserId}
         onLongPress={handleMessageLongPress}
+        onResend={() => handleResend(item)}
         messageStatus={status}
       />
     );
   };
+
+  /* ... rest of existing code ... */
 
   const handleSendImage = async (file: {
     uri: string;

@@ -434,6 +434,71 @@ const voiceMessage = await JuggleIM.sendVoiceMessage(
 )
 ```
 
+### 发送媒体消息
+
+通用接口，用于发送包含媒体内容（如图片、文件、语音等）的消息。
+
+```javascript
+const message = await JuggleIM.sendMediaMessage({
+  conversationType: 1,
+  conversationId: 'user123',
+  content: {
+    contentType: 'jg:img', // 或 'jg:file', 'jg:voice', 'jg:video' 等
+    localPath: '/path/to/media'
+    // ... 其他具体类型的属性
+  }
+}, {
+  onProgress: (progress, message) => {
+    console.log('Upload progress:', progress);
+  },
+  onSuccess: (message) => {
+    console.log('Media message sent successfully:', message);
+  },
+  onError: (message, errorCode) => {
+    console.log('Send media failed with error:', errorCode);
+  },
+  onCancel: (message) => {
+    console.log('Send cancelled:', message);
+  }
+});
+```
+
+### 重发消息
+
+使用场景：当消息列表中某条消息发送失败（出现"红点"）时，可调用此接口进行重发。建议根据接口同步返回的 `message` 对象立即更新当前消息列表的排序（通常置于底部或保持原位，取决于UI需求），随后监听回调更新最终状态。
+
+#### 重发普通消息
+
+```javascript
+const message = await JuggleIM.resendMessage(failedMessage, {
+  onSuccess: (message) => {
+    console.log('Message resent successfully:', message);
+  },
+  onError: (message, errorCode) => {
+    console.log('Resend failed with error:', errorCode);
+  }
+});
+```
+
+#### 重发媒体消息
+
+```javascript
+const message = await JuggleIM.resendMediaMessage(failedMediaMessage, {
+  onProgress: (progress, message) => {
+    console.log('Resend upload progress:', progress);
+  },
+  onSuccess: (message) => {
+    console.log('Media message resent successfully:', message);
+  },
+  onError: (message, errorCode) => {
+    console.log('Resend media failed with error:', errorCode);
+  },
+  onCancel: (message) => {
+    console.log('Resend cancelled:', message);
+  }
+});
+```
+
 ### 获取历史消息
 
 ```javascript

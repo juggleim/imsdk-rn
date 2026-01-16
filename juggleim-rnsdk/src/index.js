@@ -763,9 +763,10 @@ class JuggleIM {
 
     const successListener = juggleIMEmitter.addListener(
       "onMessageSent",
-      (event) => {
+      async (event) => {
         if (event.messageId === messageId) {
-          callback.onSuccess?.(event.message);
+          const msgInfo = await this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
           successListener.remove();
           errorListener.remove();
         }
@@ -785,7 +786,7 @@ class JuggleIM {
 
     try {
       const localMsg = await JMI.sendMessage(message, messageId);
-      return localMsg;
+      return this.buildMessageInfo(localMsg)
     } catch (error) {
       callback.onError?.(JSON.stringify(error), -1);
       successListener.remove();
@@ -821,10 +822,11 @@ class JuggleIM {
 
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
-      (event) => {
+      async (event) => {
         console.log("onMediaMessageSent msg:", event);
         if (event.messageId === messageId) {
-          callback.onSuccess?.(event.message);
+          const msgInfo = await this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -865,7 +867,7 @@ class JuggleIM {
       if (localMsg.content?.local) {
         localMsg.content.localPath = localMsg.content.local;
       }
-      return localMsg;
+      return this.buildMessageInfo(localMsg)
     } catch (error) {
       progressListener.remove();
       successListener.remove();
@@ -940,8 +942,7 @@ class JuggleIM {
     try {
       console.log("sendFileMessage message...:", message);
       const localMsg = await JMI.sendFileMessage(message, messageId);
-      console.log("sendFileMessage localMsg:", localMsg);
-      return localMsg;
+      return this.buildMessageInfo(localMsg)
     } catch (error) {
       progressListener.remove();
       successListener.remove();
@@ -976,10 +977,11 @@ class JuggleIM {
 
     const successListener = juggleIMEmitter.addListener(
       "onMediaMessageSent",
-      (event) => {
+      async (event) => {
         if (event.messageId === messageId) {
           console.log("onMediaMessageSent msg:", event);
-          callback.onSuccess?.(event.message);
+          const msgInfo = await this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
           progressListener.remove();
           successListener.remove();
           errorListener.remove();
@@ -1016,7 +1018,7 @@ class JuggleIM {
 
     try {
       const localMsg = await JMI.sendVoiceMessage(message, messageId);
-      return localMsg;
+      return this.buildMessageInfo(localMsg)
     } catch (error) {
       progressListener.remove();
       successListener.remove();
@@ -1192,6 +1194,206 @@ class JuggleIM {
    */
   static getGroupInfoList(groupIdList) {
     return JMI.getGroupInfoList(groupIdList);
+  }
+
+  /**
+   * 重发消息
+   * @param {import("juggleim-rnsdk").Message} message
+   * @param {import("juggleim-rnsdk").SendMessageCallback} callback - 回调对象
+   * @returns {import("juggleim-rnsdk").Message} - 消息对象
+   */
+  static async resendMessage(
+    message,
+    callback = {}
+  ) {
+    console.log("resendMessage message:", message);
+
+    // 生成唯一标识符以避免回调冲突
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
+
+    const successListener = juggleIMEmitter.addListener(
+      "onMessageSent",
+      async (event) => {
+        if (event.messageId === messageId) {
+          const msgInfo = await this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
+          successListener.remove();
+          errorListener.remove();
+        }
+      }
+    );
+
+    const errorListener = juggleIMEmitter.addListener(
+      "onMessageSentError",
+      async (event) => {
+        if (event.messageId === messageId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          successListener.remove();
+          errorListener.remove();
+        }
+      }
+    );
+
+    try {
+      const localMsg = await JMI.resendMessage(message, messageId);
+      const msgInfo = await this.buildMessageInfo(localMsg);
+      console.log("resendMessage msgInfo:", msgInfo);
+      return msgInfo;
+    } catch (error) {
+      callback.onError?.(JSON.stringify(error), -1);
+      successListener.remove();
+      errorListener.remove();
+      console.error("resendMessage error:", error);
+    }
+  }
+
+  /**
+   * 重发媒体消息
+   * @param {import("juggleim-rnsdk").Message} message
+   * @param {import("juggleim-rnsdk").SendMediaMessageCallback} callback - 回调对象
+   * @returns {import("juggleim-rnsdk").Message} - 消息对象
+   */
+  static async resendMediaMessage(
+    message,
+    callback = {}
+  ) {
+    console.log("resendMediaMessage message:", message);
+
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
+
+    const progressListener = juggleIMEmitter.addListener(
+      "onMediaMessageProgress",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onProgress?.(event.progress, event.message);
+        }
+      }
+    );
+
+    const successListener = juggleIMEmitter.addListener(
+      "onMediaMessageSent",
+      async (event) => {
+        if (event.messageId === messageId) {
+          const msgInfo = await this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const errorListener = juggleIMEmitter.addListener(
+      "onMediaMessageSentError",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    const cancelListener = juggleIMEmitter.addListener(
+      "onMediaMessageCancelled",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onCancel?.(event.message);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    try {
+      return await JMI.resendMediaMessage(message, messageId);
+    } catch (error) {
+      callback.onError?.(JSON.stringify(error), -1);
+      progressListener.remove();
+      successListener.remove();
+      errorListener.remove();
+      cancelListener.remove();
+      console.error("resendMediaMessage error:", error);
+    }
+  }
+
+  /**
+   * 发送媒体消息
+   * @param {import("juggleim-rnsdk").SendMessageObject} message - 消息内容
+   * @param {import("juggleim-rnsdk").SendMediaMessageCallback} callback - 回调对象
+   * @returns {Promise<import("juggleim-rnsdk").Message>} - 消息对象
+   */
+  static async sendMediaMessage(message, callback = {}) {
+    const messageId = Math.random().toString(36).substr(2, 9) + Date.now();
+    const progressListener = juggleIMEmitter.addListener(
+      "onMediaMessageProgress",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onProgress?.(event.progress, event.message);
+        }
+      }
+    );
+    const successListener = juggleIMEmitter.addListener(
+      "onMediaMessageSent",
+      (event) => {
+        if (event.messageId === messageId) {
+          const msgInfo = this.buildMessageInfo(event.message);
+          callback.onSuccess?.(msgInfo);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+    const errorListener = juggleIMEmitter.addListener(
+      "onMediaMessageSentError",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onError?.(event.message, event.errorCode || -1);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+    const cancelListener = juggleIMEmitter.addListener(
+      "onMediaMessageCancelled",
+      (event) => {
+        if (event.messageId === messageId) {
+          callback.onCancel?.(event.message);
+          progressListener.remove();
+          successListener.remove();
+          errorListener.remove();
+          cancelListener.remove();
+        }
+      }
+    );
+
+    try {
+      var msg = null;
+      if (Platform.OS === "android") {
+        msg = await JMI.sendMediaMessage(message, messageId);
+      } else {
+        const messageWithId = { ...message, messageId };
+        msg = await JMI.sendMediaMessage(messageWithId);
+      }
+      const msgInfo = await this.buildMessageInfo(msg);
+      return msgInfo;
+    } catch (error) {
+      callback.onError?.(JSON.stringify(error), -1);
+      progressListener.remove();
+      successListener.remove();
+      errorListener.remove();
+      cancelListener.remove();
+      console.error("sendMediaMessage error:", error);
+    }
   }
 }
 
