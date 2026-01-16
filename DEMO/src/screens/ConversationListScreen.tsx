@@ -1,18 +1,18 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   Image,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import JuggleIM, { ConversationInfo, ConversationType, JuggleIMCall } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import CustomMenu from '../components/CustomMenu';
 
-const ConversationItem = ({
+const ConversationItem = React.memo(({
   item,
   onPress,
   onLongPress,
@@ -27,7 +27,6 @@ const ConversationItem = ({
   const name = item.name || "";
   const avatar = item.avatar || ""
   const itemRef = useRef<View>(null);
-  // console.log('ConversationItem', item);
 
   // Get display content based on message type
   const getMessageDisplay = () => {
@@ -65,11 +64,12 @@ const ConversationItem = ({
         c = '[Message]';
         break;
     }
-    if (2 == item.conversation.conversationType) {
-      return (item.lastMessage?.senderUserName) + ": " + c;
-    } else {
-      return c;
+
+    // For group messages (type 2), show sender name
+    if (item.conversation.conversationType === 2 && item.lastMessage?.senderUserName) {
+      return `${item.lastMessage.senderUserName}: ${c}`;
     }
+    return c;
   }
 
   const lastMsgContent = getMessageDisplay();
@@ -129,7 +129,7 @@ const ConversationItem = ({
       </TouchableOpacity>
     </View>
   );
-};
+});
 
 const ConversationListScreen = () => {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
@@ -138,6 +138,7 @@ const ConversationListScreen = () => {
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; width: number; height: number } | undefined>(undefined);
   const [selectedConversation, setSelectedConversation] = useState<ConversationInfo | null>(null);
   const navigation = useNavigation<any>();
+  const flashListRef = useRef<FlashList<ConversationInfo>>(null);
 
   const sortConversations = (list: ConversationInfo[]) => {
     return list.sort((a, b) => {
@@ -151,11 +152,11 @@ const ConversationListScreen = () => {
     });
   };
 
-  const handleLongPress = (item: ConversationInfo, anchor: { x: number; y: number; width: number; height: number }) => {
+  const handleLongPress = useCallback((item: ConversationInfo, anchor: { x: number; y: number; width: number; height: number }) => {
     setSelectedConversation(item);
     setMenuAnchor(anchor);
     setMenuVisible(true);
-  };
+  }, []);
 
   const getMenuOptions = () => {
     if (!selectedConversation) return [];
@@ -204,15 +205,27 @@ const ConversationListScreen = () => {
             const updated = [...prev];
             updatedConversations.forEach(updatedConv => {
               const index = updated.findIndex(
-                c =>
-                  c.conversation.conversationId ===
-                  updatedConv.conversation.conversationId
+                c => c.conversation.conversationId === updatedConv.conversation.conversationId
               );
               if (index !== -1) {
-                updated[index] = updatedConv;
+                const oldConv = updated[index];
+
+                // Merge old and new data to preserve fields that SDK doesn't return
+                const mergedConv: ConversationInfo = {
+                  ...oldConv,              // Keep all old fields first
+                  ...updatedConv,          // Override with new fields
+                  // Special handling for lastMessage - preserve nested data
+                  lastMessage: updatedConv.lastMessage
+                    ? {
+                        ...(oldConv.lastMessage || {} as any),
+                        ...updatedConv.lastMessage,
+                      }
+                    : oldConv.lastMessage,
+                };
+
+                updated[index] = mergedConv;
               }
             });
-            console.log('onConversationInfoUpdate', updated);
             return sortConversations(updated);
           });
         },
@@ -282,7 +295,7 @@ const ConversationListScreen = () => {
     setRefreshing(false);
   };
 
-  const renderItem = ({ item }: { item: ConversationInfo }) => {
+  const renderItem = useCallback(({ item }: { item: ConversationInfo }) => {
     return (
       <ConversationItem
         item={item}
@@ -292,13 +305,15 @@ const ConversationListScreen = () => {
         onLongPress={handleLongPress}
       />
     );
-  };
+  }, [navigation, handleLongPress]);
 
   return (
     <View style={styles.container}>
-      <FlatList
+      <FlashList
+        ref={flashListRef}
         data={conversations}
         renderItem={renderItem}
+        estimatedItemSize={82}
         keyExtractor={item =>
           item.conversation.conversationId
         }
