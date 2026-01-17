@@ -69,7 +69,7 @@ const MainTabNavigator = () => {
       <Tab.Screen
         name="Discover"
         component={DiscoverScreen}
-        options={{ title: t('nav.settings') }}
+        options={{ title: t('nav.discover') }}
       />
       <Tab.Screen
         name="Me"

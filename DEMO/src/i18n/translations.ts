@@ -26,6 +26,7 @@ export const en = {
     conversation: 'Conversations',
     contacts: 'Contacts',
     profile: 'Me',
+    discover: 'Discover',
     settings: 'Settings',
   },
 
@@ -260,6 +261,7 @@ export const zh = {
     conversation: '会话',
     contacts: '通讯录',
     profile: '我的',
+    discover: '发现',
     settings: '设置',
   },
 

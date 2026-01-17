@@ -20,10 +20,9 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
   // 获取当前语言
   useFocusEffect(
-    () => {
+    React.useCallback(() => {
       setCurrentLanguage(getCurrentLanguage());
-    },
-    [visible]
+    }, [visible])
   );
 
   const handleLanguageSelect = async (language: SupportedLanguage) => {
