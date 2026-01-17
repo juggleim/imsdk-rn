@@ -12,6 +12,8 @@ import { GroupNotifyMessage } from './src/messages/GroupNotifyMessage';
 import { FriendNotifyMessage } from './src/messages/FriendNotifyMessage';
 // 注册消息渲染器
 import './src/message-renderers';
+// i18n support
+import { initLanguage } from './src/i18n/config';
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);
@@ -19,6 +21,9 @@ const App = () => {
 
   useEffect(() => {
     const init = async () => {
+      // Initialize i18n first
+      await initLanguage();
+
       JuggleIM.setServerUrls(SERVER_URLS);
       JuggleIM.init(APP_KEY);
       const session = await getToken();

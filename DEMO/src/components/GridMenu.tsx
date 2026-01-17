@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'transparent',
+        minWidth: 0,
     },
     menuContainer: {
         position: 'absolute',
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         textAlign: 'center',
+        overflow: 'hidden',
     },
 });
 

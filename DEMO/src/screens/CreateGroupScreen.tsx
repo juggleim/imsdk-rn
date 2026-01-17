@@ -14,6 +14,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { getFriendList, Friend } from '../api/friends';
 import { createGroup } from '../api/groups';
+// i18n support
+import { t } from '../i18n/config';
 
 interface FriendItemProps {
     friend: Friend;
@@ -82,12 +84,12 @@ const CreateGroupScreen = () => {
 
     const handleCreateGroup = async () => {
         if (selectedFriends.size === 0) {
-            Alert.alert('提示', '请至少选择一个成员');
+            Alert.alert(t('common.error'), t('group.selectAtLeastOne'));
             return;
         }
 
         if (!groupName.trim()) {
-            Alert.alert('提示', '请输入群名称');
+            Alert.alert(t('common.error'), t('group.enterGroupName'));
             return;
         }
 
@@ -100,15 +102,15 @@ const CreateGroupScreen = () => {
                 // group_portrait can be added here if image picker is implemented
             });
 
-            Alert.alert('成功', '群组创建成功', [
+            Alert.alert(t('common.saveSuccess'), t('group.createSuccess'), [
                 {
-                    text: '确定',
+                    text: t('common.confirm'),
                     onPress: () => navigation.goBack(),
                 },
             ]);
         } catch (error) {
             console.error('Failed to create group:', error);
-            Alert.alert('错误', '创建群组失败');
+            Alert.alert(t('common.error'), t('group.createFailed'));
         } finally {
             setCreating(false);
         }
@@ -127,13 +129,13 @@ const CreateGroupScreen = () => {
             <View style={styles.header}>
                 <TextInput
                     style={styles.input}
-                    placeholder="请输入群名称"
+                    placeholder={t('group.enterGroupName')}
                     value={groupName}
                     onChangeText={setGroupName}
                     maxLength={20}
                 />
                 <Text style={styles.selectedCount}>
-                    已选择 {selectedFriends.size} 人
+                    {t('group.selectedCount')} {selectedFriends.size}
                 </Text>
             </View>
 
@@ -148,7 +150,7 @@ const CreateGroupScreen = () => {
                     keyExtractor={item => item.user_id}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>暂无好友</Text>
+                            <Text style={styles.emptyText}>{t('contacts.noContacts')}</Text>
                         </View>
                     }
                 />
@@ -165,7 +167,7 @@ const CreateGroupScreen = () => {
                 {creating ? (
                     <ActivityIndicator color="#fff" />
                 ) : (
-                    <Text style={styles.createButtonText}>创建群组</Text>
+                    <Text style={styles.createButtonText}>{t('group.create')}</Text>
                 )}
             </TouchableOpacity>
         </SafeAreaView>
@@ -181,6 +183,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+        minWidth: 0,
     },
     input: {
         height: 44,
@@ -206,6 +209,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+        minWidth: 0,
     },
     checkbox: {
         width: 24,
@@ -271,6 +275,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+        overflow: 'hidden',
     },
 });
 

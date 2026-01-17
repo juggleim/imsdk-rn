@@ -157,6 +157,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         backgroundColor: '#f8f9fa',
+        minWidth: 0,
     },
     atAllAvatar: {
         backgroundColor: '#ff9500',
@@ -170,6 +171,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
         paddingHorizontal: 20,
+        minWidth: 0,
     },
     avatarContainer: {
         width: 40,

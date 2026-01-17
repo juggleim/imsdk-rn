@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
+        minWidth: 0,
     },
     handleBar: {
         width: 36,
@@ -155,6 +156,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
+        minWidth: 0,
     },
     avatarContainer: {
         width: 48,

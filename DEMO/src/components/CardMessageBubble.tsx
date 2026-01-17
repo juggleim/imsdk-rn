@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
     },
     url: {
         fontSize: 13,
+        overflow: 'hidden',
     },
     senderUrl: {
         color: 'rgba(255, 255, 255, 0.95)',

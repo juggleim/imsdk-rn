@@ -16,22 +16,15 @@ export class ImageMessageRenderer extends BaseMessageRenderer {
     const { message, messageStatus } = context;
     const imgContent = message.content as ImageMessageContent;
 
-    // Stable URI generation
     let uri = imgContent.localPath || imgContent.url || '';
-    
-    // Debug log
-    // console.log('ImageMessageRenderer URI:', uri, 'localPath:', imgContent.localPath, 'url:', imgContent.url);
-
-    if (uri && !uri.startsWith('http') && !uri.startsWith('file://')) {
-      uri = Platform.OS === 'android' ? 'file://' + uri : uri;
+    if (uri && !uri.startsWith('http')) {
+      uri = (Platform.OS === 'android' && !uri.startsWith('file://')) ? ('file://' + uri) : uri.replace('file:', '');
     }
     
-    // State for loading, error, and preview
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
-    // Reset state when URI changes
     useEffect(() => {
         setIsLoading(true);
         setHasError(false);

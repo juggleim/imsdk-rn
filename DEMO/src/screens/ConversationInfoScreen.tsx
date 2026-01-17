@@ -445,6 +445,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#000000',
         marginBottom: 4,
+        overflow: 'hidden',
     },
     userId: {
         fontSize: 14,
@@ -539,6 +540,7 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 16,
         justifyContent: 'flex-end',
+        minWidth: 0,
     },
     announcementPreview: {
         fontSize: 14,
@@ -588,6 +590,7 @@ const styles = StyleSheet.create({
     nameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
     },
     editIcon: {
         width: 16,
@@ -631,6 +634,7 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 12,
         alignItems: 'center',
+        minWidth: 0,
     },
     saveButton: {
         borderLeftWidth: 1,
@@ -639,6 +643,7 @@ const styles = StyleSheet.create({
     modalButtonText: {
         fontSize: 17,
         color: '#007AFF',
+        overflow: 'hidden',
     },
     saveButtonText: {
         fontWeight: '600',

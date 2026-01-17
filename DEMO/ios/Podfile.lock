@@ -9,7 +9,7 @@ PODS:
     - hermes-engine/Pre-built (= 0.82.1)
   - hermes-engine/Pre-built (0.82.1)
   - JuggleIM (1.8.35)
-  - juggleim-rnsdk (0.2.3):
+  - juggleim-rnsdk (0.2.4):
     - JuggleIM (~> 1.8.35)
     - JZegoCall (= 1.8.25)
     - React-Core
@@ -2512,6 +2512,34 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNLocalize (3.6.1):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNPermissions (3.10.1):
     - boost
     - DoubleConversion
@@ -2683,6 +2711,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - RNLocalize (from `../node_modules/react-native-localize`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2854,6 +2883,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNLocalize:
+    :path: "../node_modules/react-native-localize"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
   RNScreens:
@@ -2870,7 +2901,7 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 273e30e7fb618279934b0b95ffab60ecedb7acf5
   JuggleIM: 5aae023a0b6ec94550021ea862e8e959f00ce427
-  juggleim-rnsdk: ea19bf7915bbb0782ff7f76c4c625f94c0dfda0b
+  juggleim-rnsdk: 5c13422be5008dced1295b5732a080f3c7c46b5a
   JZegoCall: 2764397dcaea833788cbb7be4d8613ed3de765ad
   NitroModules: 1d6b00df1594151aa7be68893bf41afc261bb817
   NitroSound: 810e1a445c9301b6c0fb0c4d59cd16fc4353c6ac
@@ -2943,6 +2974,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 897bad2d2f722ff4dc46fc144f9cc018db0e2ce4
   ReactCommon: c5803af00bd3737dc1631749b1f1da5beba5b049
   RNCAsyncStorage: 302f2fac014fd450046c120567ca364632da682b
+  RNLocalize: 3c2abf099ee0e6889289aba9a710ab54e9cae3f2
   RNPermissions: aac95f813b7de02e12b567c94c329fe012dfd9e6
   RNScreens: 3693ec4bbc0065151b843269e50e9807644e9918
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

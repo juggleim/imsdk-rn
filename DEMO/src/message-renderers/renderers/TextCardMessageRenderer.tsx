@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
   },
   url: {
     fontSize: 12,
+    overflow: 'hidden',
   },
   senderUrl: {
     color: '#007AFF',

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { searchFriend, applyFriend, Friend } from '../api/friends';
+// i18n support
+import { t } from '../i18n/config';
 
 const SearchFriendsScreen = () => {
     const [keyword, setKeyword] = useState('');
@@ -15,7 +17,7 @@ const SearchFriendsScreen = () => {
             setResults(response.items || []);
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'Failed to search friends');
+            Alert.alert(t('common.error'), t('contacts.searchFriendFailed'));
         } finally {
             setLoading(false);
         }
@@ -24,13 +26,13 @@ const SearchFriendsScreen = () => {
     const handleAdd = async (userId: string) => {
         try {
             await applyFriend(userId);
-            Alert.alert('Success', 'Friend request sent');
+            Alert.alert(t('common.saveSuccess'), t('contacts.searchSuccess'));
             // Disable the button locally for this user or update state
-            // For simplicity, we just show success. 
+            // For simplicity, we just show success.
             // Ideally we should track which users we applied to in this session.
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'Failed to send friend request');
+            Alert.alert(t('common.error'), t('contacts.addFriendFailed'));
         }
     };
 
@@ -42,7 +44,7 @@ const SearchFriendsScreen = () => {
                 style={styles.addButton}
                 onPress={() => handleAdd(item.user_id)}
             >
-                <Text style={styles.addButtonText}>Add</Text>
+                <Text style={styles.addButtonText}>{t('contacts.addFriend')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -52,21 +54,21 @@ const SearchFriendsScreen = () => {
             <View style={styles.searchBar}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Search by username/id"
+                    placeholder={t('contacts.searchByUser')}
                     value={keyword}
                     onChangeText={setKeyword}
                     returnKeyType="search"
                     onSubmitEditing={handleSearch}
                 />
                 <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
-                    <Text style={styles.searchButtonText}>Search</Text>
+                    <Text style={styles.searchButtonText}>{t('common.search')}</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
                 data={results}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.user_id}
-                ListEmptyComponent={!loading ? <Text style={styles.emptyText}>No results</Text> : null}
+                ListEmptyComponent={!loading ? <Text style={styles.emptyText}>{t('contacts.noResults')}</Text> : null}
             />
         </View>
     );
@@ -82,6 +84,7 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#f0f0f0',
         alignItems: 'center',
+        minWidth: 0,
     },
     input: {
         flex: 1,
@@ -96,10 +99,12 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         backgroundColor: '#007AFF',
         borderRadius: 5,
+        minWidth: 0,
     },
     searchButtonText: {
         color: '#fff',
         fontWeight: 'bold',
+        overflow: 'hidden',
     },
     itemContainer: {
         flexDirection: 'row',
@@ -107,6 +112,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        minWidth: 0,
     },
     avatar: {
         width: 50,
@@ -118,16 +124,19 @@ const styles = StyleSheet.create({
         marginLeft: 15,
         fontSize: 16,
         color: '#333',
+        minWidth: 0,
     },
     addButton: {
         paddingHorizontal: 15,
         paddingVertical: 8,
         backgroundColor: '#007AFF',
         borderRadius: 5,
+        minWidth: 0,
     },
     addButtonText: {
         color: '#fff',
         fontSize: 14,
+        overflow: 'hidden',
     },
     emptyText: {
         textAlign: 'center',

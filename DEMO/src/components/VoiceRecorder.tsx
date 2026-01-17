@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
+        minWidth: 0,
     },
     container: {
         backgroundColor: '#fff',
@@ -247,12 +248,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
+        overflow: 'hidden',
     },
     sendButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
+        overflow: 'hidden',
     },
 });
 

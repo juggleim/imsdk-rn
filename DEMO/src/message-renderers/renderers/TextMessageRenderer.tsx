@@ -126,15 +126,19 @@ const styles = StyleSheet.create({
   },
   quotedContent: {
       flex: 1,
+      minWidth: 0,
   },
   quotedSender: {
     fontSize: 12,
     color: 'rgba(0,0,0,0.5)',
     fontWeight: '500',
     marginBottom: 2,
+    overflow: 'hidden',
   },
   quotedPreview: {
     fontSize: 12,
     color: 'rgba(0,0,0,0.45)',
+    overflow: 'hidden',
+    ellipsizeMode: 'tail',
   },
 });

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getFriendList, Friend } from '../api/friends';
+import { Colors, Spacing, Sizes, ThemeUtils, Typography } from '../theme';
+// i18n support
+import { t } from '../i18n/config';
 
 const ContactsScreen = () => {
     const navigation = useNavigation<any>();
@@ -31,19 +34,19 @@ const ContactsScreen = () => {
                 style={styles.headerItem}
                 onPress={() => navigation.navigate('SearchFriends')}
             >
-                <View style={[styles.iconPlaceholder, { backgroundColor: '#007AFF' }]}>
+                <View style={[styles.iconPlaceholder, styles.searchIcon]}>
                     <Text style={styles.iconText}>🔍</Text>
                 </View>
-                <Text style={styles.headerText}>Search Friends</Text>
+                <Text style={styles.headerText}>{t('contacts.searchFriends')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
                 style={styles.headerItem}
                 onPress={() => navigation.navigate('NewFriends')}
             >
-                <View style={[styles.iconPlaceholder, { backgroundColor: '#FA9D3B' }]}>
+                <View style={[styles.iconPlaceholder, styles.addFriendIcon]}>
                     <Text style={styles.iconText}>+</Text>
                 </View>
-                <Text style={styles.headerText}>New Friends</Text>
+                <Text style={styles.headerText}>{t('contacts.newFriends')}</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
         </View>
@@ -67,7 +70,7 @@ const ContactsScreen = () => {
                     <RefreshControl
                         refreshing={loading}
                         onRefresh={fetchFriends}
-                        tintColor="#999"
+                        tintColor={Colors.text.tertiary}
                     />
                 }
                 automaticallyAdjustContentInsets={false}
@@ -81,51 +84,65 @@ const ContactsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: Colors.background,
     },
     headerItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
-        backgroundColor: '#fff',
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.xl,
+        backgroundColor: Colors.background,
     },
     iconPlaceholder: {
-        width: 40,
-        height: 40,
-        borderRadius: 5,
+        width: ThemeUtils.moderateScale(40),
+        height: ThemeUtils.moderateScale(40),
+        borderRadius: ThemeUtils.moderateScale(5),
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: Spacing.md,
+    },
+    searchIcon: {
+        backgroundColor: Colors.primary,
+    },
+    addFriendIcon: {
+        backgroundColor: Colors.accent,
     },
     iconText: {
-        color: '#fff',
-        fontSize: 20,
+        color: Colors.text.white,
+        fontSize: ThemeUtils.moderateScale(20),
         fontWeight: 'bold',
     },
     headerText: {
-        fontSize: 16,
-        color: '#333',
+        fontSize: Typography.conversationName.fontSize,
+        color: Colors.text.primary,
+        flex: 1,
+        overflow: 'hidden',
+        numberOfLines: 1,
     },
     divider: {
-        height: 10,
-        backgroundColor: '#f0f0f0',
+        height: ThemeUtils.moderateScale(10),
+        backgroundColor: Colors.border,
     },
     itemContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.xl,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: Colors.border,
     },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: ThemeUtils.moderateScale(40),
+        height: ThemeUtils.moderateScale(40),
+        borderRadius: ThemeUtils.moderateScale(20),
     },
     nickname: {
-        marginLeft: 15,
-        fontSize: 16,
-        color: '#333',
+        marginLeft: Spacing.md,
+        fontSize: Typography.conversationName.fontSize,
+        color: Colors.text.primary,
+        flex: 1,
+        overflow: 'hidden',
+        numberOfLines: 1,
     },
 });
 

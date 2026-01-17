@@ -23,6 +23,7 @@ import JuggleIM, {
 } from 'juggleim-rnsdk';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { USER_ID_KEY } from '../utils/auth';
+import { Colors, Sizes } from '../theme';
 import MessageHeader from '../components/MessageHeader';
 import MessageComposer, { MessageComposerRef, MentionInfo } from '../components/MessageComposer';
 import { MessageBubbleContainer } from '../message-renderers';
@@ -35,6 +36,8 @@ import { TextCardMessage } from '../messages/TextCardMessage';
 import { BusinessCardMessage } from '../messages/BusinessCardMessage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MessageList, { MessageListRef } from '../components/MessageList';
+// i18n support
+import { t } from '../i18n/config';
 
 const DEFAULT_MESSAGE_COUNT = 30;
 
@@ -174,11 +177,9 @@ const MessageListScreen = () => {
         // Sort Old -> New (Ascending) for normal list
         const sorted = result.messages.sort((a, b) => a.timestamp - b.timestamp);
         console.log('消息列表', result);
-        console.log('loadInitialMessages', sorted.length, result.hasMore, "n:" + sorted[sorted.length - 1].timestamp, "o:" + sorted[0].timestamp);
         setMessages(sorted);
         setHasPrev(result.hasMore);
         requestAnimationFrame(() => {
-          console.log('loadInitialMessages end');
           setTimeout(() => {
             loadingInitial.current = false;
           }, 300);
@@ -193,7 +194,6 @@ const MessageListScreen = () => {
     if (loadingHistory || !hasPrev || loadingInitial.current) return;
     setLoadingHistory(true);
     try {
-      console.log('Loading history start: ', messages[0].timestamp);
       const result = await JuggleIM.getMessageList(conversation, 1, {
         count: DEFAULT_MESSAGE_COUNT,
         startTime: messages[0].timestamp - 1,
@@ -234,7 +234,7 @@ const MessageListScreen = () => {
         messageComposerRef.current?.setEditingMessage(null);
       } catch (error) {
         console.error('Failed to update message:', error);
-        Alert.alert('Error', 'Failed to update message');
+        Alert.alert(t('common.error'), t('message.sendFailed'));
       }
       return;
     }
@@ -314,20 +314,20 @@ const MessageListScreen = () => {
   };
 
   const handleAttachmentPress = () => {
-    Alert.alert('Attachment', 'Feature coming soon: Pick file/location');
+    Alert.alert(t('message.attachment'), t('message.attachmentComingSoon'));
   };
 
   const handleCameraPress = async () => {
-    Alert.alert('Camera', 'Sending mock image...', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('message.camera'), t('message.sendingMockImage'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Send Mock Image',
+        text: t('message.sendMockImage'),
         onPress: async () => {
           const imageContent: ImageMessageContent = {
             contentType: 'jg:img',
             localPath: 'https://via.placeholder.com/300',
-            width: 300,
-            height: 600,
+            width: Sizes.image.preview.width,
+            height: Sizes.image.preview.height,
           };
           const messageToSend = {
             conversationType: conversation.conversationType,
@@ -391,7 +391,7 @@ const MessageListScreen = () => {
     // Copy
     if (isTextMessage) {
       options.push({
-        label: '复制',
+        label: t('message.copy'),
         onPress: () => {
           Clipboard.setString(
             (selectedMessage.content as TextMessageContent).content,
@@ -404,17 +404,17 @@ const MessageListScreen = () => {
 
     // Forward (placeholder)
     options.push({
-      label: '转发',
+      label: t('message.forward'),
       onPress: () => {
         setMenuVisible(false);
-        Alert.alert('转发', '功能即将推出');
+        Alert.alert(t('message.forward'), t('message.comingSoon'));
       },
       icon: require('../assets/icons/send_message.png'),
     });
 
     // Delete
     options.push({
-      label: '删除',
+      label: t('message.deleteMessage'),
       onPress: () => {
         setMenuVisible(false);
         JuggleIM.deleteMessagesByClientMsgNoList(conversation, [
@@ -427,7 +427,7 @@ const MessageListScreen = () => {
           })
           .catch((e: any) => {
             console.error('Failed to delete message:', e);
-            Alert.alert('Error', 'Failed to delete message');
+            Alert.alert(t('common.error'), t('message.messageDeletedFailed'));
           });
       },
       icon: require('../assets/icons/delete_light.png'),
@@ -435,7 +435,7 @@ const MessageListScreen = () => {
 
     // Quote
     options.push({
-      label: '引用',
+      label: t('message.quote'),
       onPress: async () => {
         const composerRef = messageComposerRef.current;
         const messageToQuote = selectedMessage;
@@ -459,10 +459,10 @@ const MessageListScreen = () => {
     // Translate
     if (isTextMessage) {
       options.push({
-        label: '翻译',
+        label: t('message.translate'),
         onPress: () => {
           setMenuVisible(false);
-          Alert.alert('翻译', '翻译功能即将推出');
+          Alert.alert(t('message.translate'), t('message.translateComingSoon'));
         },
         icon: require('../assets/icons/translate.png'),
       });
@@ -471,7 +471,7 @@ const MessageListScreen = () => {
     // Recall
     if (isOutgoing) {
       options.push({
-        label: '撤回',
+        label: t('message.recall'),
         onPress: () => {
           setMenuVisible(false);
           JuggleIM.recallMessage(selectedMessage.messageId)
@@ -482,17 +482,17 @@ const MessageListScreen = () => {
             })
             .catch((e: any) => {
               console.error('Failed to recall message:', e);
-              Alert.alert('Error', 'Failed to recall message');
+              Alert.alert(t('common.error'), t('message.recallFailed'));
             });
         },
         icon: require('../assets/icons/recall.png'),
       });
     }
 
-    // Edit 
+    // Edit
     if (isOutgoing && isTextMessage) {
       options.push({
-        label: '编辑',
+        label: t('message.edit'),
         onPress: () => {
           setMenuVisible(false);
           setEditingMessage(selectedMessage);
@@ -577,7 +577,7 @@ const MessageListScreen = () => {
       }
     } catch (e) {
       console.error('Resend exception:', e);
-      Alert.alert('Error', 'Failed to resend message');
+      Alert.alert(t('common.error'), t('message.sendFailed'));
     }
   };
 
@@ -605,8 +605,8 @@ const MessageListScreen = () => {
     const imageContent: ImageMessageContent = {
       contentType: 'jg:img',
       localPath: file.uri,
-      width: 300,
-      height: 600,
+      width: Sizes.image.preview.width,
+      height: Sizes.image.preview.height,
     };
     const message: SendMessageObject = {
       conversationType: conversation.conversationType,
@@ -761,7 +761,7 @@ const MessageListScreen = () => {
       });
     } catch (error) {
       console.error('Failed to send card message:', error);
-      Alert.alert('Error', 'Failed to send card message');
+      Alert.alert(t('common.error'), t('message.sendFailed'));
     }
   };
 
@@ -785,7 +785,7 @@ const MessageListScreen = () => {
       });
     } catch (error) {
       console.error('Failed to send business card message:', error);
-      Alert.alert('Error', 'Failed to send business card message');
+      Alert.alert(t('common.error'), t('message.sendFailed'));
     }
   };
 
@@ -807,7 +807,7 @@ const MessageListScreen = () => {
               })
               .catch(e => {
                 console.error('Start call failed', e);
-                Alert.alert('Error', 'Start call failed');
+                Alert.alert(t('common.error'), t('videoCall.callFailed'));
               });
           } else { // Group Chat
             navigation.navigate('CallSelectMember', { conversationId: conversation.conversationId });
@@ -863,14 +863,7 @@ const MessageListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  listContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  spinner: {
-    marginVertical: 10,
+    backgroundColor: Colors.background,
   },
 });
 

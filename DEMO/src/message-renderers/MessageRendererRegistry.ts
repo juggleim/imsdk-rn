@@ -54,11 +54,6 @@ export class MessageRendererRegistry {
 
     this.renderers.set(renderer.contentType, renderer);
     this.updateSortedRenderers();
-
-    console.log(
-      `[MessageRendererRegistry] Registered renderer: ${renderer.contentType} ` +
-        `(mode: ${renderer.renderMode}, priority: ${renderer.priority || 100})`,
-    );
   }
 
   /**
@@ -75,7 +70,6 @@ export class MessageRendererRegistry {
     const deleted = this.renderers.delete(contentType);
     if (deleted) {
       this.updateSortedRenderers();
-      console.log(`[MessageRendererRegistry] Unregistered renderer: ${contentType}`);
     }
     return deleted;
   }

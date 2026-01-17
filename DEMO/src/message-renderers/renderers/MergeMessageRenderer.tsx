@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
       fontSize: 16,
       color: '#000',
       fontWeight: '500',
+      overflow: 'hidden',
   },
   body: {
       paddingHorizontal: 16,
@@ -96,6 +97,7 @@ const styles = StyleSheet.create({
       color: '#888',
       marginBottom: 4,
       lineHeight: 18,
+      overflow: 'hidden',
   },
   footer: {
       borderTopWidth: 1,

@@ -19,6 +19,9 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { getUserInfo, updateUserInfo, updateUserSettings, UserInfo, UserSettings } from '../api/users';
+import { t, getCurrentLanguage, subscribeToLanguage, initLanguage } from '../i18n/config';
+import LanguageSelector from '../components/LanguageSelector';
+import { AVAILABLE_LANGUAGES, type SupportedLanguage } from '../i18n';
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
@@ -27,9 +30,21 @@ const ProfileScreen = () => {
   const [uploading, setUploading] = useState(false);
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
   const [newNickname, setNewNickname] = useState('');
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(getCurrentLanguage());
+  const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
 
   useEffect(() => {
+    initLanguage();
     loadData();
+
+    // Subscribe to language changes
+    const subscription = subscribeToLanguage((language) => {
+      setCurrentLanguage(language);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadData = async () => {
@@ -58,7 +73,7 @@ const ProfileScreen = () => {
       });
     } catch (e) {
       console.error('Logout failed', e);
-      Alert.alert('Error', 'Logout failed');
+      Alert.alert(t('common.error'), t('profile.logoutFailed'));
     }
   };
 
@@ -82,10 +97,10 @@ const ProfileScreen = () => {
             nickname: userInfo!.nickname,
           });
           setUserInfo(prev => prev ? { ...prev, avatar: remoteUrl } : null);
-          Alert.alert('Success', 'Avatar updated');
+          Alert.alert(t('common.saveSuccess'), t('profile.avatarUpdateSuccess'));
         } catch (e) {
           console.error('Avatar update failed', e);
-          Alert.alert('Error', 'Failed to update avatar');
+          Alert.alert(t('common.error'), t('profile.avatarUpdateFailed'));
         } finally {
           setUploading(false);
         }
@@ -105,7 +120,7 @@ const ProfileScreen = () => {
       setNicknameModalVisible(false);
     } catch (e) {
       console.error('Nickname update failed', e);
-      Alert.alert('Error', 'Failed to update nickname');
+      Alert.alert(t('common.error'), t('profile.nicknameUpdateFailed'));
     }
   };
 
@@ -133,7 +148,7 @@ const ProfileScreen = () => {
       await updateUserSettings(newSettings);
     } catch (e) {
       console.error('Settings update failed', e);
-      Alert.alert('Error', 'Failed to update settings');
+      Alert.alert(t('common.error'), t('profile.settingsUpdateFailed'));
       // Revert on failure
       loadData();
     }
@@ -144,7 +159,7 @@ const ProfileScreen = () => {
       text: opt.label,
       onPress: () => onSelect(opt.value)
     }));
-    buttons.push({ text: 'Cancel', onPress: () => { }, style: 'cancel' });
+    buttons.push({ text: t('common.cancel'), onPress: () => { }, style: 'cancel' });
     Alert.alert(title, undefined, buttons);
   };
 
@@ -163,10 +178,10 @@ const ProfileScreen = () => {
 
   const getVerifyText = (type: number) => {
     switch (type) {
-      case 0: return 'Allowed';
-      case 1: return 'Need Verify';
-      case 2: return 'Denied';
-      default: return 'Unknown';
+      case 0: return t('profile.verifyAllowed');
+      case 1: return t('profile.needVerify');
+      case 2: return t('profile.verifyDenied');
+      default: return t('profile.verifyUnknown');
     }
   };
 
@@ -210,10 +225,10 @@ const ProfileScreen = () => {
                 setNicknameModalVisible(true);
               }}
             >
-              <Text style={styles.name}>{userInfo?.nickname || 'Unknown'}</Text>
+              <Text style={styles.name}>{userInfo?.nickname || t('profile.unknown')}</Text>
               <Image source={require('../assets/icons/edit.png')} style={styles.editIcon} />
             </TouchableOpacity>
-            <Text style={styles.userId}>ID: {userInfo?.user_id}</Text>
+            <Text style={styles.userId}>{t('profile.id')}: {userInfo?.user_id}</Text>
           </View>
         </View>
 
@@ -221,7 +236,7 @@ const ProfileScreen = () => {
         {userInfo?.settings && (
           <View style={styles.section}>
             <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>Do Not Disturb</Text>
+              <Text style={styles.settingLabel}>{t('profile.doNotDisturb')}</Text>
               <Switch
                 value={userInfo.settings.undisturb?.switch}
                 onValueChange={(val) => handleUpdateSetting('undisturb.switch', val)}
@@ -233,33 +248,32 @@ const ProfileScreen = () => {
         {/* Settings Section */}
         {userInfo?.settings && (
           <View style={styles.section}>
-            {renderSettingItem('Language', userInfo.settings.language, () => {
-              showSelectionActionSheet('Language', [
-                { label: 'English', value: 'en_US' },
-                { label: 'Chinese', value: 'zh_CN' }
-              ], (val) => handleUpdateSetting('language', val));
-            })}
+            {renderSettingItem(
+              t('profile.language'),
+              AVAILABLE_LANGUAGES.find(l => l.code === currentLanguage)?.nativeName || currentLanguage,
+              () => setLanguageSelectorVisible(true)
+            )}
 
-            {renderSettingItem('Friend Verify', getVerifyText(userInfo.settings.friend_verify_type), () => {
-              showSelectionActionSheet('Friend Verify', [
-                { label: 'Allowed', value: 0 },
-                { label: 'Need Verify', value: 1 },
-                { label: 'Denied', value: 2 },
+            {renderSettingItem(t('profile.friendVerify'), getVerifyText(userInfo.settings.friend_verify_type), () => {
+              showSelectionActionSheet(t('profile.friendVerify'), [
+                { label: t('profile.verifyAllowed'), value: 0 },
+                { label: t('profile.needVerify'), value: 1 },
+                { label: t('profile.verifyDenied'), value: 2 },
               ], (val) => handleUpdateSetting('friend_verify_type', val));
             })}
 
-            {renderSettingItem('Group Verify', getVerifyText(userInfo.settings.grp_verify_type), () => {
-              showSelectionActionSheet('Group Verify', [
-                { label: 'Allowed', value: 0 },
-                { label: 'Need Verify', value: 1 },
-                { label: 'Denied', value: 2 },
+            {renderSettingItem(t('profile.groupVerify'), getVerifyText(userInfo.settings.grp_verify_type), () => {
+              showSelectionActionSheet(t('profile.groupVerify'), [
+                { label: t('profile.verifyAllowed'), value: 0 },
+                { label: t('profile.needVerify'), value: 1 },
+                { label: t('profile.verifyDenied'), value: 2 },
               ], (val) => handleUpdateSetting('grp_verify_type', val));
             })}
           </View>
         )}
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -272,24 +286,34 @@ const ProfileScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Nickname</Text>
+            <Text style={styles.modalTitle}>{t('profile.editNickname')}</Text>
             <TextInput
               style={styles.input}
               value={newNickname}
               onChangeText={setNewNickname}
-              placeholder="Enter new nickname"
+              placeholder={t('profile.enterNewNickname')}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.modalButton} onPress={() => setNicknameModalVisible(false)}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleUpdateNickname}>
-                <Text style={[styles.modalButtonText, styles.saveButtonText]}>Save</Text>
+                <Text style={[styles.modalButtonText, styles.saveButtonText]}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Language Selector Modal */}
+      <LanguageSelector
+        visible={languageSelectorVisible}
+        onClose={() => setLanguageSelectorVisible(false)}
+        onLanguageChanged={(language) => {
+          // Language change is handled by the LanguageSelector component
+          console.log('Language changed to:', language);
+        }}
+      />
     </View>
   );
 };
@@ -313,6 +337,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 20,
     marginBottom: 20,
+    minWidth: 0,
   },
   avatar: {
     width: 64,
@@ -358,6 +383,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#c6c6c8',
     backgroundColor: '#fff',
+    minWidth: 0,
   },
   settingLabel: {
     fontSize: 17,
@@ -389,6 +415,7 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontSize: 17,
     fontWeight: '600',
+    overflow: 'hidden',
   },
   avatarContainer: {
     position: 'relative',
@@ -476,6 +503,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     alignItems: 'center',
+    minWidth: 0,
   },
   saveButton: {
     borderLeftWidth: 1,
@@ -484,6 +512,7 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 17,
     color: '#007AFF',
+    overflow: 'hidden',
   },
   saveButtonText: {
     fontWeight: '600',

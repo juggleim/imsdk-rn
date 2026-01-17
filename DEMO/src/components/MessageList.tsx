@@ -2,6 +2,7 @@ import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState, us
 import { View, StyleSheet, ActivityIndicator, Text, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { FlashList, ListRenderItem } from '@shopify/flash-list';
 import { Message } from 'juggleim-rnsdk';
+import { Colors, Spacing, ThemeUtils } from '../theme';
 
 interface MessageListProps {
     messages: Message[];
@@ -32,7 +33,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
 
     const listRef = useRef<FlashList<Message>>(null);
     const memoizedRenderItem = useCallback(renderItem, [renderItem]);
-
+    console.log('messages flat list: ', messages);
     return (
         <View style={styles.container}>
             <FlashList
@@ -40,7 +41,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
                 data={messages}
                 renderItem={memoizedRenderItem}
                 keyExtractor={(item) => item.messageId || item.clientMsgNo.toString()}
-                estimatedItemSize={70}
+                estimatedItemSize={ThemeUtils.moderateScale(70)}
                 maintainVisibleContentPosition={{
                     autoscrollToBottomThreshold: 0.1,
                     startRenderingFromBottom: true,
@@ -55,13 +56,13 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
                 }}
                 onStartReachedThreshold={0.6}
                 ListHeaderComponent={
-                    <View style={{ height: 40, justifyContent: 'center' }}>
-                        {loadingPrev && <ActivityIndicator size="small" color="#999" />}
+                    <View style={{ height: ThemeUtils.moderateScale(40), justifyContent: 'center' }}>
+                        {loadingPrev && <ActivityIndicator size="small" color={Colors.text.tertiary} />}
                     </View>
                 }
                 ListFooterComponent={
-                    <View style={{ height: 40, justifyContent: 'center' }}>
-                        {loadingNext && <ActivityIndicator size="small" color="#999" />}
+                    <View style={{ height: ThemeUtils.moderateScale(40), justifyContent: 'center' }}>
+                        {loadingNext && <ActivityIndicator size="small" color={Colors.text.tertiary} />}
                     </View>
                 }
             />
@@ -72,12 +73,9 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>((props, ref) =>
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: Colors.border,
         overflow: 'hidden',
-    },
-    footerLoader: {
-        paddingVertical: 20,
-        alignItems: 'center',
+        minWidth: 0,
     },
 });
 

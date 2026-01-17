@@ -77,6 +77,7 @@ const styles = StyleSheet.create({
     },
     info: {
         flex: 1,
+        minWidth: 0,
     },
     nickname: {
         fontSize: 16,

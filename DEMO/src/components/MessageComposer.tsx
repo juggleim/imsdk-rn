@@ -23,6 +23,9 @@ import MoreMenu from './MoreMenu';
 import CardMessageInput from './CardMessageInput';
 import FriendSelectionSheet from './FriendSelectionSheet';
 import QuoteReplyBar from './QuoteReplyBar';
+import { Colors, Spacing, Sizes, Typography, ThemeUtils } from '../theme';
+// i18n support
+import { t } from '../i18n/config';
 
 export interface MentionInfo {
   userId: string;
@@ -276,8 +279,8 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
             onSelectionChange={(event) => {
               setCursorPosition(event.nativeEvent.selection.start);
             }}
-            placeholder="Type a message..."
-            placeholderTextColor="#999"
+            placeholder={t('message.inputPlaceholder')}
+            placeholderTextColor={Colors.text.tertiary}
             multiline
           />
         </View>
@@ -294,7 +297,7 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
             <TouchableOpacity onPress={handleCamera} style={styles.iconButton}>
               <Image
                 source={require('../assets/icons/camera.png')}
-                style={[styles.icon, { tintColor: '#FF9500' }]}
+                style={[styles.icon, { tintColor: Colors.warning }]}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -342,55 +345,51 @@ const MessageComposer = forwardRef<MessageComposerRef, MessageComposerProps>((pr
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 10,
+    padding: ThemeUtils.moderateScale(10),
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    backgroundColor: '#fff',
+    borderTopColor: Colors.borderLight,
+    backgroundColor: Colors.background,
   },
   iconButton: {
-    padding: 8,
+    padding: Spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
-    width: 24,
-    height: 24,
-    tintColor: '#3399ff',
+    width: Sizes.icon.medium,
+    height: Sizes.icon.medium,
+    tintColor: Colors.primary,
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    marginHorizontal: 8,
-    minHeight: 40,
+    backgroundColor: Colors.inputBackground,
+    borderRadius: ThemeUtils.moderateScale(20),
+    paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.sm,
+    minHeight: ThemeUtils.moderateScale(40),
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: ThemeUtils.moderateScale(4),
+    minWidth: 0,
   },
   input: {
-    fontSize: 16,
-    color: '#141414',
-    maxHeight: 100,
-    paddingVertical: 8,
+    ...Typography.input,
+    maxHeight: ThemeUtils.moderateScale(100),
+    paddingVertical: Spacing.sm,
   },
   sendButton: {
-    padding: 8,
+    padding: Spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#3399ff',
-  },
-  moreIcon: {
-    fontSize: 24,
-    color: '#3399ff',
+    width: Sizes.icon.medium,
+    height: Sizes.icon.medium,
+    tintColor: Colors.primary,
   },
 });
 

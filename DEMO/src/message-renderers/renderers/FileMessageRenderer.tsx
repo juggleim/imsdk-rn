@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
   infoCol: {
       flex: 1,
       marginRight: 12,
+      minWidth: 0,
   },
   fileName: {
     fontSize: 15,
@@ -80,6 +81,8 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 20,
     marginBottom: 4,
+    overflow: 'hidden',
+    ellipsizeMode: 'tail',
   },
   fileSize: {
       fontSize: 12,

@@ -97,11 +97,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#141414',
+    overflow: 'hidden',
+    minWidth: "20%",
   },
   subtitle: {
     fontSize: 12,
     color: 'rgba(0,0,0,0.5)',
     marginTop: 2,
+    overflow: 'hidden',
   },
   rightContainer: {
     flexDirection: 'row',

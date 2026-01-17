@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { getFriendApplications, confirmFriendApplication, FriendApplication } from '../api/friends';
+// i18n support
+import { t } from '../i18n/config';
 
 const NewFriendsScreen = () => {
     const [applications, setApplications] = useState<FriendApplication[]>([]);
@@ -22,7 +24,7 @@ const NewFriendsScreen = () => {
             setApplications(response.items || []);
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'Failed to load friend applications');
+            Alert.alert(t('common.error'), t('contacts.loadNewFriendsFailed'));
         } finally {
             setLoading(false);
         }
@@ -35,11 +37,11 @@ const NewFriendsScreen = () => {
     const handleConfirm = async (sponsorId: string, isAgree: boolean) => {
         try {
             await confirmFriendApplication(sponsorId, isAgree);
-            Alert.alert('Success', isAgree ? 'Accepted' : 'Rejected');
+            Alert.alert(t('common.saveSuccess'), isAgree ? t('contacts.acceptSuccess') : t('contacts.rejectSuccess'));
             fetchApplications(); // Refresh list
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'Failed to process request');
+            Alert.alert(t('common.error'), t('contacts.processFailed'));
         }
     };
 
@@ -50,7 +52,7 @@ const NewFriendsScreen = () => {
                 <Image source={item.target_user.avatar ? { uri: item.target_user.avatar } : require('../assets/icons/avatar.png')} style={styles.avatar} />
                 <View style={styles.info}>
                     <Text style={styles.nickname}>{item.target_user.nickname}</Text>
-                    <Text style={styles.message}>{item.is_sponsor ? 'Applied to add you' : 'You applied'}</Text>
+                    <Text style={styles.message}>{item.is_sponsor ? t('contacts.appliedToYou') : t('contacts.youApplied')}</Text>
                 </View>
                 {isPending ? (
                     <View style={styles.actions}>
@@ -58,18 +60,18 @@ const NewFriendsScreen = () => {
                             style={[styles.button, styles.rejectButton]}
                             onPress={() => handleConfirm(item.target_user.user_id, false)}
                         >
-                            <Text style={styles.buttonText}>Reject</Text>
+                            <Text style={styles.buttonText}>{t('button.reject')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.button, styles.acceptButton]}
                             onPress={() => handleConfirm(item.target_user.user_id, true)}
                         >
-                            <Text style={styles.buttonText}>Accept</Text>
+                            <Text style={styles.buttonText}>{t('button.accept')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <Text style={styles.statusText}>
-                        {item.status === 1 ? 'Added' : item.status === 2 ? 'Rejected' : 'Expired'}
+                        {item.status === 1 ? t('contacts.statusAdded') : item.status === 2 ? t('contacts.statusRejected') : t('contacts.statusExpired')}
                     </Text>
                 )}
             </View>
@@ -84,7 +86,7 @@ const NewFriendsScreen = () => {
                 keyExtractor={(item, index) => item.target_user.user_id + index} // Fallback key
                 refreshing={loading}
                 onRefresh={fetchApplications}
-                ListEmptyComponent={!loading ? <Text style={styles.emptyText}>No new applications</Text> : null}
+                ListEmptyComponent={!loading ? <Text style={styles.emptyText}>{t('contacts.noNewApplications')}</Text> : null}
             />
         </View>
     );
@@ -101,6 +103,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        minWidth: 0,
     },
     avatar: {
         width: 50,
@@ -123,12 +126,14 @@ const styles = StyleSheet.create({
     },
     actions: {
         flexDirection: 'row',
+        minWidth: 0,
     },
     button: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 4,
         marginLeft: 8,
+        minWidth: 0,
     },
     acceptButton: {
         backgroundColor: '#007AFF',
@@ -139,6 +144,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 12,
+        overflow: 'hidden',
     },
     statusText: {
         color: '#999',

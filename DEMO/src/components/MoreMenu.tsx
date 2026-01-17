@@ -158,6 +158,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+        minWidth: 0,
     },
     menuContainer: {
         backgroundColor: '#fff',
@@ -201,6 +202,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#141414',
         fontWeight: '500',
+        overflow: 'hidden',
     },
 });
 

@@ -23,6 +23,8 @@ import {
     CallMediaType
 } from 'juggleim-rnsdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
+// i18n support
+import { t } from '../i18n/config';
 
 const { width, height } = Dimensions.get('window');
 
@@ -237,10 +239,10 @@ const VideoCallScreen = () => {
                 {isIncoming && callStatus === CallStatus.INCOMING ? (
                     <View style={styles.incomingControls}>
                         <TouchableOpacity style={[styles.controlButton, styles.hangupButton]} onPress={handleHangup}>
-                            <Text style={styles.controlText}>Decline</Text>
+                            <Text style={styles.controlText}>{t('videoCall.decline')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.controlButton, styles.acceptButton]} onPress={handleAccept}>
-                            <Text style={styles.controlText}>Accept</Text>
+                            <Text style={styles.controlText}>{t('videoCall.accept')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -248,17 +250,17 @@ const VideoCallScreen = () => {
                         <Text style={styles.durationText}>{formatTime(duration)}</Text>
                         <View style={styles.buttonRow}>
                             <TouchableOpacity style={styles.iconButton} onPress={toggleMute}>
-                                <Text style={styles.iconText}>{isMuted ? 'Unmute' : 'Mute'}</Text>
+                                <Text style={styles.iconText}>{isMuted ? t('videoCall.unmute') : t('videoCall.mute')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.iconButton} onPress={toggleCamera}>
-                                <Text style={styles.iconText}>{isCameraOn ? 'Cam Off' : 'Cam On'}</Text>
+                                <Text style={styles.iconText}>{isCameraOn ? t('videoCall.camOff') : t('videoCall.camOn')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.iconButton} onPress={toggleSpeaker}>
-                                <Text style={styles.iconText}>{isSpeakerOn ? 'Spk Off' : 'Spk On'}</Text>
+                                <Text style={styles.iconText}>{isSpeakerOn ? t('videoCall.spkOff') : t('videoCall.spkOn')}</Text>
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity style={[styles.controlButton, styles.hangupButtonLarge]} onPress={handleHangup}>
-                            <Text style={styles.controlText}>Hangup</Text>
+                            <Text style={styles.controlText}>{t('videoCall.hangup')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -280,6 +282,7 @@ const styles = StyleSheet.create({
     gridContainer: {
         flex: 1,
         marginTop: 100, // Leave space for something?
+        minWidth: 0,
     },
     remoteViewContainer: {
         width: width / 2,
@@ -334,6 +337,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         paddingHorizontal: 40,
+        minWidth: 0,
     },
     activeControls: {
         alignItems: 'center',
@@ -343,6 +347,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         width: '100%',
         marginBottom: 20,
+        minWidth: 0,
     },
     controlButton: {
         width: 64,

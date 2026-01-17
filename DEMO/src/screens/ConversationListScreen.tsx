@@ -6,11 +6,15 @@ import {
   StyleSheet,
   Image,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import JuggleIM, { ConversationInfo, ConversationType, JuggleIMCall } from 'juggleim-rnsdk';
 import { useNavigation } from '@react-navigation/native';
 import CustomMenu from '../components/CustomMenu';
+import { Colors, Typography, Sizes, Spacing, ThemeUtils } from '../theme';
+// i18n support
+import { t } from '../i18n/config';
 
 const ConversationItem = React.memo(({
   item,
@@ -163,7 +167,7 @@ const ConversationListScreen = () => {
 
     return [
       {
-        label: selectedConversation.isTop ? '取消置顶' : '置顶',
+        label: selectedConversation.isTop ? t('conversationInfo.unpin') : t('conversationInfo.pinned'),
         onPress: () => {
           JuggleIM.setTop(selectedConversation.conversation, !selectedConversation.isTop);
           setMenuVisible(false);
@@ -171,7 +175,7 @@ const ConversationListScreen = () => {
         icon: require('../assets/icons/top.png'),
       },
       {
-        label: selectedConversation.isMute ? '取消免打扰' : '免打扰',
+        label: selectedConversation.isMute ? t('conversationInfo.unmute') : t('conversationInfo.mute'),
         onPress: () => {
           JuggleIM.setMute(selectedConversation.conversation, !selectedConversation.isMute);
           setMenuVisible(false);
@@ -179,7 +183,7 @@ const ConversationListScreen = () => {
         icon: require('../assets/icons/mute.png'),
       },
       {
-        label: '删除会话',
+        label: t('conversationInfo.delete'),
         destructive: true,
         onPress: () => {
           setMenuVisible(false);
@@ -313,7 +317,7 @@ const ConversationListScreen = () => {
         ref={flashListRef}
         data={conversations}
         renderItem={renderItem}
-        estimatedItemSize={82}
+        estimatedItemSize={ThemeUtils.moderateScale(82)}
         keyExtractor={item =>
           item.conversation.conversationId
         }
@@ -322,7 +326,7 @@ const ConversationListScreen = () => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No conversations yet</Text>
+            <Text style={styles.emptyText}>{t('conversationList.noConversations')}</Text>
           </View>
         }
       />
@@ -339,59 +343,69 @@ const ConversationListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   itemContainer: {
     flexDirection: 'row',
-    padding: 16,
+    padding: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.border,
     alignItems: 'center',
+    // Android 需要 minHeight 确保 item 高度一致
+    minHeight: ThemeUtils.moderateScale(82),
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#007AFF',
+    width: Sizes.avatar.medium,
+    height: Sizes.avatar.medium,
+    borderRadius: Sizes.avatar.medium / 2,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: Spacing.lg,
     overflow: 'hidden',
   },
   avatarImage: {
-    width: 50,
-    height: 50,
+    width: Sizes.avatar.medium,
+    height: Sizes.avatar.medium,
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 20,
+    color: Colors.text.white,
+    fontSize: ThemeUtils.moderateScale(20),
     fontWeight: 'bold',
   },
   contentContainer: {
     flex: 1,
+    // Android 需要确保有宽度
+    minWidth: 0,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    alignItems: 'center', // 确保垂直对齐
+    marginBottom: ThemeUtils.moderateScale(4),
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    ...Typography.conversationName,
+    flex: 1, // 关键：允许名字占据剩余空间
+    // Android 需要这些属性来正确显示省略号
+    overflow: 'hidden',
+    numberOfLines: 1,
   },
   time: {
-    fontSize: 12,
-    color: '#999',
+    ...Typography.conversationTime,
+    // Android 确保时间不被压缩
+    marginLeft: Spacing.sm,
   },
   timeContainer: {
     alignItems: 'flex-end',
+    // 确保时间容器有最小宽度
+    minWidth: ThemeUtils.moderateScale(60),
   },
   muteIcon: {
-    width: 12,
-    height: 12,
-    marginTop: 6,
-    tintColor: '#999',
+    width: Sizes.icon.small,
+    height: Sizes.icon.small,
+    marginTop: ThemeUtils.moderateScale(6),
+    tintColor: Colors.text.tertiary,
   },
   bottomRow: {
     flexDirection: 'row',
@@ -399,38 +413,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   message: {
-    fontSize: 14,
-    color: '#666',
+    ...Typography.conversationMessage,
     flex: 1,
-    marginRight: 8,
+    marginRight: Spacing.sm,
+    // Android 需要这些属性
+    overflow: 'hidden',
+    numberOfLines: 1,
   },
   mentionIndicator: {
-    color: '#FF3B30',
+    color: Colors.mention,
     fontWeight: '600',
   },
   badge: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    backgroundColor: Colors.badge,
+    borderRadius: Sizes.badge.borderRadius,
+    minWidth: Sizes.badge.width,
+    height: Sizes.badge.height,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: ThemeUtils.moderateScale(6),
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    ...Typography.badge,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 100,
+    marginTop: ThemeUtils.moderateScale(100),
   },
   emptyText: {
-    color: '#999',
-    fontSize: 16,
+    color: Colors.text.tertiary,
+    fontSize: ThemeUtils.moderateScale(16),
   },
 });
 

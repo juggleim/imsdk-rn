@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { setGroupAnnouncement } from '../api/groups';
+// i18n support
+import { t } from '../i18n/config';
 
 const GroupAnnouncementScreen = () => {
     const route = useRoute<any>();
@@ -26,14 +28,14 @@ const GroupAnnouncementScreen = () => {
         setIsSaving(true);
         try {
             await setGroupAnnouncement(groupId, announcement);
-            Alert.alert('成功', '群公告已更新');
+            Alert.alert(t('common.saveSuccess'), t('group.announcementUpdated'));
             if (onUpdate) {
                 onUpdate(announcement);
             }
             navigation.goBack();
         } catch (error) {
             console.error('Failed to set announcement:', error);
-            Alert.alert('错误', '更新群公告失败');
+            Alert.alert(t('common.error'), t('group.announcementUpdateFailed'));
         } finally {
             setIsSaving(false);
         }
@@ -45,12 +47,12 @@ const GroupAnnouncementScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text style={styles.cancelButton}>取消</Text>
+                    <Text style={styles.cancelButton}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.title}>群公告</Text>
+                <Text style={styles.title}>{t('group.announcement')}</Text>
                 <TouchableOpacity onPress={handleSave} disabled={isSaving}>
                     <Text style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}>
-                        {isSaving ? '保存中...' : '保存'}
+                        {isSaving ? t('group.saving') : t('common.save')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -60,13 +62,13 @@ const GroupAnnouncementScreen = () => {
                     style={styles.input}
                     value={announcement}
                     onChangeText={setAnnouncement}
-                    placeholder="请输入群公告内容..."
+                    placeholder={t('group.enterAnnouncement')}
                     placeholderTextColor="#C7C7CC"
                     multiline
                     textAlignVertical="top"
                     autoFocus
                 />
-                <Text style={styles.hint}>群公告将对所有群成员可见</Text>
+                <Text style={styles.hint}>{t('group.announcementHint')}</Text>
             </View>
         </KeyboardAvoidingView>
     );
@@ -86,10 +88,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5EA',
+        minWidth: 0,
     },
     cancelButton: {
         fontSize: 16,
         color: '#007AFF',
+        overflow: 'hidden',
     },
     title: {
         fontSize: 17,
@@ -100,6 +104,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#007AFF',
         fontWeight: '600',
+        overflow: 'hidden',
     },
     saveButtonDisabled: {
         color: '#C7C7CC',
@@ -107,6 +112,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 16,
+        minWidth: 0,
     },
     input: {
         backgroundColor: '#FFFFFF',

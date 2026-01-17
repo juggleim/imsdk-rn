@@ -654,6 +654,7 @@ const styles = StyleSheet.create({
         right: 20,
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
     },
     userName: {
         fontSize: 18,
@@ -693,6 +694,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5E5',
+        minWidth: 0,
     },
     momentAvatar: {
         width: 40,
@@ -720,11 +722,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginTop: 8,
+        minWidth: 0,
     },
     timeDeleteRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        minWidth: 0,
     },
     momentTime: {
         fontSize: 13,
@@ -742,6 +746,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         alignItems: 'flex-end',
         flexDirection: 'row',
+        minWidth: 0,
     },
     moreButton: {
         paddingHorizontal: 12,
@@ -769,6 +774,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+        minWidth: 0,
     },
     bubbleButton: {
         flexDirection: 'row',
@@ -776,6 +782,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 4,
         gap: 6,
+        minWidth: 0,
     },
     bubbleIcon: {
         width: 18,
@@ -785,6 +792,7 @@ const styles = StyleSheet.create({
     bubbleText: {
         fontSize: 13,
         color: '#FFFFFF',
+        overflow: 'hidden',
     },
     bubbleDivider: {
         width: 1,
@@ -843,6 +851,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5E5',
+        minWidth: 0,
     },
     reactionIcon: {
         width: 14,
@@ -900,6 +909,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 8,
         paddingHorizontal: 4,
+        minWidth: 0,
     },
     replyToText: {
         fontSize: 12,
@@ -913,6 +923,7 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
     },
     commentInput: {
         flex: 1,
@@ -939,6 +950,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 15,
         fontWeight: '600',
+        overflow: 'hidden',
     },
     sendButtonTextDisabled: {
         color: '#A8A8A8',
@@ -965,6 +977,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignSelf: 'center',
         gap: 8,
+        minWidth: 0,
     },
     indicatorDot: {
         width: 8,

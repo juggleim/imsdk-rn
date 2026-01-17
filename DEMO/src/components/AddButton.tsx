@@ -16,6 +16,7 @@ interface AddButtonProps {
 
 const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => {
     const [menuVisible, setMenuVisible] = useState(false);
+    const [buttonLayout, setButtonLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
     const handleAddFriend = () => {
         setMenuVisible(false);
@@ -27,11 +28,26 @@ const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => 
         setTimeout(() => onCreateGroup(), 100);
     };
 
+    const measureButton = () => {
+        if (buttonLayout?.y) {
+            return buttonLayout;
+        }
+        return null;
+    };
+
     return (
         <>
             <TouchableOpacity
                 onPress={() => setMenuVisible(true)}
                 style={styles.button}
+                onLayout={(event) => {
+                    setButtonLayout({
+                        x: event.nativeEvent.layout.x,
+                        y: event.nativeEvent.layout.y + event.nativeEvent.layout.height,
+                        width: event.nativeEvent.layout.width,
+                        height: event.nativeEvent.layout.height,
+                    });
+                }}
             >
                 <Image
                     source={require('../assets/icons/circle_add.png')}
@@ -47,7 +63,12 @@ const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => 
             >
                 <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
                     <View style={styles.overlay}>
-                        <View style={styles.menuContainer}>
+                        <View style={[
+                            styles.menuContainer,
+                            buttonLayout && {
+                                top: buttonLayout.y + 8, // Position 8px below the button
+                            }
+                        ]}>
                             <View style={styles.triangle} />
                             <View style={styles.menu}>
                                 <TouchableOpacity
@@ -95,10 +116,10 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'transparent',
+        minWidth: 0,
     },
     menuContainer: {
         position: 'absolute',
-        top: 100,
         right: 10,
         alignItems: 'flex-end',
     },
@@ -125,6 +146,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 4,
         elevation: 5,
+        overflow: 'hidden',
     },
     menuItem: {
         flexDirection: 'row',
@@ -141,6 +163,7 @@ const styles = StyleSheet.create({
     menuText: {
         color: '#fff',
         fontSize: 16,
+        overflow: 'hidden',
     },
     divider: {
         height: 0.5,

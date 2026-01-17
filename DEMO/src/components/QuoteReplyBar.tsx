@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 0,
     },
     icon: {
         width: 20,
@@ -74,16 +75,20 @@ const styles = StyleSheet.create({
     },
     textContainer: {
         flex: 1,
+        minWidth: 0,
     },
     title: {
         fontSize: 14,
         fontWeight: '600',
         color: '#333',
         marginBottom: 2,
+        overflow: 'hidden',
     },
     preview: {
         fontSize: 13,
         color: '#666',
+        overflow: 'hidden',
+        ellipsizeMode: 'tail',
     },
     closeButton: {
         padding: 4,

@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+        overflow: 'hidden',
     },
 });
 

@@ -21,7 +21,7 @@ export class RecallMessageRenderer extends BaseMessageRenderer {
       <View style={styles.systemMessageContainer}>
         <View style={styles.systemMessageContent}>
           <Text style={styles.systemMessageText}>
-            {isOutgoing ? '你撤回了一条消息' : `${message.senderUserId} 撤回了一条消息`}
+            {isOutgoing ? '你撤回了一条消息' : `${message.senderUserName} 撤回了一条消息`}
           </Text>
         </View>
       </View>

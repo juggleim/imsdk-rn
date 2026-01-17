@@ -176,6 +176,7 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+        minWidth: 0,
     },
     title: {
         fontSize: 17,
@@ -185,11 +186,13 @@ const styles = StyleSheet.create({
     cancelButton: {
         fontSize: 16,
         color: '#8E8E93',
+        overflow: 'hidden',
     },
     sendButton: {
         fontSize: 16,
         color: '#007AFF',
         fontWeight: '600',
+        overflow: 'hidden',
     },
     sendButtonDisabled: {
         color: '#C7C7CC',
@@ -243,22 +246,26 @@ const styles = StyleSheet.create({
         padding: 16,
         borderLeftWidth: 4,
         borderLeftColor: '#007AFF',
+        minWidth: 0,
     },
     previewTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: '#141414',
         marginBottom: 6,
+        overflow: 'hidden',
     },
     previewDescription: {
         fontSize: 14,
         color: '#666',
         lineHeight: 20,
         marginBottom: 8,
+        overflow: 'hidden',
     },
     previewUrl: {
         fontSize: 13,
         color: '#007AFF',
+        overflow: 'hidden',
     },
 });
 

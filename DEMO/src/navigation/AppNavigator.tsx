@@ -19,6 +19,8 @@ import CallSelectMemberScreen from '../screens/CallSelectMemberScreen';
 import { Image } from 'react-native';
 import AddButton from '../components/AddButton';
 import { useNavigation } from '@react-navigation/native';
+// i18n support
+import { t } from '../i18n/config';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,7 +52,7 @@ const MainTabNavigator = () => {
         component={ConversationListScreen}
         options={{
           headerShown: true,
-          title: '会话',
+          title: t('nav.conversation'),
           headerRight: () => (
             <AddButton
               onAddFriend={() => navigation.navigate('SearchFriends')}
@@ -59,9 +61,21 @@ const MainTabNavigator = () => {
           ),
         }}
       />
-      <Tab.Screen name="Contacts" component={ContactsScreen} />
-      <Tab.Screen name="Discover" component={DiscoverScreen} />
-      <Tab.Screen name="Me" component={ProfileScreen} />
+      <Tab.Screen
+        name="Contacts"
+        component={ContactsScreen}
+        options={{ title: t('nav.contacts') }}
+      />
+      <Tab.Screen
+        name="Discover"
+        component={DiscoverScreen}
+        options={{ title: t('nav.settings') }}
+      />
+      <Tab.Screen
+        name="Me"
+        component={ProfileScreen}
+        options={{ title: t('nav.profile') }}
+      />
     </Tab.Navigator>
   );
 };
@@ -74,15 +88,51 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="MessageList" component={MessageListScreen} />
-      <Stack.Screen name="SearchFriends" component={SearchFriendsScreen} options={{ headerShown: true, title: 'Search Friends' }} />
-      <Stack.Screen name="NewFriends" component={NewFriendsScreen} options={{ headerShown: true, title: 'New Friends' }} />
-      <Stack.Screen name="Moment" component={MomentScreen} options={{ headerShown: true, title: 'Moments' }} />
-      <Stack.Screen name="PublishMoment" component={PublishMomentScreen} options={{ headerShown: true, title: '发朋友圈' }} />
-      <Stack.Screen name="ConversationInfo" component={ConversationInfoScreen} options={{ headerShown: true, title: '聊天信息' }} />
-      <Stack.Screen name="GroupAnnouncement" component={GroupAnnouncementScreen} options={{ headerShown: true, title: '群公告' }} />
-      <Stack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ headerShown: true, title: '创建群组' }} />
-      <Stack.Screen name="VideoCall" component={VideoCallScreen} options={{ headerShown: false, gestureEnabled: false }} />
-      <Stack.Screen name="CallSelectMember" component={CallSelectMemberScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="SearchFriends"
+        component={SearchFriendsScreen}
+        options={{ headerShown: true, title: t('contacts.searchFriends') }}
+      />
+      <Stack.Screen
+        name="NewFriends"
+        component={NewFriendsScreen}
+        options={{ headerShown: true, title: t('contacts.newFriends') }}
+      />
+      <Stack.Screen
+        name="Moment"
+        component={MomentScreen}
+        options={{ headerShown: true, title: 'Moments' }}
+      />
+      <Stack.Screen
+        name="PublishMoment"
+        component={PublishMomentScreen}
+        options={{ headerShown: true, title: '发朋友圈' }}
+      />
+      <Stack.Screen
+        name="ConversationInfo"
+        component={ConversationInfoScreen}
+        options={{ headerShown: true, title: t('conversationInfo.title') }}
+      />
+      <Stack.Screen
+        name="GroupAnnouncement"
+        component={GroupAnnouncementScreen}
+        options={{ headerShown: true, title: t('group.announcement') }}
+      />
+      <Stack.Screen
+        name="CreateGroup"
+        component={CreateGroupScreen}
+        options={{ headerShown: true, title: t('group.create') }}
+      />
+      <Stack.Screen
+        name="VideoCall"
+        component={VideoCallScreen}
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="CallSelectMember"
+        component={CallSelectMemberScreen}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 };
