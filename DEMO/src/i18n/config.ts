@@ -1,6 +1,6 @@
 import { getSystemLanguage } from './index';
 import { zh, en } from './translations';
-import { AsyncStorage } from '@react-native-async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BehaviorSubject } from 'rxjs';
 import { SupportedLanguage } from './index';
 
