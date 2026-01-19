@@ -19,6 +19,6 @@ const ZegoSurfaceViewManager = Platform.select<React.ComponentType<SurfaceViewPr
 })!;
 
 
-export const ZegoSurfaceView: React.FC<SurfaceViewProps> = (props) => {
-    return <ZegoSurfaceViewManager {...props} />;
-};
+export const ZegoSurfaceView = React.forwardRef<React.ComponentRef<typeof ZegoSurfaceViewManager>, SurfaceViewProps>((props, ref) => {
+    return <ZegoSurfaceViewManager {...props} ref={ref} />;
+});

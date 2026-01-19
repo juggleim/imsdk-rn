@@ -125,7 +125,7 @@ const VideoCallScreen = () => {
 
     const handleHangup = () => {
         session?.hangup();
-        navigation.goBack();
+        // Don't call goBack() here - onCallFinish will handle it
     };
 
     const toggleMute = () => {
