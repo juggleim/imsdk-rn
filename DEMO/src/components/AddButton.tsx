@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     TouchableOpacity,
     Image,
@@ -7,6 +7,9 @@ import {
     Text,
     Modal,
     TouchableWithoutFeedback,
+    UIManager,
+    findNodeHandle,
+    Platform,
 } from 'react-native';
 
 interface AddButtonProps {
@@ -17,6 +20,7 @@ interface AddButtonProps {
 const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [buttonLayout, setButtonLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+    const buttonRef = useRef<TouchableOpacity>(null);
 
     const handleAddFriend = () => {
         setMenuVisible(false);
@@ -29,25 +33,23 @@ const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => 
     };
 
     const measureButton = () => {
-        if (buttonLayout?.y) {
-            return buttonLayout;
+        const handle = findNodeHandle(buttonRef.current);
+        if (handle) {
+            UIManager.measureInWindow(handle, (x, y, width, height) => {
+                setButtonLayout({ x, y, width, height });
+            });
         }
-        return null;
     };
 
     return (
         <>
             <TouchableOpacity
-                onPress={() => setMenuVisible(true)}
-                style={styles.button}
-                onLayout={(event) => {
-                    setButtonLayout({
-                        x: event.nativeEvent.layout.x,
-                        y: event.nativeEvent.layout.y + event.nativeEvent.layout.height,
-                        width: event.nativeEvent.layout.width,
-                        height: event.nativeEvent.layout.height,
-                    });
+                ref={buttonRef}
+                onPress={() => {
+                    measureButton();
+                    setMenuVisible(true);
                 }}
+                style={styles.button}
             >
                 <Image
                     source={require('../assets/icons/circle_add.png')}
@@ -66,7 +68,7 @@ const AddButton: React.FC<AddButtonProps> = ({ onAddFriend, onCreateGroup }) => 
                         <View style={[
                             styles.menuContainer,
                             buttonLayout && {
-                                top: buttonLayout.y + 8, // Position 8px below the button
+                                top: buttonLayout.y + buttonLayout.height + 4, // +4 for spacing
                             }
                         ]}>
                             <View style={styles.triangle} />
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
     },
     menuContainer: {
         position: 'absolute',
-        right: 10,
+        right: 5,
         alignItems: 'flex-end',
     },
     triangle: {
