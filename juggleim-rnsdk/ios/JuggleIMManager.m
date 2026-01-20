@@ -1724,6 +1724,7 @@ RCT_EXPORT_METHOD(sendMediaMessage : (NSDictionary *)messageDict resolver : (
         [userArray addObject:userInfo];
       }
     }
+    mentionInfo.targetUsers = userArray;
   }
 
   return mentionInfo;
