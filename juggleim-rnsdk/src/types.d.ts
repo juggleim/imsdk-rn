@@ -180,13 +180,13 @@ export class VoiceMessageContent extends MessageContent {
 
 /**
  * 通话结束通知消息内容: jg:callfinishntf
- * @property {number} finishType - 结束类型（从原生 reason 字段映射）
+ * @property {number} reason - 结束原因
  * @property {number} duration - 通话时长，单位秒
  * @property {number} mediaType - 媒体类型: 0-语音, 1-视频
  */
 export class CallFinishNotifyMessageContent extends MessageContent {
     contentType: string;
-    finishType?: number;
+    reason?: number;
     duration?: number;
     mediaType?: number;
 }

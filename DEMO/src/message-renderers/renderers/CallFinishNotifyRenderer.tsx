@@ -5,7 +5,7 @@ import { BaseMessageRenderer } from '../BaseMessageRenderer';
 import { MessageRendererProps, MessageRenderMode } from '../types';
 
 interface CallFinishNotifyContent {
-  finishType?: number;
+  reason?: number;
   duration?: number;
   mediaType?: number;
 }
