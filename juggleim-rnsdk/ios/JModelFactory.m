@@ -677,6 +677,8 @@
     content = [self voiceMessageFromData:data];
   } else if ([contentType isEqualToString:@"jg:merge"]) {
     content = [self mergeMessageFromData:data];
+  } else if ([contentType isEqualToString:@"jg:callfinishntf"]) {
+    content = [self callFinishNotifyMessageFromString:string];
   } else {
     content = [self unknownMessageFromString:string type:contentType];
   }
@@ -747,6 +749,67 @@
   JUnknownMessage *unknown = [JUnknownMessage new];
   unknown.content = string;
   unknown.messageType = contentType;
+  return unknown;
+}
+
+/**
+ * 解析通话结束通知消息
+ * 原生字段: reason, duration, mMediaType
+ * RN层字段: finishType, duration, mediaType
+ */
++ (JUnknownMessage *)callFinishNotifyMessageFromString:(NSString *)string {
+  // 解析 JSON 字符串
+  NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
+  if (!data) {
+    return [self unknownMessageFromString:string type:@"jg:callfinishntf"];
+  }
+
+  NSError *error = nil;
+  NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:data
+                                                           options:0
+                                                             error:&error];
+  if (error || ![jsonDict isKindOfClass:[NSDictionary class]]) {
+    return [self unknownMessageFromString:string type:@"jg:callfinishntf"];
+  }
+
+  // 字段映射: reason -> finishType, mMediaType -> mediaType
+  NSMutableDictionary *mappedDict = [NSMutableDictionary dictionary];
+
+  // 映射 finishType (from reason)
+  if (jsonDict[@"reason"]) {
+    id reason = jsonDict[@"reason"];
+    if ([reason isKindOfClass:[NSString class]]) {
+      // 尝试将字符串转换为数字
+      NSNumber *finishTypeNum = @([reason integerValue]);
+      mappedDict[@"finishType"] = finishTypeNum;
+    } else if ([reason isKindOfClass:[NSNumber class]]) {
+      mappedDict[@"finishType"] = reason;
+    }
+  }
+
+  // 映射 duration (保持不变)
+  if (jsonDict[@"duration"]) {
+    mappedDict[@"duration"] = jsonDict[@"duration"];
+  }
+
+  // 映射 mediaType (from mMediaType)
+  if (jsonDict[@"mMediaType"]) {
+    mappedDict[@"mediaType"] = jsonDict[@"mMediaType"];
+  }
+
+  // 将映射后的字典转换回 JSON 字符串
+  NSData *mappedData = [NSJSONSerialization dataWithJSONObject:mappedDict
+                                                        options:0
+                                                          error:&error];
+  if (error || !mappedData) {
+    return [self unknownMessageFromString:string type:@"jg:callfinishntf"];
+  }
+
+  NSString *mappedString = [[NSString alloc] initWithData:mappedData encoding:NSUTF8StringEncoding];
+
+  JUnknownMessage *unknown = [JUnknownMessage new];
+  unknown.content = mappedString;
+  unknown.messageType = @"jg:callfinishntf";
   return unknown;
 }
 

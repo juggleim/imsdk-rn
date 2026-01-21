@@ -485,6 +485,11 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"previewList"] = mergeMsg.previewList;
     dict[@"containerMsgId"] = mergeMsg.containerMsgId;
     dict[@"extra"] = mergeMsg.extra ?: @"";
+  } else if ([contentType isEqualToString:@"jg:callfinishntf"]) {
+    JCallFinishNotifyMessage *callFinishMsg = (JCallFinishNotifyMessage *)content;
+    dict[@"reason"] = @(callFinishMsg.finishType);
+    dict[@"duration"] = @(callFinishMsg.duration);
+    dict[@"mediaType"] = @(callFinishMsg.mediaType);
   } else if (self.customMessageTypes[contentType]) {
     // 处理自定义消息:解析 JSON 数据
     JUnknownMessage *customMsg = (JUnknownMessage *)content;

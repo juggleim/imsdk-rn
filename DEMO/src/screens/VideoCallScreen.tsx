@@ -41,6 +41,7 @@ const VideoCallScreen = () => {
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [remoteMembers, setRemoteMembers] = useState<CallMember[]>([]);
     const [isViewReady, setIsViewReady] = useState(false);
+    const [hasAccepted, setHasAccepted] = useState(false);
 
     // Refs for views to pass to native
     const localViewRef = useRef<View>(null);
@@ -75,6 +76,7 @@ const VideoCallScreen = () => {
                 onCallConnect: () => {
                     console.log('onCallConnect');
                     setCallStatus(CallStatus.CONNECTED);
+                    setHasAccepted(true);
                     if (localViewRef.current) {
                         const viewTag = findNodeHandle(localViewRef.current);
                         console.log('viewTag', viewTag);
@@ -108,6 +110,11 @@ const VideoCallScreen = () => {
             console.log('viewTag', viewTag);
             currentSession.startPreview(viewTag);
             return () => {
+                // 如果作为被叫方在接听前就退出，需要停止预览
+                if (isIncoming && !hasAccepted) {
+                    console.log('Stopping preview in cleanup');
+                    currentSession.stopPreview();
+                }
                 cleanup();
             };
         };
@@ -124,6 +131,11 @@ const VideoCallScreen = () => {
     };
 
     const handleHangup = () => {
+        // 如果作为被叫方在接听前挂断，需要停止预览
+        if (isIncoming && !hasAccepted && session) {
+            console.log('Stopping preview on hangup');
+            session.stopPreview();
+        }
         session?.hangup();
         // Don't call goBack() here - onCallFinish will handle it
     };

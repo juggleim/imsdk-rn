@@ -183,4 +183,18 @@ export class CallSession {
 
         return JuggleIMCallModule.startPreview(this.callId, view);
     }
+
+    /**
+     * 停止预览
+     * 用于被叫方在接听前挂断时停止预览。
+     * 如果接听后，则不需要停止预览（由通话结束自动处理）。
+     *
+     * 使用场景：
+     * - 作为被叫方，被呼叫后开启了预览，之后直接挂断，需要停止预览
+     * - 如果接听了通话，则不需要调用此方法（通话结束会自动停止）
+     */
+    stopPreview(): Promise<void> {
+        console.log('stopPreview', this.callId);
+        return JuggleIMCallModule.stopPreview(this.callId);
+    }
 }

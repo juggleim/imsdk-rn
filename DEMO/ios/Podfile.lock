@@ -8,9 +8,9 @@ PODS:
   - hermes-engine (0.82.1):
     - hermes-engine/Pre-built (= 0.82.1)
   - hermes-engine/Pre-built (0.82.1)
-  - JuggleIM (1.8.35)
-  - juggleim-rnsdk (0.2.4):
-    - JuggleIM (~> 1.8.35)
+  - JuggleIM (1.8.37)
+  - juggleim-rnsdk (0.2.6):
+    - JuggleIM (~> 1.8.37)
     - JZegoCall (= 1.8.25)
     - React-Core
   - JZegoCall (1.8.25):
@@ -2900,8 +2900,8 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 273e30e7fb618279934b0b95ffab60ecedb7acf5
-  JuggleIM: 5aae023a0b6ec94550021ea862e8e959f00ce427
-  juggleim-rnsdk: 5c13422be5008dced1295b5732a080f3c7c46b5a
+  JuggleIM: 9e98493ddfb3cbbe415cb9ed978ca9f819c8c206
+  juggleim-rnsdk: 53f77514c3f4e24212075c7f29190a691ed0ffc0
   JZegoCall: 2764397dcaea833788cbb7be4d8613ed3de765ad
   NitroModules: 1d6b00df1594151aa7be68893bf41afc261bb817
   NitroSound: 810e1a445c9301b6c0fb0c4d59cd16fc4353c6ac

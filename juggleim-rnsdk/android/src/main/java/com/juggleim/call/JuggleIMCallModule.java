@@ -308,6 +308,23 @@ public class JuggleIMCallModule extends ReactContextBaseJavaModule {
         promise.resolve(null);
     }
 
+    /**
+     * 停止预览
+     * 用于被叫方在接听前挂断时停止预览
+     * @param callId 会话ID
+     * @param promise Promise
+     */
+    @ReactMethod
+    public void stopPreview(String callId, Promise promise) {
+        ICallSession session = getCallManager().getCallSession(callId);
+        if (session == null) {
+            promise.resolve(null);
+            return;
+        }
+        session.stopPreview();
+        promise.resolve(null);
+    }
+
     @ReactMethod
     public void addSessionListener(String callId, String key) {
         ICallSession session = getCallManager().getCallSession(callId);

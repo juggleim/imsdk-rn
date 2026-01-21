@@ -331,6 +331,22 @@ RCT_EXPORT_METHOD(startPreview : (NSString *)callId viewTag : (
   });
 }
 
+/**
+ * 停止预览
+ * 用于被叫方在接听前挂断时停止预览
+ * @param callId 会话ID
+ */
+RCT_EXPORT_METHOD(stopPreview : (NSString *)callId resolver : (
+    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  id<JCallSession> session = [[self getCallManager] getCallSession:callId];
+  if (!session) {
+    resolve(nil);
+    return;
+  }
+  [session stopPreview];
+  resolve(nil);
+}
+
 #pragma mark - Session Listeners
 
 RCT_EXPORT_METHOD(addSessionListener : (NSString *)callId key : (NSString *)
