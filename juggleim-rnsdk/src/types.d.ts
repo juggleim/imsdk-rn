@@ -514,6 +514,55 @@ export interface SaveMessageObject {
     options?: SaveMessageOptions;
     direction?: number;
 }
+
+/**
+ * 搜索消息选项
+ * @property {Conversation} conversation - 要查询的会话, 不能为空
+ * @property {string} searchContent - 查询内容
+ * @property {number} [count=20] - 拉取数量，超过100条按100返回
+ * @property {number} [timestamp=0] - 消息时间戳，如果传0为当前时间
+ * @property {number} [direction=0] - 拉取方向: 0-更新的消息, 1-更旧的消息
+ * @property {string[]} [contentTypes] - 内容类型列表，传空返回所有类型
+ */
+export interface SearchMessageOptions {
+    conversation: Conversation;
+    searchContent: string;
+    count?: number;
+    timestamp?: number;
+    direction?: number;
+    contentTypes?: string[];
+}
+
+/**
+ * 搜索会话消息选项
+ * @property {string} searchContent - 搜索内容
+ * @property {string[]} [senderUserIds] - 指定消息发送者ID列表
+ * @property {string[]} [contentTypes] - 指定消息类型列表
+ * @property {Conversation[]} [conversations] - 指定会话列表
+ * @property {number[]} [states] - 指定消息状态列表
+ * @property {number} [direction] - 指定消息方向: 1-发送, 2-接收
+ * @property {number[]} [conversationTypes] - 指定会话类型列表: 1-私聊, 2-群组, 3-聊天室
+ */
+export interface SearchConversationsOptions {
+    searchContent: string;
+    senderUserIds?: string[];
+    contentTypes?: string[];
+    conversations?: Conversation[];
+    states?: number[];
+    direction?: number;
+    conversationTypes?: number[];
+}
+
+/**
+ * 搜索会话结果
+ * @property {ConversationInfo} conversationInfo - 会话信息
+ * @property {number} matchedCount - 匹配的消息数量
+ */
+export interface SearchConversationsResult {
+    conversationInfo: ConversationInfo;
+    matchedCount: number;
+}
+
 /**
  * 连接状态监听器回调函数
  * @param {ConnectionStatus} status - 连接状态

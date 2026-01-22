@@ -1133,6 +1133,120 @@ RCT_EXPORT_METHOD(saveMessage : (NSDictionary *)messageDict resolver : (RCTPromi
 }
 
 /**
+ * 搜索会话中的消息
+ */
+RCT_EXPORT_METHOD(searchMessage : (NSDictionary *)optionsDict resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    NSDictionary *conversationDict = optionsDict[@"conversation"];
+    if (!conversationDict) {
+      reject(@"SEARCH_MESSAGE_ERROR", @"Conversation is required", nil);
+      return;
+    }
+    JConversation *conversation = [self convertDictionaryToConversation:conversationDict];
+
+    NSString *searchContent = optionsDict[@"searchContent"];
+    if (!searchContent) {
+      reject(@"SEARCH_MESSAGE_ERROR", @"Search content is required", nil);
+      return;
+    }
+
+    int count = 20;
+    if (optionsDict[@"count"]) {
+      count = [optionsDict[@"count"] intValue];
+    }
+
+    long long time = 0;
+    if (optionsDict[@"timestamp"]) {
+      time = [optionsDict[@"timestamp"] longLongValue];
+    }
+
+    int directionInt = 1;
+    if (optionsDict[@"direction"]) {
+      directionInt = [optionsDict[@"direction"] intValue];
+    }
+    JPullDirection direction = (directionInt == 0) ? JPullDirectionNewer : JPullDirectionOlder;
+
+    NSArray *contentTypes = nil;
+    if (optionsDict[@"contentTypes"]) {
+      contentTypes = optionsDict[@"contentTypes"];
+    }
+
+    NSArray *messages = [JIM.shared.messageManager searchMessagesWithContent:searchContent
+                                                           inConversation:conversation
+                                                                   count:count
+                                                                    time:time
+                                                               direction:direction
+                                                            contentTypes:contentTypes];
+
+    NSMutableArray *result = [NSMutableArray array];
+    for (JMessage *message in messages) {
+      [result addObject:[self convertMessageToDictionary:message]];
+    }
+    resolve(result);
+  } @catch (NSException *exception) {
+    reject(@"SEARCH_MESSAGE_ERROR", exception.reason, nil);
+  }
+}
+
+/**
+ * 根据消息内容搜索会话
+ */
+RCT_EXPORT_METHOD(searchConversationsWithMessageContent : (NSDictionary *)optionsDict resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    NSString *searchContent = optionsDict[@"searchContent"];
+    if (!searchContent) {
+      reject(@"SEARCH_CONVERSATIONS_ERROR", @"Search content is required", nil);
+      return;
+    }
+
+    JQueryMessageOptions *options = [[JQueryMessageOptions alloc] init];
+    options.searchContent = searchContent;
+
+    if (optionsDict[@"senderUserIds"]) {
+      options.senderUserIds = optionsDict[@"senderUserIds"];
+    }
+
+    if (optionsDict[@"contentTypes"]) {
+      options.contentTypes = optionsDict[@"contentTypes"];
+    }
+
+    if (optionsDict[@"conversations"]) {
+      NSArray *conversationsArray = optionsDict[@"conversations"];
+      NSMutableArray *conversations = [NSMutableArray array];
+      for (NSDictionary *conversationDict in conversationsArray) {
+        JConversation *conversation = [self convertDictionaryToConversation:conversationDict];
+        [conversations addObject:conversation];
+      }
+      options.conversations = conversations;
+    }
+
+    if (optionsDict[@"states"]) {
+      options.states = optionsDict[@"states"];
+    }
+
+    if (optionsDict[@"conversationTypes"]) {
+      options.conversationTypes = optionsDict[@"conversationTypes"];
+    }
+
+    [JIM.shared.messageManager searchConversationsWithMessageContent:options
+                                                           complete:^(NSArray<JSearchConversationsResult *> *resultList) {
+      NSMutableArray *result = [NSMutableArray array];
+      for (JSearchConversationsResult *searchResult in resultList) {
+        NSMutableDictionary *resultMap = [NSMutableDictionary dictionary];
+        resultMap[@"matchedCount"] = @(searchResult.matchedCount);
+        resultMap[@"conversationInfo"] = [self convertConversationInfoToDictionary:searchResult.conversationInfo];
+        [result addObject:resultMap];
+      }
+      resolve(result);
+    }];
+  } @catch (NSException *exception) {
+    reject(@"SEARCH_CONVERSATIONS_ERROR", exception.reason, nil);
+  }
+}
+
+/**
  * 发送图片消息
  */
 RCT_EXPORT_METHOD(sendImageMessage : (NSDictionary *)messageDict messageId : (

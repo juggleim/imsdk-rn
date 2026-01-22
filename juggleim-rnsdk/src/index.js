@@ -833,6 +833,77 @@ class JuggleIM {
   }
 
   /**
+   * 搜索会话中的消息
+   * @param {Object} options - 搜索选项
+   * @param {Object} options.conversation - 要查询的会话
+   * @param {string} options.searchContent - 查询内容
+   * @param {number} [options.count=20] - 拉取数量
+   * @param {number} [options.timestamp=0] - 消息时间戳
+   * @param {number} [options.direction=1] - 拉取方向: 0-更新的, 1-更旧的
+   * @param {string[]} [options.contentTypes] - 内容类型列表
+   * @returns {Promise<Message[]>} - 搜索到的消息列表
+   */
+  static async searchMessage(options) {
+    console.log("searchMessage options:", options);
+
+    try {
+      const messages = await JMI.searchMessage(options);
+      // Build message info for each message to include user info
+      const builtMessages = await Promise.all(
+        messages.map(msg => this.buildMessageInfo(msg))
+      );
+      return builtMessages;
+    } catch (error) {
+      console.error("searchMessage error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 根据消息内容搜索会话
+   * @param {Object} options - 搜索选项
+   * @param {string} options.searchContent - 搜索内容
+   * @param {string[]} [options.senderUserIds] - 发送者ID列表
+   * @param {string[]} [options.contentTypes] - 消息类型列表
+   * @param {Object[]} [options.conversations] - 会话列表
+   * @param {number[]} [options.states] - 消息状态列表
+   * @param {number} [options.direction] - 消息方向: 1-发送, 2-接收
+   * @param {number[]} [options.conversationTypes] - 会话类型列表: 1-私聊, 2-群组
+   * @returns {Promise<SearchConversationsResult[]>} - 搜索到的会话列表
+   */
+  static async searchConversationsWithMessageContent(options) {
+    console.log("searchConversationsWithMessageContent options:", options);
+
+    try {
+      const results = await JMI.searchConversationsWithMessageContent(options);
+      // Build conversation info for each result to include user info
+      const builtResults = await Promise.all(
+        results.map(async (result) => {
+          const convInfo = result.conversationInfo;
+          // For private chats, fetch user info to fill in name and avatar
+          if (convInfo.conversation?.conversationType === 1) {
+            try {
+              const userInfo = await JMI.getUserInfo(convInfo.conversation.conversationId);
+              if (userInfo) {
+                convInfo.name = userInfo.nickname;
+                convInfo.avatar = userInfo.avatar;
+              }
+            } catch (e) {
+              console.warn('Failed to fetch user info for conversation:', e);
+            }
+          }
+          // For group chats, the SDK should already have name and avatar
+          return result;
+        })
+      );
+      return builtResults;
+    } catch (error) {
+      console.error("searchConversationsWithMessageContent error:", error);
+      throw error;
+    }
+  }
+
+  /**
    * 发送图片消息
    * @param {Object} message - 图片消息内容
    * @param {Object} callback - 回调对象

@@ -19,6 +19,9 @@ import {
   SendMessageObject,
   SendMessageCallback,
   SaveMessageObject,
+  SearchMessageOptions,
+  SearchConversationsOptions,
+  SearchConversationsResult,
   Message,
   MessageContent,
   MergeMessageContent,
@@ -580,6 +583,43 @@ export default class JuggleIM {
     message: SendMessageObject,
     callback?: SendMediaMessageCallback
   ): Promise<Message>;
+
+  /**
+   * 搜索会话中的消息
+   * 在指定会话中根据关键字搜索消息
+   * @param {SearchMessageOptions} options - 搜索选项
+   * @returns {Promise<Message[]>} 搜索到的消息列表
+   * @example
+   * const messages = await JuggleIM.searchMessage({
+   *   conversation: { conversationType: 1, conversationId: 'user123' },
+   *   searchContent: 'hello',
+   *   count: 20,
+   *   timestamp: 0,
+   *   direction: 1,
+   */
+  static searchMessage(
+    options: SearchMessageOptions
+  ): Promise<Message[]>;
+
+  /**
+   * 根据消息内容搜索会话
+   * 在所有会话中根据关键字搜索包含该消息的会话
+   * @param {SearchConversationsOptions} options - 搜索选项
+   * @returns {Promise<SearchConversationsResult[]>} 搜索到的会话列表及匹配数量
+   * @example
+   * const results = await JuggleIM.searchConversationsWithMessageContent({
+   *   searchContent: 'hello',
+   *   conversationTypes: [1, 2],
+   *   contentTypes: ['jg:text', 'jg:image']
+   * });
+   * console.log(`Found ${results.length} conversations`);
+   * results.forEach(result => {
+   *   console.log(`${result.conversationInfo.name}: ${result.matchedCount} messages`);
+   * });
+   */
+  static searchConversationsWithMessageContent(
+    options: SearchConversationsOptions
+  ): Promise<SearchConversationsResult[]>;
 }
 
 

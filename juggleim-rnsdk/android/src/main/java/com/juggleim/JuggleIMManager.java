@@ -40,6 +40,8 @@ import com.juggle.im.internal.logger.JLogLevel;
 import com.juggle.im.model.MessageContent.*;
 import com.juggle.im.model.GroupInfo;
 import com.juggle.im.model.GroupMember;
+import com.juggle.im.model.MessageQueryOptions;
+import com.juggle.im.model.SearchConversationsResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1295,6 +1297,191 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             pushData.setExtra(pushDataMap.getString("extra"));
         }
         return pushData;
+    }
+
+    /**
+     * 搜索会话中的消息
+     * @param optionsMap 搜索选项
+     * @param promise Promise回调
+     */
+    @ReactMethod
+    public void searchMessage(ReadableMap optionsMap, Promise promise) {
+        try {
+            ReadableMap conversationMap = optionsMap.getMap("conversation");
+            Conversation conversation = null;
+            if (conversationMap != null) {
+                conversation = convertMapToConversation(conversationMap);
+            }
+
+            String searchContent = optionsMap.getString("searchContent");
+            if (searchContent == null) {
+                promise.reject("SEARCH_MESSAGE_ERROR", "Search content is required");
+                return;
+            }
+
+            int count = 20;
+            if (optionsMap.hasKey("count")) {
+                count = optionsMap.getInt("count");
+            }
+
+            long timestamp = 0;
+            if (optionsMap.hasKey("timestamp")) {
+                timestamp = (long) optionsMap.getDouble("timestamp");
+            }
+
+            int directionInt = 1;
+            if (optionsMap.hasKey("direction")) {
+                directionInt = optionsMap.getInt("direction");
+            }
+            JIMConst.PullDirection pullDirection = (directionInt == 0)
+                ? JIMConst.PullDirection.NEWER
+                : JIMConst.PullDirection.OLDER;
+
+            List<String> contentTypes = null;
+            if (optionsMap.hasKey("contentTypes")) {
+                ReadableArray contentTypesArray = optionsMap.getArray("contentTypes");
+                if (contentTypesArray != null) {
+                    contentTypes = new ArrayList<>();
+                    for (int i = 0; i < contentTypesArray.size(); i++) {
+                        contentTypes.add(contentTypesArray.getString(i));
+                    }
+                }
+            }
+            List<Message> messages = new ArrayList<>();
+            if (conversation == null) {
+                 messages = JIM.getInstance().getMessageManager().searchMessage(
+                        searchContent,
+                        count,
+                        timestamp,
+                        pullDirection,
+                        contentTypes
+                );
+            } else {
+                messages = JIM.getInstance().getMessageManager().searchMessageInConversation(
+                        conversation,
+                        searchContent,
+                        count,
+                        timestamp,
+                        pullDirection
+                );
+            }
+
+
+            WritableArray result = new WritableNativeArray();
+            for (Message message : messages) {
+                result.pushMap(convertMessageToMap(message));
+            }
+            promise.resolve(result);
+        } catch (Exception e) {
+            Log.e("JuggleIM", "searchMessage error: " + e.getMessage(), e);
+            promise.reject("SEARCH_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 根据消息内容搜索会话
+     * @param optionsMap 搜索选项
+     * @param promise Promise回调
+     */
+    @ReactMethod
+    public void searchConversationsWithMessageContent(ReadableMap optionsMap, Promise promise) {
+        try {
+            String searchContent = optionsMap.getString("searchContent");
+            if (searchContent == null) {
+                promise.reject("SEARCH_CONVERSATIONS_ERROR", "Search content is required");
+                return;
+            }
+
+            MessageQueryOptions.Builder builder = new MessageQueryOptions.Builder();
+            builder.setSearchContent(searchContent);
+
+            if (optionsMap.hasKey("senderUserIds")) {
+                ReadableArray senderUserIdsArray = optionsMap.getArray("senderUserIds");
+                if (senderUserIdsArray != null) {
+                    List<String> senderUserIds = new ArrayList<>();
+                    for (int i = 0; i < senderUserIdsArray.size(); i++) {
+                        senderUserIds.add(senderUserIdsArray.getString(i));
+                    }
+                    builder.setSenderUserIds(senderUserIds);
+                }
+            }
+
+            if (optionsMap.hasKey("contentTypes")) {
+                ReadableArray contentTypesArray = optionsMap.getArray("contentTypes");
+                if (contentTypesArray != null) {
+                    List<String> contentTypes = new ArrayList<>();
+                    for (int i = 0; i < contentTypesArray.size(); i++) {
+                        contentTypes.add(contentTypesArray.getString(i));
+                    }
+                    builder.setContentTypes(contentTypes);
+                }
+            }
+
+            if (optionsMap.hasKey("conversations")) {
+                ReadableArray conversationsArray = optionsMap.getArray("conversations");
+                if (conversationsArray != null) {
+                    List<Conversation> conversations = new ArrayList<>();
+                    for (int i = 0; i < conversationsArray.size(); i++) {
+                        conversations.add(convertMapToConversation(conversationsArray.getMap(i)));
+                    }
+                    builder.setConversations(conversations);
+                }
+            }
+
+            if (optionsMap.hasKey("states")) {
+                ReadableArray statesArray = optionsMap.getArray("states");
+                if (statesArray != null) {
+                    List<Message.MessageState> states = new ArrayList<>();
+                    for (int i = 0; i < statesArray.size(); i++) {
+                        int stateValue = (int) statesArray.getDouble(i);
+                        states.add(Message.MessageState.values()[stateValue]);
+                    }
+                    builder.setStates(states);
+                }
+            }
+
+            if (optionsMap.hasKey("direction")) {
+                int directionInt = optionsMap.getInt("direction");
+                Message.MessageDirection messageDirection = (directionInt == 2)
+                    ? Message.MessageDirection.RECEIVE
+                    : Message.MessageDirection.SEND;
+                builder.setDirection(messageDirection);
+            }
+
+            if (optionsMap.hasKey("conversationTypes")) {
+                ReadableArray conversationTypesArray = optionsMap.getArray("conversationTypes");
+                if (conversationTypesArray != null) {
+                    List<Conversation.ConversationType> conversationTypes = new ArrayList<>();
+                    for (int i = 0; i < conversationTypesArray.size(); i++) {
+                        int typeValue = (int) conversationTypesArray.getDouble(i);
+                        conversationTypes.add(Conversation.ConversationType.values()[typeValue - 1]);
+                    }
+                    builder.setConversationTypes(conversationTypes);
+                }
+            }
+
+            MessageQueryOptions options = builder.build();
+
+            JIM.getInstance().getMessageManager().searchConversationsWithMessageContent(
+                    options,
+                    new IMessageManager.ISearchConversationWithMessageContentCallback() {
+                        @Override
+                        public void onComplete(List<SearchConversationsResult> resultList) {
+                            WritableArray result = new WritableNativeArray();
+                            for (SearchConversationsResult searchResult : resultList) {
+                                WritableMap resultMap = new WritableNativeMap();
+                                resultMap.putInt("matchedCount", searchResult.getMatchedCount());
+                                resultMap.putMap("conversationInfo", convertConversationInfoToMap(searchResult.getConversationInfo()));
+                                result.pushMap(resultMap);
+                            }
+                            promise.resolve(result);
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            Log.e("JuggleIM", "searchConversationsWithMessageContent error: " + e.getMessage(), e);
+            promise.reject("SEARCH_CONVERSATIONS_ERROR", e.getMessage());
+        }
     }
 
     /**

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
 import MessageListScreen from '../screens/MessageListScreen';
@@ -17,6 +17,7 @@ import GroupAnnouncementScreen from '../screens/GroupAnnouncementScreen';
 import CreateGroupScreen from '../screens/CreateGroupScreen';
 import VideoCallScreen from '../screens/VideoCallScreen';
 import CallSelectMemberScreen from '../screens/CallSelectMemberScreen';
+import SearchScreen from '../screens/SearchScreen';
 import { Image } from 'react-native';
 import AddButton from '../components/AddButton';
 import { useNavigation } from '@react-navigation/native';
@@ -72,10 +73,22 @@ const MainTabNavigator = () => {
           headerShown: true,
           title: t('nav.conversation'),
           headerRight: () => (
-            <AddButton
-              onAddFriend={() => navigation.navigate('SearchFriends')}
-              onCreateGroup={() => navigation.navigate('CreateGroup')}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Search')}
+                style={{ marginRight: 12, padding: 4 }}
+              >
+                <Image
+                  source={require('../assets/icons/search.png')}
+                  style={{ width: 32, height: 32, tintColor: '#007AFF' }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+              <AddButton
+                onAddFriend={() => navigation.navigate('SearchFriends')}
+                onCreateGroup={() => navigation.navigate('CreateGroup')}
+              />
+            </View>
           ),
         }}
       />
@@ -149,6 +162,11 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen
         name="CallSelectMember"
         component={CallSelectMemberScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
