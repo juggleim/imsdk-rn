@@ -15,6 +15,8 @@ import CustomMenu from '../components/CustomMenu';
 import { Colors, Typography, Sizes, Spacing, ThemeUtils } from '../theme';
 // i18n support
 import { t } from '../i18n/config';
+// time format utility
+import { formatConversationTime } from '../utils/timeFormat';
 
 const ConversationItem = React.memo(({
   item,
@@ -27,7 +29,7 @@ const ConversationItem = React.memo(({
 }) => {
   const conversationId = item.conversation.conversationId;
   const conversationType = item.conversation.conversationType;
-  const time = new Date(item.lastMessage?.timestamp || Date.now()).toLocaleTimeString();
+  const time = formatConversationTime(item.lastMessage?.timestamp || Date.now());
   const name = item.name || "";
   const avatar = item.avatar || ""
   const itemRef = useRef<View>(null);
@@ -119,7 +121,9 @@ const ConversationItem = React.memo(({
             </Text>
             {!item.isMute && item.unreadCount > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{item.unreadCount}</Text>
+                <Text style={styles.badgeText}>
+                  {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                </Text>
               </View>
             )}
             {item.isMute && (
@@ -246,8 +250,8 @@ const ConversationListScreen = () => {
           );
         },
         onTotalUnreadMessageCountUpdate: count => {
-          // Update badge if needed
-          console.log('Total unread count:', count);
+          // Unread count is now managed by UnreadCountContext
+          console.log('Total unread count updated:', count);
         },
       },
     );
@@ -427,11 +431,11 @@ const styles = StyleSheet.create({
   badge: {
     backgroundColor: Colors.badge,
     borderRadius: Sizes.badge.borderRadius,
-    minWidth: Sizes.badge.width,
     height: Sizes.badge.height,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: ThemeUtils.moderateScale(6),
+    minWidth: ThemeUtils.moderateScale(20),
   },
   badgeText: {
     ...Typography.badge,

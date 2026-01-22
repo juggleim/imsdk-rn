@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import ConversationListScreen from '../screens/ConversationListScreen';
 import MessageListScreen from '../screens/MessageListScreen';
@@ -19,6 +20,7 @@ import CallSelectMemberScreen from '../screens/CallSelectMemberScreen';
 import { Image } from 'react-native';
 import AddButton from '../components/AddButton';
 import { useNavigation } from '@react-navigation/native';
+import { UnreadCountProvider, useUnreadCount } from '../contexts/UnreadCountContext';
 // i18n support
 import { t } from '../i18n/config';
 
@@ -27,6 +29,7 @@ const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
   const navigation = useNavigation<any>();
+  const { totalUnread } = useUnreadCount();
 
   return (
     <Tab.Navigator
@@ -42,7 +45,22 @@ const MainTabNavigator = () => {
           } else if (route.name === 'Me') {
             iconSource = require('../assets/icons/me.png');
           }
-          return <Image source={iconSource} style={{ width: size, height: size, tintColor: color }} />;
+
+          // 显示未读数红点（仅在 Chats 标签）
+          const showBadge = route.name === 'Chats' && totalUnread > 0;
+
+          return (
+            <View style={styles.iconContainer}>
+              <Image source={iconSource} style={{ width: size, height: size, tintColor: color }} />
+              {showBadge && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
         },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
@@ -138,3 +156,31 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
 };
 
 export default AppNavigator;
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    position: 'relative',
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    // 增加 minWidth 以确保能完整显示 "99+"
+    minWidth: 30,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    lineHeight: 20,
+  },
+});

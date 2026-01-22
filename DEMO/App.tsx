@@ -10,6 +10,7 @@ import { TextCardMessage } from './src/messages/TextCardMessage';
 import { BusinessCardMessage } from './src/messages/BusinessCardMessage';
 import { GroupNotifyMessage } from './src/messages/GroupNotifyMessage';
 import { FriendNotifyMessage } from './src/messages/FriendNotifyMessage';
+import { UnreadCountProvider } from './src/contexts/UnreadCountContext';
 // 注册消息渲染器
 import './src/message-renderers';
 // i18n support
@@ -52,9 +53,11 @@ const App = () => {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <AppNavigator initialRouteName={initialRoute} />
-      </NavigationContainer>
+      <UnreadCountProvider>
+        <NavigationContainer>
+          <AppNavigator initialRouteName={initialRoute} />
+        </NavigationContainer>
+      </UnreadCountProvider>
     </SafeAreaProvider>
   );
 };

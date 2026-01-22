@@ -69,7 +69,6 @@ export const Typography = {
   },
   badge: {
     fontSize: moderateScale(12),
-    fontWeight: 'bold' as const,
     color: Colors.text.white,
   },
   // 按钮字体
