@@ -484,6 +484,36 @@ export interface SendMessageObject {
     // 引用消息ID
     referredMessageId?: string;
 }
+
+/**
+ * 保存消息选项
+ * @property {MessageMentionInfo} [mentionInfo] - 消息提及信息
+ * @property {string} [referredMessageId] - 引用的消息ID
+ * @property {PushData} [pushData] - 推送数据
+ * @property {number} [lifeTime] - 消息生命周期（毫秒）
+ * @property {number} [lifeTimeAfterRead] - 消息阅读后生命周期（毫秒）
+ */
+export interface SaveMessageOptions {
+    mentionInfo?: MessageMentionInfo;
+    referredMessageId?: string;
+    pushData?: PushData;
+    lifeTime?: number;
+    lifeTimeAfterRead?: number;
+}
+
+/**
+ * 保存消息实体对象
+ * @property {Conversation} conversation - 会话对象
+ * @property {MessageContent} content - 消息内容
+ * @property {SaveMessageOptions} [options] - 消息扩展选项
+ * @property {number} [direction] - 消息方向: 1-发送, 2-接收
+ */
+export interface SaveMessageObject {
+    conversation: Conversation;
+    content: MessageContent;
+    options?: SaveMessageOptions;
+    direction?: number;
+}
 /**
  * 连接状态监听器回调函数
  * @param {ConnectionStatus} status - 连接状态

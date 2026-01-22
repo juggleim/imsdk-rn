@@ -796,6 +796,43 @@ class JuggleIM {
   }
 
   /**
+   * 保存消息到本地数据库
+   * 场景：在客户端本地插入一条消息，消息不需要发送出去
+   * @param {Object} message - 保存消息对象
+   * @param {Object} message.conversation - 会话对象
+   * @param {Object} message.content - 消息内容
+   * @param {Object} [message.options] - 消息扩展选项
+   * @param {number} [message.direction=1] - 消息方向: 1-发送, 2-接收
+   * @returns {Promise<Message>} - 保存的消息对象
+   * @example
+   * ```javascript
+   * const message = {
+   *   conversation: {
+   *     conversationType: 1,
+   *     conversationId: 'user123'
+   *   },
+   *   content: new TextMessageContent('Hello'),
+   *   options: {
+   *     pushData: { content: 'New message', extra: '' }
+   *   },
+   *   direction: 1
+   * };
+   * const savedMessage = await JuggleIM.saveMessage(message);
+   * ```
+   */
+  static async saveMessage(message) {
+    console.log("saveMessage message:", message);
+
+    try {
+      const savedMsg = await JMI.saveMessage(message);
+      return this.buildMessageInfo(savedMsg);
+    } catch (error) {
+      console.error("saveMessage error:", error);
+      throw error;
+    }
+  }
+
+  /**
    * 发送图片消息
    * @param {Object} message - 图片消息内容
    * @param {Object} callback - 回调对象

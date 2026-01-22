@@ -1202,6 +1202,102 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 保存消息到本地数据库
+     * @param messageMap 消息内容字典，包含 conversation、content、options、direction
+     * @param promise Promise回调
+     */
+    @ReactMethod
+    public void saveMessage(ReadableMap messageMap, Promise promise) {
+        try {
+            // 获取会话
+            ReadableMap conversationMap = messageMap.getMap("conversation");
+            if (conversationMap == null) {
+                promise.reject("SAVE_MESSAGE_ERROR", "Conversation is required");
+                return;
+            }
+            Conversation conversation = convertMapToConversation(conversationMap);
+
+            // 获取消息内容
+            ReadableMap contentMap = messageMap.getMap("content");
+            if (contentMap == null) {
+                promise.reject("SAVE_MESSAGE_ERROR", "Message content is required");
+                return;
+            }
+            MessageContent content = convertMapToMessageContent(contentMap);
+
+            // 获取消息方向，默认为1（发送）
+            int direction = 1; // Default: sent
+            if (messageMap.hasKey("direction")) {
+                direction = (int) messageMap.getDouble("direction");
+            }
+
+            // 构建MessageOptions（可选）
+            MessageOptions options = null;
+            if (messageMap.hasKey("options")) {
+                ReadableMap optionsMap = messageMap.getMap("options");
+                if (optionsMap != null) {
+                    options = new MessageOptions();
+                    PushData pushData = convertMapToPushDataFromMap(optionsMap);
+                    if (pushData != null) {
+                        options.setPushData(pushData);
+                    }
+                    if (optionsMap.hasKey("mentionInfo")) {
+                        ReadableMap mentionInfoMap = optionsMap.getMap("mentionInfo");
+                        if (mentionInfoMap != null) {
+                            MessageMentionInfo mentionInfo = convertMapToMentionInfo(mentionInfoMap);
+                            options.setMentionInfo(mentionInfo);
+                        }
+                    }
+                    if (optionsMap.hasKey("referredMessageId")) {
+                        options.setReferredMessageId(optionsMap.getString("referredMessageId"));
+                    }
+                }
+            }
+
+            // 调用原生SDK保存消息
+            Message savedMessage;
+            if (options != null) {
+                savedMessage = JIM.getInstance().getMessageManager().saveMessage(content, conversation, options);
+            } else {
+                savedMessage = JIM.getInstance().getMessageManager().saveMessage(content, conversation);
+            }
+
+            // 设置消息方向 (convert int to MessageDirection enum)
+            Message.MessageDirection messageDirection = (direction == 2)
+                ? Message.MessageDirection.RECEIVE
+                : Message.MessageDirection.SEND;
+            savedMessage.setDirection(messageDirection);
+
+            WritableMap result = convertMessageToMap(savedMessage);
+            promise.resolve(result);
+        } catch (Exception e) {
+            Log.e("JuggleIM", "saveMessage error: " + e.getMessage(), e);
+            promise.reject("SAVE_MESSAGE_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * 从options字典中转换PushData
+     */
+    private PushData convertMapToPushDataFromMap(ReadableMap optionsMap) {
+        if (!optionsMap.hasKey("pushData")) {
+            return null;
+        }
+        ReadableMap pushDataMap = optionsMap.getMap("pushData");
+        if (pushDataMap == null) {
+            return null;
+        }
+        PushData pushData = new PushData();
+        if (pushDataMap.hasKey("content")) {
+            pushData.setContent(pushDataMap.getString("content"));
+        }
+        if (pushDataMap.hasKey("extra")) {
+            pushData.setExtra(pushDataMap.getString("extra"));
+        }
+        return pushData;
+    }
+
+    /**
      * 根据clientMsgNo列表删除消息
      */
     @ReactMethod

@@ -18,6 +18,7 @@ import {
   ConversationTagOptions,
   SendMessageObject,
   SendMessageCallback,
+  SaveMessageObject,
   Message,
   MessageContent,
   MergeMessageContent,
@@ -293,6 +294,32 @@ export default class JuggleIM {
   static sendMessage(
     message: SendMessageObject,
     callback?: SendMessageCallback
+  ): Promise<Message>;
+
+  /**
+   * 保存消息到本地数据库
+   * 场景：在客户端本地插入一条消息，消息不需要发送出去
+   * 
+   * @param {SaveMessageObject} message 保存消息对象
+   * @returns {Promise<Message>} 保存的消息对象
+   * @example
+   * ```typescript
+   * const message = {
+   *   conversation: {
+   *     conversationType: 1,
+   *     conversationId: 'user123'
+   *   },
+   *   content: new TextMessageContent('Hello'),
+   *   options: {
+   *     pushData: { content: 'New message', extra: '' }
+   *   },
+   *   direction: 1 // 1-发送, 2-接收
+   * };
+   * const savedMessage = await JuggleIM.saveMessage(message);
+   * ```
+   */
+  static saveMessage(
+    message: SaveMessageObject
   ): Promise<Message>;
 
 

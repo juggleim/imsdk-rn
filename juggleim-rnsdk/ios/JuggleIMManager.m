@@ -1067,6 +1067,72 @@ RCT_EXPORT_METHOD(sendMessage : (NSDictionary *)messageDict messageId : (
 }
 
 /**
+ * 保存消息到本地数据库
+ */
+RCT_EXPORT_METHOD(saveMessage : (NSDictionary *)messageDict resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+  @try {
+    // 获取会话
+    NSDictionary *conversationDict = messageDict[@"conversation"];
+    if (!conversationDict) {
+      reject(@"SAVE_MESSAGE_ERROR", @"Conversation is required", nil);
+      return;
+    }
+    JConversation *conversation = [self convertDictionaryToConversation:conversationDict];
+
+    // 获取消息内容
+    NSDictionary *contentDict = messageDict[@"content"];
+    if (!contentDict) {
+      reject(@"SAVE_MESSAGE_ERROR", @"Message content is required", nil);
+      return;
+    }
+    JMessageContent *content = [self convertDictToMessageContent:contentDict];
+
+    // 获取消息方向，默认为1（发送）
+    NSInteger direction = 1; // Default: sent
+    if (messageDict[@"direction"]) {
+      direction = [messageDict[@"direction"] integerValue];
+    }
+
+    // 构建MessageOptions（可选）
+    JMessageOptions *options = nil;
+    if (messageDict[@"options"]) {
+      NSDictionary *optionsDict = messageDict[@"options"];
+      if (optionsDict) {
+        options = [[JMessageOptions alloc] init];
+        if (optionsDict[@"mentionInfo"]) {
+          options.mentionInfo = [self convertDictToMessageMentionInfo:optionsDict[@"mentionInfo"]];
+        }
+        if (optionsDict[@"referredMessageId"]) {
+          options.referredMsgId = optionsDict[@"referredMessageId"];
+        }
+        if (optionsDict[@"pushData"]) {
+          options.pushData = [self convertDictToPushData:optionsDict[@"pushData"]];
+        }
+      }
+    }
+
+    // 调用原生SDK保存消息
+    JMessage *savedMessage;
+    if (options) {
+      savedMessage = [JIM.shared.messageManager saveMessage:content
+                                               messageOption:options
+                                              inConversation:conversation
+                                                   direction:(JMessageDirection)direction];
+    } else {
+      savedMessage = [JIM.shared.messageManager saveMessage:content
+                                              inConversation:conversation
+                                                   direction:(JMessageDirection)direction];
+    }
+
+    NSMutableDictionary *result = [self convertMessageToDictionary:savedMessage];
+    resolve(result);
+  } @catch (NSException *exception) {
+    reject(@"SAVE_MESSAGE_ERROR", exception.reason, nil);
+  }
+}
+
+/**
  * 发送图片消息
  */
 RCT_EXPORT_METHOD(sendImageMessage : (NSDictionary *)messageDict messageId : (
