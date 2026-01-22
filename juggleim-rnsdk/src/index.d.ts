@@ -29,7 +29,8 @@ import {
   MessageResponse,
   GroupInfo,
   GroupMember,
-  UserInfo
+  UserInfo,
+  MessageFlag,
 } from './types';
 
 /**

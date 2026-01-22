@@ -1480,7 +1480,14 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     NSString *contenType = messageDict[@"contentType"];
     NSError *error = nil;
     JUnknownMessage *unknown = [JUnknownMessage new];
-    unknown.flags = JMessageFlagIsSave | JMessageFlagIsCountable;
+
+    // 从 messageDict 中读取 flag，如果没有设置则使用默认值
+    int flag = JMessageFlagIsSave | JMessageFlagIsCountable;
+    if (messageDict[@"flag"] && [messageDict[@"flag"] isKindOfClass:[NSNumber class]]) {
+      flag = [messageDict[@"flag"] intValue];
+    }
+    unknown.flags = flag;
+
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:messageDict
                                                        options:0
                                                          error:&error];

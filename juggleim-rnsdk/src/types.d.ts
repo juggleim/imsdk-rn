@@ -11,6 +11,24 @@ export type ConnectionStatus =
     | "dbClose";
 
 /**
+ * 消息标志枚举
+ * 支持使用或（|）操作组合多个标志
+ * 
+ * 如果使用自定义消息，不设置flag，默认都是 计数+存储
+ */
+export enum MessageFlag {
+    NONE = 0,
+    IS_CMD = 1, // 命令式消息：保证到达率，但不存储不计数
+    IS_COUNTABLE = 2, // 计数消息：页面会显示未读数
+    IS_STATUS = 4, // 状态消息：不保证到达率，例如输入状态
+    IS_SAVE = 8, // 存储型消息
+    IS_MODIFIED = 16, // 编辑型消息
+    IS_MERGED = 32, // 合并消息
+    IS_MUTE = 64, //静默消息：不通知/不推送
+    IS_BROADCAST = 128, //广播消息：可以对多会话/多人发消息，但不会改变会话的sortTime
+}
+
+/**
  * 会话类型
  */
 export enum ConversationType {
@@ -34,9 +52,11 @@ export interface Conversation {
  * 消息内容基类
  * @property {string} contentType - 消息内容类型
  *           枚举：jg:text, jg:img, jg:file, jg:voice
+ * 
  */
 export abstract class MessageContent {
     contentType: string;
+    flag?: number;
 }
 
 /**

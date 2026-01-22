@@ -583,7 +583,13 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             JSONObject jsonObject = convertReadableMapToJSON(map);
             String jsonStr = jsonObject.toString();
             UnknownMessage customMsg = new UnknownMessage();
-            customMsg.setFlags(MessageFlag.IS_SAVE.getValue() | MessageFlag.IS_COUNTABLE.getValue());
+
+            // 从 map 中读取 flag，如果没有设置则使用默认值
+            int flag = MessageFlag.IS_SAVE.getValue() | MessageFlag.IS_COUNTABLE.getValue();
+            if (map.hasKey("flag") && !map.isNull("flag")) {
+                flag = (int) map.getDouble("flag");
+            }
+            customMsg.setFlags(flag);
             customMsg.setContent(jsonStr);
             return customMsg;
         } catch (JSONException e) {
