@@ -202,13 +202,13 @@ export class VoiceMessageContent extends MessageContent {
  * 通话结束通知消息内容: jg:callfinishntf
  * @property {number} reason - 结束原因
  * @property {number} duration - 通话时长，单位秒
- * @property {number} mediaType - 媒体类型: 0-语音, 1-视频
+ * @property {number} media_type - 媒体类型: 0-语音, 1-视频
  */
 export class CallFinishNotifyMessageContent extends MessageContent {
     contentType: string;
     reason?: number;
     duration?: number;
-    mediaType?: number;
+    media_type?: number;
 }
 
 

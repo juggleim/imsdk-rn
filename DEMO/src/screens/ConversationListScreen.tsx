@@ -56,6 +56,12 @@ const ConversationItem = React.memo(({
       case 'jg:voice':
         c = '[Voice]';
         break;
+      case 'jg:callfinishntf': {
+        const callContent = item.lastMessage?.content as any;
+        const media_type = callContent?.media_type;
+        c = media_type === 1 ? '[视频通话]' : '[语音通话]';
+        break;
+      }
       case 'jgd:grpntf':
         return '[群通知]';
       case 'jgd:friendntf':

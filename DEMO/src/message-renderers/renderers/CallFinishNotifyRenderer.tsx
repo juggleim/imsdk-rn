@@ -7,7 +7,7 @@ import { MessageRendererProps, MessageRenderMode } from '../types';
 interface CallFinishNotifyContent {
   reason?: number;
   duration?: number;
-  mediaType?: number;
+  media_type?: number;
 }
 
 /**
@@ -30,17 +30,24 @@ export class CallFinishNotifyRenderer extends BaseMessageRenderer {
         ? `${minutes > 0 ? `${minutes}分` : ''}${seconds}秒`
         : '通话未接通';
 
-    const getCallTypeText = (mediaType?: number): string => {
-      return (mediaType === 1 ? '视频' : '语音') + '通话';
+    const getCallTypeText = (media_type?: number): string => {
+      return (media_type === 1 ? '视频通话' : '语音通话');
     };
 
-    const callType = getCallTypeText(callContent.mediaType);
+    const getCallIcon = (media_type?: number): any => {
+      return media_type === 1
+        ? require('../../assets/icons/video_call.png')
+        : require('../../assets/icons/call.png');
+    };
+
+    const callType = getCallTypeText(callContent.media_type);
+    const callIcon = getCallIcon(callContent.media_type);
 
     return (
       <View style={styles.callContainer}>
         <View style={styles.callHeader}>
           <Image
-            source={require('../../assets/icons/call.png')}
+            source={callIcon}
             style={[styles.callIcon, isOutgoing ? styles.outgoingIcon : styles.incomingIcon]}
           />
           <Text style={[styles.callType, isOutgoing ? styles.outgoingText : styles.incomingText]}>
@@ -75,12 +82,12 @@ const styles = StyleSheet.create({
   callContainer: {
     flexDirection: 'column',
     minWidth: 120,
-    alignItems: 'center',
+    paddingVertical: 4,
   },
   callHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   callIcon: {
     width: 20,
@@ -88,38 +95,39 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   outgoingIcon: {
-    tintColor: 'rgba(0,0,0,0.6)',
+    tintColor: 'rgba(255,255,255,0.9)',
   },
   incomingIcon: {
     tintColor: '#666',
   },
   callType: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   callBody: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   callDuration: {
     fontSize: 13,
   },
   callTimestamp: {
     fontSize: Platform.OS === 'android' ? 10 : 11,
+    marginTop: 2,
   },
   outgoingText: {
-    color: '#000',
+    color: '#fff',
   },
   incomingText: {
     color: '#141414',
   },
   outgoingPreview: {
-    color: 'rgba(0,0,0,0.6)',
+    color: 'rgba(255,255,255,0.85)',
   },
   incomingPreview: {
     color: '#666',
   },
   outgoingTimestamp: {
-    color: 'rgba(0,0,0,0.45)',
+    color: 'rgba(255,255,255,0.7)',
   },
   incomingTimestamp: {
     color: 'rgba(0,0,0,0.45)',
