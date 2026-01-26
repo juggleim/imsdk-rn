@@ -52,11 +52,26 @@ const ContactsScreen = () => {
         </View>
     );
 
+    const handleFriendPress = (friend: Friend) => {
+        navigation.navigate('MessageList', {
+            conversation: {
+                conversationType: 1, // PRIVATE chat
+                conversationId: friend.user_id,
+            },
+            title: friend.nickname,
+            unreadCount: 0,
+        });
+    };
+
     const renderItem = ({ item }: { item: Friend }) => (
-        <View style={styles.itemContainer}>
+        <TouchableOpacity
+            style={styles.itemContainer}
+            onPress={() => handleFriendPress(item)}
+            activeOpacity={0.7}
+        >
             <Image source={item.avatar ? { uri: item.avatar } : require('../assets/icons/avatar.png')} style={styles.avatar} />
             <Text style={styles.nickname}>{item.nickname}</Text>
-        </View>
+        </TouchableOpacity>
     );
 
     return (

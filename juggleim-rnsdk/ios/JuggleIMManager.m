@@ -489,7 +489,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     JCallFinishNotifyMessage *callFinishMsg = (JCallFinishNotifyMessage *)content;
     dict[@"reason"] = @(callFinishMsg.finishType);
     dict[@"duration"] = @(callFinishMsg.duration);
-    dict[@"mediaType"] = @(callFinishMsg.mediaType);
+    dict[@"media_type"] = @(callFinishMsg.mediaType);
   } else if (self.customMessageTypes[contentType]) {
     // 处理自定义消息:解析 JSON 数据
     JUnknownMessage *customMsg = (JUnknownMessage *)content;
