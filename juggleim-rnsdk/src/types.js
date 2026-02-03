@@ -137,10 +137,11 @@ export class VoiceMessageContent extends MessageContent {
  * 流式文本消息内容
  */
 export class StreamTextMessageContent extends MessageContent {
-    constructor(content = "", isFinished = false) {
+    constructor(content = "", isFinished = false, seq = 0) {
         super();
         this.contentType = "jg:streamtext";
         this.content = content;
         this.isFinished = isFinished;
+        this.seq = seq; 
     }
 }

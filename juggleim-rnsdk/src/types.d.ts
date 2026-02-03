@@ -216,13 +216,15 @@ export class CallFinishNotifyMessageContent extends MessageContent {
  * 流式消息用于AI助手等场景，消息内容会分片追加
  * @property {string} content - 消息内容
  * @property {boolean} isFinished - 是否完成
+ * @property {number} seq - 流式消息序号
  */
 export class StreamTextMessageContent extends MessageContent {
     contentType: string;
     content: string;
     isFinished: boolean;
+    seq: number;
 
-    constructor(content?: string, isFinished?: boolean);
+    constructor(content?: string, isFinished?: boolean, seq?: number);
 }
 
 

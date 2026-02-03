@@ -130,6 +130,8 @@ const unsubscribe = JuggleIM.addMessageDestroyListener('destroy_listener_key', {
 ### 流式消息监听
 
 流式消息用于 AI 助手等场景，支持实时文本流式输出。
+如果要做打字效果，可以将消息 StreamTextMessageContent 放在一个队列中，
+入对通过append不断追加，出队可以逐字处理
 
 ```javascript
 /**
@@ -159,6 +161,22 @@ const unsubscribe = JuggleIM.addStreamMessageListener('stream_listener_key', {
 
 // 取消监听
 // unsubscribe();
+
+/**
+ * 流式文本消息内容: jg:streamtext
+ * 流式消息用于AI助手等场景，消息内容会分片追加
+ * @property {string} content - 消息内容
+ * @property {boolean} isFinished - 是否完成
+ * @property {number} seq - 流式消息序号
+ */
+export class StreamTextMessageContent extends MessageContent {
+    contentType: string;
+    content: string;
+    isFinished: boolean;
+    seq: number;
+}
+
+
 ```
 
 ### 会话监听

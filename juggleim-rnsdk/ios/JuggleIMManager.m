@@ -515,6 +515,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     JStreamTextMessage *streamMsg = (JStreamTextMessage *)content;
     dict[@"content"] = streamMsg.content ?: @"";
     dict[@"isFinished"] = @(streamMsg.isFinished);
+    dict[@"seq"] = @(streamMsg.seq);
   } else if ([content isKindOfClass:[JMergeMessage class]]) {
     JMergeMessage *mergeMsg = (JMergeMessage *)content;
     dict[@"title"] = mergeMsg.title ?: @"";
