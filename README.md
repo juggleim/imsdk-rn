@@ -133,7 +133,18 @@ const unsubscribe = JuggleIM.addMessageDestroyListener('destroy_listener_key', {
 如果要做打字效果，可以将消息 StreamTextMessageContent 放在一个队列中，
 入对通过append不断追加，出队可以逐字处理
 
+* 收到消息后如果是流消息 jg:streamtext，且未完成
+* 之后的流消息通过 onStreamTextMessageAppend 追加通知
+* 直到流消息完成 onStreamTextMessageComplete 通知
+
 ```javascript
+
+// 接收消息监听
+JuggleIM.addMessageListener('MessageListScreen', {
+      onMessageReceive: (message: Message) => {
+}})
+
+
 /**
  * 流式消息监听器
  * 用于监听流式消息的追加和完成事件
