@@ -211,6 +211,20 @@ export class CallFinishNotifyMessageContent extends MessageContent {
     media_type?: number;
 }
 
+/**
+ * 流式文本消息内容: jg:streamtext
+ * 流式消息用于AI助手等场景，消息内容会分片追加
+ * @property {string} content - 消息内容
+ * @property {boolean} isFinished - 是否完成
+ */
+export class StreamTextMessageContent extends MessageContent {
+    contentType: string;
+    content: string;
+    isFinished: boolean;
+
+    constructor(content?: string, isFinished?: boolean);
+}
+
 
 /**
  * 消息对象
@@ -639,6 +653,25 @@ export interface MessageDestroyListener {
         conversation: Conversation,
         destroyTime: number
     ) => void;
+}
+
+/**
+ * 流式消息监听器回调函数
+ * 用于监听流式消息的追加和完成事件
+ */
+export interface StreamMessageListener {
+    /**
+     * 流式消息分片追加的回调
+     * @param messageId 流式消息的消息 id
+     * @param content 分片追加的内容，开发者可以在界面上把 content 追加到 StreamTextMessage 的 content 尾部
+     */
+    onStreamTextMessageAppend?: (messageId: string, content: string) => void;
+    
+    /**
+     * 流式消息完成的回调
+     * @param message 追加完成的流式消息，开发者可以根据 messageId 找到界面上对应的流式消息进行界面刷新
+     */
+    onStreamTextMessageComplete?: (message: Message) => void;
 }
 
 /**

@@ -7,7 +7,8 @@
  */
 @interface JuggleIMManager () <JConnectionDelegate, JMessageDelegate,
                                JMessageReadReceiptDelegate,
-                               JMessageDestroyDelegate, JConversationDelegate>
+                               JMessageDestroyDelegate, JConversationDelegate,
+                               JStreamMessageDelegate>
 
 // 自定义消息类型注册表
 @property(nonatomic, strong) NSMutableDictionary *customMessageTypes;
@@ -79,7 +80,9 @@ RCT_EXPORT_METHOD(disconnect : (BOOL)pushable) {
     @"onMediaMessageProgress",
     @"onMediaMessageSent",
     @"onMediaMessageSentError",
-    @"onMediaMessageCancelled"
+    @"onMediaMessageCancelled",
+    @"StreamTextMessageAppend",
+    @"StreamTextMessageComplete"
   ];
 }
 
@@ -109,6 +112,13 @@ RCT_EXPORT_METHOD(addMessageReadReceiptDelegate) {
  */
 RCT_EXPORT_METHOD(addMessageDestroyDelegate) {
   [JIM.shared.messageManager addDestroyDelegate:self];
+}
+
+/**
+ * 添加流式消息监听器
+ */
+RCT_EXPORT_METHOD(addStreamMessageDelegate) {
+  [JIM.shared.messageManager addStreamMessageDelegate:self];
 }
 
 /**
@@ -322,6 +332,30 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
                      }];
 }
 
+#pragma mark - JStreamMessageDelegate
+
+/**
+ * 流式消息分片追加的回调
+ */
+- (void)streamTextMessageDidAppend:(NSString *)messageId
+                           content:(NSString *)content {
+  [self sendEventWithName:@"StreamTextMessageAppend"
+                     body:@{
+                       @"messageId" : messageId,
+                       @"content" : content
+                     }];
+}
+
+/**
+ * 流式消息完成的回调
+ */
+- (void)streamTextMessageDidComplete:(JMessage *)message {
+  [self sendEventWithName:@"StreamTextMessageComplete"
+                     body:@{
+                       @"message" : [self convertMessageToDictionary:message]
+                     }];
+}
+
 #pragma mark - JConversationDelegate
 
 /**
@@ -477,6 +511,10 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
+  } else if ([content isKindOfClass:[JStreamTextMessage class]]) {
+    JStreamTextMessage *streamMsg = (JStreamTextMessage *)content;
+    dict[@"content"] = streamMsg.content ?: @"";
+    dict[@"isFinished"] = @(streamMsg.isFinished);
   } else if ([content isKindOfClass:[JMergeMessage class]]) {
     JMergeMessage *mergeMsg = (JMergeMessage *)content;
     dict[@"title"] = mergeMsg.title ?: @"";
@@ -1634,6 +1672,11 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     voice.localPath = messageDict[@"localPath"];
     voice.duration = [messageDict[@"duration"] integerValue];
     return voice;
+  } else if ([contentType isEqualToString:@"jg:streamtext"]) {
+    JStreamTextMessage *streamText = [[JStreamTextMessage alloc] init];
+    streamText.content = messageDict[@"content"] ?: @"";
+    streamText.isFinished = [messageDict[@"isFinished"] boolValue];
+    return streamText;
   } else if ([contentType isEqualToString:@"jg:merge"]) {
     NSString *title = messageDict[@"title"];
     JConversation *conversation =

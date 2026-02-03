@@ -67,6 +67,7 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     private Map<String, IMessageManager.IMessageListener> messageListeners = new HashMap<>();
     private Map<String, IMessageManager.IMessageReadReceiptListener> readReceiptListeners = new HashMap<>();
     private Map<String, IConversationManager.IConversationListener> conversationListeners = new HashMap<>();
+    private Map<String, IMessageManager.IStreamMessageListener> streamMessageListeners = new HashMap<>();
 
     // 自定义消息类型注册表
     private Map<String, String> customMessageTypes = new HashMap<>();
@@ -430,6 +431,57 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 流式消息监听器
+     * 用于监听流式消息的追加和完成事件
+     *
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void addStreamMessageListener(String key) {
+        IMessageManager.IStreamMessageListener listener = new IMessageManager.IStreamMessageListener() {
+            /**
+             * 流式消息分片追加的回调
+             * @param messageId 流式消息的消息 id
+             * @param content 分片追加的内容，开发者可以在界面上把 content 追加到 StreamTextMessage 的 content 尾部
+             */
+            @Override
+            public void onStreamTextMessageAppend(String messageId, String content) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putString("messageId", messageId);
+                params.putString("content", content);
+                sendEvent("StreamTextMessageAppend", params);
+            }
+
+            /**
+             * 流式消息完成的回调
+             * @param message 追加完成的流式消息，开发者可以根据 messageId 找到界面上对应的流式消息进行界面刷新
+             */
+            @Override
+            public void onStreamTextMessageComplete(Message message) {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                params.putMap("message", convertMessageToMap(message));
+                sendEvent("StreamTextMessageComplete", params);
+            }
+        };
+
+        streamMessageListeners.put(key, listener);
+        com.juggle.im.JIM.getInstance().getMessageManager().addStreamMessageListener(key, listener);
+    }
+
+    /**
+     * 移除流式消息监听器
+     *
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void removeStreamMessageListener(String key) {
+        streamMessageListeners.remove(key);
+        com.juggle.im.JIM.getInstance().getMessageManager().removeStreamMessageListener(key);
+    }
+
+    /**
      * 将消息对象转换为Map
      */
     private WritableMap convertMessageToMap(Message message) {
@@ -507,6 +559,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("localPath", img.getLocalPath());
             map.putString("thumbnailLocalPath", img.getThumbnailLocalPath());
             map.putString("thumbnailUrl", img.getThumbnailUrl());
+        } else if (content instanceof StreamTextMessage) {
+            StreamTextMessage streamText = (StreamTextMessage) content;
+            map.putBoolean("isFinished", streamText.isFinished());
         }
         return map;
     }
@@ -539,6 +594,15 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 voice.setLocalPath(map.getString("localPath"));
                 voice.setDuration(map.getInt("duration"));
                 return voice;
+            case "jg:streamtext":
+                StreamTextMessage streamText = new StreamTextMessage();
+                if (map.hasKey("content")) {
+                    streamText.setContent(map.getString("content"));
+                }
+                if (map.hasKey("isFinished")) {
+                    streamText.setFinished(map.getBoolean("isFinished"));
+                }
+                return streamText;
             case "jg:merge":
                 String title = map.getString("title");
                 Conversation conversation = convertMapToConversation(map.getMap("conversation"));

@@ -340,6 +340,57 @@ class JuggleIM {
   }
 
   /**
+   * 添加流式消息监听器
+   * 用于监听流式消息的追加和完成事件
+   * @param {string} key - 监听器标识
+   * @param {Object} listener - 监听器回调函数对象
+   * @param {function} listener.onStreamTextMessageAppend - 流式消息分片追加回调
+   * @param {function} listener.onStreamTextMessageComplete - 流式消息完成回调
+   * @returns {function} 返回取消监听的函数
+   */
+  static addStreamMessageListener(key, listener) {
+    if (Platform.OS === "android") {
+      JMI.addStreamMessageListener(key);
+    } else if (Platform.OS === "ios") {
+      JMI.addStreamMessageDelegate();
+    }
+
+    const subscriptions = [];
+
+    // 流式消息分片追加监听
+    if (listener.onStreamTextMessageAppend) {
+      const subscription = juggleIMEmitter.addListener(
+        "StreamTextMessageAppend",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onStreamTextMessageAppend(event.messageId, event.content);
+        }
+      );
+      subscriptions.push(subscription);
+    }
+
+    // 流式消息完成监听
+    if (listener.onStreamTextMessageComplete) {
+      const subscription = juggleIMEmitter.addListener(
+        "StreamTextMessageComplete",
+        (event) => {
+          if (Platform.OS === "android" && event.key !== key) return;
+          listener.onStreamTextMessageComplete(event.message);
+        }
+      );
+      subscriptions.push(subscription);
+    }
+
+    // 返回取消监听的函数
+    return () => {
+      subscriptions.forEach((subscription) => subscription.remove());
+      if (Platform.OS === "android") {
+        JMI.removeStreamMessageListener(key);
+      }
+    };
+  }
+
+  /**
    * 添加会话监听器
    * @param {string} key - 监听器标识
    * @param {object} listener - 监听器回调函数对象

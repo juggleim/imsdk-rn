@@ -21,6 +21,7 @@ import { VideoMessageRenderer } from './renderers/VideoMessageRenderer';
 import { RecallMessageRenderer } from './renderers/RecallMessageRenderer';
 import { MergeMessageRenderer } from './renderers/MergeMessageRenderer';
 import { CallFinishNotifyRenderer } from './renderers/CallFinishNotifyRenderer';
+import { StreamTextMessageRenderer } from './renderers/StreamTextMessageRenderer';
 
 // Demo 自定义消息渲染器
 import { TextCardMessageRenderer } from './renderers/TextCardMessageRenderer';
@@ -46,6 +47,7 @@ export function registerBuiltinRenderers() {
   messageRendererRegistry.register({ renderer: new CallFinishNotifyRenderer() });
   messageRendererRegistry.register({ renderer: new MergeMessageRenderer() });
   messageRendererRegistry.register({ renderer: new RecallMessageRenderer() });
+  messageRendererRegistry.register({ renderer: new StreamTextMessageRenderer() });
 
   // Demo 自定义消息（优先级 50-60）
   messageRendererRegistry.register({ renderer: new TextCardMessageRenderer() });
@@ -75,6 +77,7 @@ export { VideoMessageRenderer } from './renderers/VideoMessageRenderer';
 export { RecallMessageRenderer } from './renderers/RecallMessageRenderer';
 export { MergeMessageRenderer } from './renderers/MergeMessageRenderer';
 export { CallFinishNotifyRenderer } from './renderers/CallFinishNotifyRenderer';
+export { StreamTextMessageRenderer } from './renderers/StreamTextMessageRenderer';
 export { TextCardMessageRenderer } from './renderers/TextCardMessageRenderer';
 export { BusinessCardMessageRenderer } from './renderers/BusinessCardMessageRenderer';
 export { SystemMessageRenderer } from './renderers/SystemMessageRenderer';

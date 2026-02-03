@@ -15,6 +15,7 @@ import JuggleIM, {
   ImageMessageContent,
   VoiceMessageContent,
   FileMessageContent,
+  StreamTextMessageContent,
   SendMessageObject,
   MessageMentionInfo,
   UserInfo,
@@ -107,7 +108,14 @@ const MessageListScreen = () => {
       if (conversation.conversationType === 2) { // GROUP
         const groupInfo = await UserInfoManager.getGroupInfo(conversation.conversationId);
         if (groupInfo && groupInfo.members) {
-          setGroupMembers(groupInfo.members);
+          // 添加一个固定的AI Bot到群组成员列表
+          const botMember: GroupMember = {
+            user_id: 'ai_bot',
+            nickname: 'AI助手',
+            avatar: '',
+            role: 0
+          };
+          setGroupMembers([botMember, ...groupInfo.members]);
         }
       }
     };
@@ -160,9 +168,39 @@ const MessageListScreen = () => {
       }
     })
 
+    // 添加流式消息监听器
+    const streamMsgListener = JuggleIM.addStreamMessageListener('MessageListScreen', {
+      onStreamTextMessageAppend: (messageId: string, content: string) => {
+        console.log('流式消息追加:', messageId, content);
+        // 在消息列表中找到对应的消息，追加内容
+        setMessages(prev =>
+          prev.map(m => {
+            if (m.messageId === messageId && m.content.contentType === 'jg:streamtext') {
+              return {
+                ...m,
+                content: {
+                  ...m.content,
+                  content: (m.content as any).content + content,
+                }
+              };
+            }
+            return m;
+          })
+        );
+      },
+      onStreamTextMessageComplete: (message: Message) => {
+        console.log('流式消息完成:', message);
+        // 更新消息状态为完成
+        setMessages(prev =>
+          prev.map(m => m.messageId === message.messageId ? message : m)
+        );
+      }
+    });
+
     return () => {
       msgUpdateListener();
       msgDestoryLisener();
+      streamMsgListener();
     };
   }, [conversation]);
 
@@ -239,10 +277,23 @@ const MessageListScreen = () => {
       return;
     }
 
-    const textContent: TextMessageContent = {
-      contentType: 'jg:text',
-      content: text,
-    };
+    // 检测是否在群组会话中@了bot（ai_bot）
+    const isMentionBot = conversation.conversationType === 2 && 
+                         mentions.some(m => m.userId === 'ai_bot');
+
+    let messageContent: TextMessageContent | StreamTextMessageContent;
+    
+    if (isMentionBot) {
+      // 如果@了bot，发送流式消息
+      messageContent = new StreamTextMessageContent(text, false);
+      console.log('检测到@bot，发送流式消息');
+    } else {
+      // 普通文本消息
+      messageContent = {
+        contentType: 'jg:text',
+        content: text,
+      };
+    }
 
     // Build mention info if there are mentions
     let mentionInfo: MessageMentionInfo | undefined;
@@ -275,7 +326,7 @@ const MessageListScreen = () => {
     const messageToSend: SendMessageObject = {
       conversationType: conversation.conversationType,
       conversationId: conversation.conversationId,
-      content: textContent,
+      content: messageContent,
       mentionInfo,
       referredMessageId: quotedMessage?.messageId,
     };
@@ -285,6 +336,11 @@ const MessageListScreen = () => {
         setMessages(prev => 
           prev.map(m => m.clientMsgNo === message.clientMsgNo ? message : m)
         )
+        
+        // 如果发送的是流式消息，提示用户
+        if (isMentionBot) {
+          console.log('流式消息发送成功，等待AI响应...');
+        }
       },
       onError: (message: Message, errorCode: number) => {
         setMessages(prev => 

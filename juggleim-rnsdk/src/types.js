@@ -132,3 +132,15 @@ export class VoiceMessageContent extends MessageContent {
         this.duration = duration;
     }
 }
+
+/**
+ * 流式文本消息内容
+ */
+export class StreamTextMessageContent extends MessageContent {
+    constructor(content = "", isFinished = false) {
+        super();
+        this.contentType = "jg:streamtext";
+        this.content = content;
+        this.isFinished = isFinished;
+    }
+}

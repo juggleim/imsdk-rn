@@ -10,6 +10,7 @@ import {
   MessageListener,
   MessageReadReceiptListener,
   MessageDestroyListener,
+  StreamMessageListener,
   ConversationListener,
   GetConversationOptions,
   ConversationInfo,
@@ -126,6 +127,18 @@ export default class JuggleIM {
   static addMessageDestroyListener(
     key: string,
     listener: MessageDestroyListener
+  ): () => void;
+
+  /**
+   * 添加流式消息监听器
+   * 用于监听流式消息的追加和完成事件
+   * @param key 监听器标识
+   * @param listener 监听器回调函数
+   * @returns 返回取消监听的函数
+   */
+  static addStreamMessageListener(
+    key: string,
+    listener: StreamMessageListener
   ): () => void;
 
   /**
