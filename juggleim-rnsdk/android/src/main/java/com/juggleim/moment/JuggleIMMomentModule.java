@@ -265,6 +265,8 @@ public class JuggleIMMomentModule extends ReactContextBaseJavaModule {
 
     private GetMomentOption convertReadableMapToGetMomentOption(ReadableMap map) {
         GetMomentOption option = new GetMomentOption();
+        if (map.hasKey("userId"))
+            option.setUserId(map.getString("userId"));
         if (map.hasKey("count"))
             option.setCount(map.getInt("count"));
         if (map.hasKey("timestamp"))

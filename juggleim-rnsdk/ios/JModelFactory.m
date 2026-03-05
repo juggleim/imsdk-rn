@@ -562,6 +562,11 @@
   }
 
   JGetMomentOption *option = [[JGetMomentOption alloc] init];
+  id userIdValue = dic[@"userId"];
+  if ([userIdValue isKindOfClass:[NSString class]]) {
+    option.userId = userIdValue;
+  }
+
   id startTimeValue = dic[@"startTime"];
   if ([startTimeValue isKindOfClass:[NSNumber class]]) {
     option.startTime = [startTimeValue longLongValue];

@@ -38,6 +38,7 @@ export interface Moment {
 }
 
 export interface GetMomentOption {
+    userId?: string;
     count: number;
     timestamp: number; // 0 for initial
     direction: number; // 0 for new, 1 for old
