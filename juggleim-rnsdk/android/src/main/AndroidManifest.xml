@@ -1,3 +1,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.juggleim">
+    package="com.juggleim">
+
+    <permission
+        android:name="${applicationId}.permission.JOPERATE_MESSAGE"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="${applicationId}.permission.JOPERATE_MESSAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <service
+            android:name=".push.JGPushCommonService"
+            android:exported="true"
+            android:process=":pushcore">
+            <intent-filter>
+                <action android:name="cn.jiguang.user.service.action" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".push.JGPushMessageService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="cn.jpush.android.intent.SERVICE_MESSAGE" />
+                <category android:name="${applicationId}" />
+            </intent-filter>
+        </service>
+    </application>
 </manifest>

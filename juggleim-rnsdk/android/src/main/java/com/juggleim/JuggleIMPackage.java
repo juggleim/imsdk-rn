@@ -19,6 +19,7 @@ public class JuggleIMPackage implements ReactPackage {
         modules.add(new JuggleIMManager(reactContext));
         modules.add(new com.juggleim.call.JuggleIMCallModule(reactContext));
         modules.add(new com.juggleim.moment.JuggleIMMomentModule(reactContext));
+        modules.add(new com.juggleim.push.JuggleIMPushModule(reactContext));
 
         return modules;
     }

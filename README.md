@@ -622,6 +622,221 @@ const addResult = await JuggleIM.addMessageReaction('message_id', 'thumbs_up');
 const removeResult = await JuggleIM.removeMessageReaction('message_id', 'thumbs_up');
 ```
 
+## 推送（Push）
+
+### 功能说明
+
+当前推送封装仅支持 Android，基于极光推送插件实现，提供以下最小能力：
+
+- 初始化极光推送
+- 获取 `registrationId`
+- 获取冷启动时通知点击携带的原始参数
+- 监听应用运行期间的通知点击事件
+
+### 接口文档
+
+```typescript
+import { JuggleIMPush } from 'juggleim-rnsdk';
+
+/**
+ * 初始化极光推送
+ * 仅支持 Android 平台
+ */
+await JuggleIMPush.initJGPush();
+
+/**
+ * 获取 registrationId
+ * 可用于服务端绑定推送 token
+ * @returns registrationId
+ */
+const registrationId = await JuggleIMPush.getRegistrationId();
+
+/**
+ * 获取冷启动通知点击参数
+ * 场景：应用被杀死后，用户点击通知拉起 App
+ * 读取成功后，SDK 内部会清空本次缓存，避免重复消费
+ * @returns 推送原始参数；如果没有则返回 null
+ */
+const launchNotification = await JuggleIMPush.getLaunchNotification();
+
+/**
+ * 监听通知点击事件
+ * 场景：应用在前台或后台存活时，用户点击通知
+ * @param extras 推送原始参数
+ * @returns 取消监听函数
+ */
+const removePushListener = JuggleIMPush.addNotificationClickListener((extras) => {
+  console.log('push click extras:', extras);
+});
+
+// 不再监听时移除
+removePushListener();
+```
+
+### App 如何集成
+
+#### 1）安装依赖
+
+```bash
+npm install juggleim-rnsdk --legacy-peer-deps
+```
+
+#### 2）Android Maven 仓库配置
+
+在 RN App 的 Android Gradle 仓库中增加：
+
+```gradle
+maven { url "https://repo.juggle.im/repository/maven-releases/" }
+```
+
+#### 3）Android App 配置极光参数
+
+在 `android/app/build.gradle` 的 `defaultConfig` 中增加：
+
+```gradle
+defaultConfig {
+    applicationId "your.application.id"
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+
+    manifestPlaceholders = [
+        JPUSH_APPKEY : "你的极光 AppKey",
+        JPUSH_CHANNEL: "developer-default"
+    ]
+}
+```
+
+#### 4）推送需要由 App 主动开启
+
+SDK 不会在 `JuggleIM.init()` 时默认开启极光推送。
+
+业务侧需要在完成 IM 初始化后，主动调用：
+
+```typescript
+import JuggleIM from 'juggleim-rnsdk';
+import { JuggleIMPush } from 'juggleim-rnsdk';
+
+JuggleIM.setServerUrls(['your_server_url']);
+JuggleIM.init('your_app_key');
+JuggleIM.connect('your_token');
+
+// 由 App 显式开启极光推送
+await JuggleIMPush.initJGPush();
+```
+
+#### 5）在 Android Activity 中转发通知点击 Intent
+
+为了支持冷启动与后台点击通知场景，需要在宿主 App 的 `MainActivity` 中转发 `intent`：
+
+```kotlin
+import android.content.Intent
+import android.os.Bundle
+import com.juggleim.push.JuggleIMPushModule
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    JuggleIMPushModule.handleIntent(intent)
+}
+
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    JuggleIMPushModule.handleIntent(intent)
+}
+```
+
+#### 6）在 RN 页面中接入推送监听
+
+建议在应用首页或全局入口中处理两类场景：
+
+- 冷启动：`getLaunchNotification()`
+- 运行中点击通知：`addNotificationClickListener()`
+
+```typescript
+import { useEffect } from 'react';
+import { JuggleIMPush } from 'juggleim-rnsdk';
+
+useEffect(() => {
+  let removeListener = () => {};
+
+  const setupPush = async () => {
+    await JuggleIMPush.initJGPush();
+
+    const launchExtras = await JuggleIMPush.getLaunchNotification();
+    if (launchExtras) {
+      console.log('launch push extras:', launchExtras);
+      // 在这里根据 extras 执行页面跳转
+    }
+
+    removeListener = JuggleIMPush.addNotificationClickListener((extras) => {
+      console.log('event push extras:', extras);
+      // 在这里根据 extras 执行页面跳转
+    });
+  };
+
+  setupPush();
+
+  return () => {
+    removeListener();
+  };
+}, []);
+```
+
+### 如何根据通知跳转到指定页面
+
+SDK 只负责把通知点击携带的原始参数透传给 RN，不直接处理业务页面跳转。
+
+推荐由 App 自己约定 payload，例如：
+
+```json
+{
+  "page": "MessageList",
+  "targetId": "user_1001",
+  "conversationType": "1",
+  "title": "测试跳转"
+}
+```
+
+业务侧收到后自行解析：
+
+```typescript
+const extras = {
+  page: 'MessageList',
+  targetId: 'user_1001',
+  conversationType: '1',
+  title: '测试跳转',
+};
+
+if (extras.page === 'MessageList') {
+  navigation.navigate('MessageList', {
+    conversation: {
+      conversationType: Number(extras.conversationType),
+      conversationId: extras.targetId,
+    },
+    title: extras.title || extras.targetId,
+    unreadCount: 0,
+  });
+}
+```
+
+### Demo 集成方式
+
+当前 Demo 已提供 `Push Demo` 页面，可用于验证：
+
+- 初始化推送
+- 获取 `registrationId`
+- 展示最近一次点击通知 payload
+- 使用模拟 payload 验证页面跳转
+
+推荐验证顺序：
+
+1. 进入 `Discover -> Push Demo`
+2. 点击“初始化推送”
+3. 点击“获取 registrationId”
+4. 点击“模拟 payload”
+5. 点击“按当前 payload 跳转”
+6. 再结合真实通知验证冷启动/后台点击场景
+
 ## 音视频通话 (Call)
 
 ### 初始化 (Initialization)
