@@ -84,6 +84,11 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "5.2.3"
+        manifestPlaceholders = [
+            JPUSH_APPKEY : "请替换为实际极光 AppKey",
+            JPUSH_CHANNEL: "developer-default",
+            JPUSH_PKGNAME: "com.juggleim.sampleapp.reactnative.android"
+        ]
     }
     signingConfigs {
         debug {

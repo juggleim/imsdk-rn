@@ -44,7 +44,10 @@ repositories {
 
 dependencies {
     implementation 'com.facebook.react:react-native:0.71.1'
-    implementation 'com.juggle.im:juggle:1.8.44'
+    implementation 'com.juggle.im:juggle:1.8.46'
     implementation 'com.juggle.call.zego:juggle:1.8.25'
     implementation 'im.zego:express-video:3.17.3'
+    implementation("cn.jiguang.sdk:jpush:5.2.4")
+    implementation 'com.juggle.push.jg:juggle:1.8.46'
+
 }

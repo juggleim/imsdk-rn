@@ -55,6 +55,12 @@ export default class JuggleIM {
   static init(appKey: string): void;
 
   /**
+   * 初始化SDK
+   * @param appKey 应用唯一标识
+   * @param enableJGPush 是否开启极光推送
+   */
+  static initWithPush(appKey: string, enableJGPush: boolean): void;
+  /**
    * 注册自定义消息类型
    * @param contentType 消息类型标识符(不能以 "jg:" 开头)
    * @param messageClass 自定义消息类的构造函数

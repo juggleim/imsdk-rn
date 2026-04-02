@@ -42,6 +42,7 @@ import com.juggle.im.model.GroupInfo;
 import com.juggle.im.model.GroupMember;
 import com.juggle.im.model.MessageQueryOptions;
 import com.juggle.im.model.SearchConversationsResult;
+import com.juggle.im.push.PushConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -118,6 +119,21 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(getReactApplicationContext());
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
+        JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
+    }
+
+        /**
+     * 初始化SDK
+     *
+     * @param appKey 应用唯一标识
+     */
+    @ReactMethod
+    public void initWithPush(String appKey, Boolean enableJGPush) {
+        JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
+        JLogConfig.Builder logBuilder = new JLogConfig.Builder(getReactApplicationContext());
+        logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
+        builder.setJLogConfig(new JLogConfig(logBuilder));
+        builder.setPushConfig(new PushConfig.Builder().build());
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
     }
 

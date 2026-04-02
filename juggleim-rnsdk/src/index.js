@@ -52,7 +52,15 @@ class JuggleIM {
    */
   static init(appKey) {
     if (Platform.OS === "android") {
-      JMI.init(appKey);
+      JMI.init(appKey, false);
+    } else if (Platform.OS === "ios") {
+      JMI.initWithAppKey(appKey);
+    }
+  }
+
+  static initWithPush(appKey, enableJGPush) {
+    if (Platform.OS === "android") {
+      JMI.initWithPush(appKey, enableJGPush);
     } else if (Platform.OS === "ios") {
       JMI.initWithAppKey(appKey);
     }
