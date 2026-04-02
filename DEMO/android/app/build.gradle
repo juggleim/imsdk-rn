@@ -84,10 +84,6 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "5.2.3"
-        manifestPlaceholders = [
-            JPUSH_APPKEY : "请替换为实际极光 AppKey",
-            JPUSH_CHANNEL: "developer-default"
-        ]
     }
     signingConfigs {
         debug {
@@ -96,19 +92,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        release {
-            storeFile file('release.keystore')
-            storePassword 'juggle123'
-            keyAlias 'release-key'
-            keyPassword 'juggle123'
-        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.release
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

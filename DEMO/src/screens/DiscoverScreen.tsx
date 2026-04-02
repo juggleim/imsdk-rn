@@ -16,10 +16,6 @@ const DiscoverScreen = () => {
         navigation.navigate('Moment' as never);
     };
 
-    const handlePushDemoPress = () => {
-        navigation.navigate('PushDemo' as never);
-    };
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
@@ -30,19 +26,6 @@ const DiscoverScreen = () => {
                             style={styles.itemIcon}
                         />
                         <Text style={styles.itemText}>Moments</Text>
-                    </View>
-                    <Image
-                        source={require('../assets/icons/rightArrowIcon.png')}
-                        style={styles.arrowIcon}
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.item} onPress={handlePushDemoPress}>
-                    <View style={styles.itemLeft}>
-                        <Image
-                            source={require('../assets/icons/discover.png')}
-                            style={styles.itemIcon}
-                        />
-                        <Text style={styles.itemText}>Push Demo</Text>
                     </View>
                     <Image
                         source={require('../assets/icons/rightArrowIcon.png')}

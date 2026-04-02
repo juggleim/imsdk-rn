@@ -18,7 +18,6 @@ import CreateGroupScreen from '../screens/CreateGroupScreen';
 import VideoCallScreen from '../screens/VideoCallScreen';
 import CallSelectMemberScreen from '../screens/CallSelectMemberScreen';
 import SearchScreen from '../screens/SearchScreen';
-import PushDemoScreen from '../screens/PushDemoScreen';
 import { Image } from 'react-native';
 import AddButton from '../components/AddButton';
 import { useNavigation } from '@react-navigation/native';
@@ -169,11 +168,6 @@ const AppNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
         name="Search"
         component={SearchScreen}
         options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="PushDemo"
-        component={PushDemoScreen}
-        options={{ headerShown: true, title: 'Push Demo' }}
       />
     </Stack.Navigator>
   );
