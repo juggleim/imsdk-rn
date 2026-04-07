@@ -133,7 +133,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(getReactApplicationContext());
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
-        builder.setPushConfig(new PushConfig.Builder().build());
+        if (enableJGPush) {
+            builder.setPushConfig(new PushConfig.Builder().build());
+        }
         JIM.getInstance().init(getCurrentActivity(), appKey, builder.build());
     }
 
