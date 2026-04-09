@@ -417,8 +417,8 @@ class JuggleIM {
     if (listener.onConversationInfoAdd) {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoAdded",
-        (event) => {
-          const convsList = this.buildConversationInfoList(event.conversations);
+        async (event) => {
+          const convsList = await this.buildConversationInfoList(event.conversations);
           console.log("ConversationInfoAdded", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
           listener.onConversationInfoAdd(convsList);
@@ -431,8 +431,8 @@ class JuggleIM {
     if (listener.onConversationInfoUpdate) {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoUpdated",
-        (event) => {
-          const convsList = this.buildConversationInfoList(event.conversations);
+        async (event) => {
+          const convsList = await this.buildConversationInfoList(event.conversations);
           console.log("ConversationInfoUpdated", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
           listener.onConversationInfoUpdate(convsList);
@@ -445,8 +445,8 @@ class JuggleIM {
     if (listener.onConversationInfoDelete) {
       const subscription = juggleIMEmitter.addListener(
         "ConversationInfoDeleted",
-        (event) => {
-          const convsList = this.buildConversationInfoList(event.conversations);
+        async (event) => {
+          const convsList = await this.buildConversationInfoList(event.conversations);
           console.log("ConversationInfoDeleted", convsList);
           if (Platform.OS === "android" && event.key !== key) return;
           listener.onConversationInfoDelete(convsList);
@@ -484,8 +484,10 @@ class JuggleIM {
         option.count,
         option.timestamp,
         option.direction
-      ).then(convs => {
-        convs?.forEach(async (conv) => {
+      ).then(async (convs) => {
+        const convList = convs || [];
+        // 简要描述：串行等待每个会话资料补充完成，再返回结果，避免调用方拿到半成品数据。
+        for (const conv of convList) {
           if (conv.conversation?.conversationType === 1) {
             const userInfo = await JMI.getUserInfo(conv.conversation?.conversationId);
             conv.name = userInfo?.nickname;
@@ -503,8 +505,8 @@ class JuggleIM {
             conv.lastMessage.senderUserAvatar = userInfo?.avatar;
             conv.lastMessage.senderUserExtra = userInfo?.extra;
           }
-        });
-        resolve(convs || []);
+        }
+        resolve(convList);
       }).catch(err => {
         console.error(err);
         reject(err);
@@ -512,8 +514,15 @@ class JuggleIM {
     });
   }
 
-  static buildConversationInfoList(convs) {
-    convs?.forEach(async (conv) => {
+  /**
+   * 构建会话信息列表（补齐会话名、头像、扩展信息及最后一条消息发送者信息）
+   * @param {Array} convs - 原始会话列表
+   * @returns {Promise<Array>} 补齐后的会话列表
+   */
+  static async buildConversationInfoList(convs) {
+    const convList = convs || [];
+    // 简要描述：会话监听场景下，也要等待用户/群组信息补齐后再通知上层。
+    for (const conv of convList) {
       if (conv.conversation?.conversationType === 1) {
         const userInfo = await JMI.getUserInfo(conv.conversation?.conversationId);
         conv.name = userInfo?.nickname;
@@ -531,8 +540,8 @@ class JuggleIM {
         conv.lastMessage.senderUserAvatar = userInfo?.avatar;
         conv.lastMessage.senderUserExtra = userInfo?.extra;
       }
-    });
-    return convs;
+    }
+    return convList;
   }
 
   static async buildMessageInfo(message) {
@@ -737,8 +746,10 @@ class JuggleIM {
    */
   static getTopConversationInfoList(count = 20, timestamp = 0, direction = 0) {
     return new Promise((resolve, reject) => {
-      JMI.getTopConversationInfoList(count, timestamp, direction).then(convs => {
-        convs?.forEach(async (conv) => {
+      JMI.getTopConversationInfoList(count, timestamp, direction).then(async (convs) => {
+        const convList = convs || [];
+        // 简要描述：先补齐置顶会话展示字段，再统一返回，避免 UI 出现名称/头像延迟闪动。
+        for (const conv of convList) {
           if (conv.conversation?.conversationType === 1) {
             const userInfo = await JMI.getUserInfo(conv.conversation?.userId);
             conv.name = userInfo?.nickname;
@@ -756,8 +767,8 @@ class JuggleIM {
             conv.lastMessage.senderUserAvatar = userInfo?.avatar;
             conv.lastMessage.senderUserExtra = userInfo?.extra;
           }
-        });
-        resolve(convs || []);
+        }
+        resolve(convList);
       }).catch(err => {
         console.error(err);
         reject(err);
@@ -1219,14 +1230,15 @@ class JuggleIM {
    */
   static getMessageList(conversation, direction, options) {
     return new Promise((resolve, reject) => {
-      JMI.getMessages(conversation, direction, options).then(res => {
+      JMI.getMessages(conversation, direction, options).then(async (res) => {
         const msgs = res?.messages;
-        msgs?.forEach(async (msg) => {
+        // 简要描述：等待消息发送者资料补齐后再返回，避免消息列表显示占位昵称/头像。
+        for (const msg of (msgs || [])) {
           const userInfo = await JMI.getUserInfo(msg.senderUserId);
           msg.senderUserName = userInfo?.nickname;
           msg.senderUserAvatar = userInfo?.avatar;
           msg.senderUserExtra = userInfo?.extra;
-        });
+        }
         resolve(res);
       }).catch(err => {
         console.error(err);
