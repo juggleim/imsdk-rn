@@ -43,6 +43,8 @@ import com.juggle.im.model.GroupMember;
 import com.juggle.im.model.MessageQueryOptions;
 import com.juggle.im.model.SearchConversationsResult;
 import com.juggle.im.push.PushConfig;
+import cn.jiguang.internal.JConstants;
+import cn.jpush.android.api.JPushInterface;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,6 +136,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
         if (enableJGPush) {
+            // 简要描述：极光调试日志开关需在 SDK 初始化前设置，避免日志不完整。
+            JConstants.CMD_TO_PRINT_ALL_LOG = true;
+            JPushInterface.setDebugMode(true);
             builder.setPushConfig(
                 new PushConfig.Builder()
                 .setJgConfig()
