@@ -1650,6 +1650,9 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
   if ([contentType isEqualToString:@"jg:text"]) {
     JTextMessage *text =
         [[JTextMessage alloc] initWithContent:messageDict[@"content"] ?: @""];
+    if (messageDict[@"extra"]) {
+      text.extra = messageDict[@"extra"];
+    }
     return text;
   } else if ([contentType isEqualToString:@"jg:img"]) {
     JImageMessage *img = [[JImageMessage alloc] init];
@@ -1659,6 +1662,9 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     img.thumbnailUrl = messageDict[@"thumbnailUrl"];
     img.width = [messageDict[@"width"] integerValue];
     img.height = [messageDict[@"height"] integerValue];
+    if (messageDict[@"extra"]) {
+      img.extra = messageDict[@"extra"];
+    }
     return img;
   } else if ([contentType isEqualToString:@"jg:file"]) {
     JFileMessage *file = [[JFileMessage alloc] init];
@@ -1666,12 +1672,18 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
     file.type = messageDict[@"type"];
     file.name = messageDict[@"name"];
     file.size = [messageDict[@"size"] longLongValue];
+    if (messageDict[@"extra"]) {
+      file.extra = messageDict[@"extra"];
+    }
     return file;
   } else if ([contentType isEqualToString:@"jg:voice"]) {
     JVoiceMessage *voice = [[JVoiceMessage alloc] init];
     voice.url = messageDict[@"url"];
     voice.localPath = messageDict[@"localPath"];
     voice.duration = [messageDict[@"duration"] integerValue];
+    if (messageDict[@"extra"]) {
+      voice.extra = messageDict[@"extra"];
+    }
     return voice;
   } else if ([contentType isEqualToString:@"jg:streamtext"]) {
     JStreamTextMessage *streamText = [[JStreamTextMessage alloc] init];

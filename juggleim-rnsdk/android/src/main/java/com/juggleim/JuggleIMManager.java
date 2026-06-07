@@ -597,6 +597,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         switch (contentType) {
             case "jg:text":
                 TextMessage text = new TextMessage(map.getString("content"));
+                if (map.hasKey("extra")) {
+                    text.setExtra(map.getString("extra"));
+                }
                 return text;
             case "jg:img":
                 ImageMessage img = new ImageMessage();
@@ -606,6 +609,9 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 img.setThumbnailUrl(map.getString("thumbnailUrl"));
                 img.setWidth(map.getInt("width"));
                 img.setHeight(map.getInt("height"));
+                if (map.hasKey("extra")) {
+                    img.setExtra(map.getString("extra"));
+                }
                 return img;
             case "jg:file":
                 FileMessage file = new FileMessage();
@@ -613,12 +619,18 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                 file.setType(map.getString("type"));
                 file.setName(map.getString("name"));
                 file.setSize(map.getInt("size"));
+                if (map.hasKey("extra")) {
+                    file.setExtra(map.getString("extra"));
+                }
                 return file;
             case "jg:voice":
                 VoiceMessage voice = new VoiceMessage();
                 voice.setUrl(map.getString("url"));
                 voice.setLocalPath(map.getString("localPath"));
                 voice.setDuration(map.getInt("duration"));
+                if (map.hasKey("extra")) {
+                    voice.setExtra(map.getString("extra"));
+                }
                 return voice;
             case "jg:streamtext":
                 StreamTextMessage streamText = new StreamTextMessage();
