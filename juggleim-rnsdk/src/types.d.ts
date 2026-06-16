@@ -199,6 +199,31 @@ export class VoiceMessageContent extends MessageContent {
 }
 
 /**
+ * 视频消息内容
+ * @property {string} localPath - 视频本地路径：支持 /、file://、content://
+ * @property {string} [url] - 视频远程URL
+ * @property {string} [snapshotUrl] - 视频封面远程URL
+ * @property {string} [snapshotLocalPath] - 视频封面本地路径
+ * @property {number} width - 视频宽度
+ * @property {number} height - 视频高度
+ * @property {number} size - 视频文件大小，单位字节
+ * @property {number} duration - 视频时长，单位秒
+ */
+export class VideoMessageContent extends MessageContent {
+    localPath: string;
+    url?: string;
+    snapshotUrl?: string;
+    snapshotLocalPath?: string;
+    width: number;
+    height: number;
+    size: number;
+    duration: number;
+    extra?: string;
+
+    contentType: string;
+}
+
+/**
  * 通话结束通知消息内容: jg:callfinishntf
  * @property {number} reason - 结束原因
  * @property {number} duration - 通话时长，单位秒

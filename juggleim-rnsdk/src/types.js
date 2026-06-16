@@ -134,6 +134,21 @@ export class VoiceMessageContent extends MessageContent {
 }
 
 /**
+ * 视频消息内容
+ */
+export class VideoMessageContent extends MessageContent {
+    constructor(localPath, width, height, duration, size = 0) {
+        super();
+        this.contentType = "jg:video";
+        this.localPath = localPath;
+        this.width = width;
+        this.height = height;
+        this.duration = duration;
+        this.size = size;
+    }
+}
+
+/**
  * 流式文本消息内容
  */
 export class StreamTextMessageContent extends MessageContent {

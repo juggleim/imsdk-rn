@@ -511,6 +511,17 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
     dict[@"localPath"] = voiceMsg.localPath ?: @"";
     dict[@"duration"] = @(voiceMsg.duration);
     dict[@"extra"] = voiceMsg.extra ?: @"";
+  } else if ([content isKindOfClass:[JVideoMessage class]]) {
+    JVideoMessage *videoMsg = (JVideoMessage *)content;
+    dict[@"url"] = videoMsg.url ?: @"";
+    dict[@"localPath"] = videoMsg.localPath ?: @"";
+    dict[@"snapshotUrl"] = videoMsg.snapshotUrl ?: @"";
+    dict[@"snapshotLocalPath"] = videoMsg.snapshotLocalPath ?: @"";
+    dict[@"width"] = @(videoMsg.width);
+    dict[@"height"] = @(videoMsg.height);
+    dict[@"size"] = @(videoMsg.size);
+    dict[@"duration"] = @(videoMsg.duration);
+    dict[@"extra"] = videoMsg.extra ?: @"";
   } else if ([content isKindOfClass:[JStreamTextMessage class]]) {
     JStreamTextMessage *streamMsg = (JStreamTextMessage *)content;
     dict[@"content"] = streamMsg.content ?: @"";
@@ -1685,6 +1696,20 @@ RCT_EXPORT_METHOD(removeMessageReaction : (
       voice.extra = messageDict[@"extra"];
     }
     return voice;
+  } else if ([contentType isEqualToString:@"jg:video"]) {
+    JVideoMessage *video = [[JVideoMessage alloc] init];
+    video.url = messageDict[@"url"];
+    video.localPath = messageDict[@"localPath"] ?: messageDict[@"local"];
+    video.snapshotUrl = messageDict[@"snapshotUrl"] ?: messageDict[@"poster"];
+    video.snapshotLocalPath = messageDict[@"snapshotLocalPath"];
+    video.width = [messageDict[@"width"] integerValue];
+    video.height = [messageDict[@"height"] integerValue];
+    video.size = [messageDict[@"size"] longLongValue];
+    video.duration = [messageDict[@"duration"] integerValue];
+    if (messageDict[@"extra"]) {
+      video.extra = messageDict[@"extra"];
+    }
+    return video;
   } else if ([contentType isEqualToString:@"jg:streamtext"]) {
     JStreamTextMessage *streamText = [[JStreamTextMessage alloc] init];
     streamText.content = messageDict[@"content"] ?: @"";

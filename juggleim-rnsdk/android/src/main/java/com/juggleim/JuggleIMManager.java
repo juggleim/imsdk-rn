@@ -585,11 +585,65 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
             map.putString("localPath", img.getLocalPath());
             map.putString("thumbnailLocalPath", img.getThumbnailLocalPath());
             map.putString("thumbnailUrl", img.getThumbnailUrl());
+        } else if (content instanceof VideoMessage) {
+            VideoMessage video = (VideoMessage) content;
+            map.putString("localPath", video.getLocalPath());
+            map.putString("url", video.getUrl());
+            map.putString("snapshotLocalPath", video.getSnapshotLocalPath());
+            map.putString("snapshotUrl", video.getSnapshotUrl());
+            map.putInt("width", video.getWidth());
+            map.putInt("height", video.getHeight());
+            map.putDouble("size", video.getSize());
+            map.putInt("duration", video.getDuration());
+            map.putString("extra", video.getExtra());
         } else if (content instanceof StreamTextMessage) {
             StreamTextMessage streamText = (StreamTextMessage) content;
             map.putBoolean("isFinished", streamText.isFinished());
         }
         return map;
+    }
+
+    /**
+     * 读取字符串字段，不存在或为空时返回空字符串。
+     *
+     * @param map 原始消息内容
+     * @param key 字段名
+     * @return 字符串字段值
+     */
+    private String getOptionalString(ReadableMap map, String key) {
+        if (map.hasKey(key) && !map.isNull(key)) {
+            return map.getString(key);
+        }
+        return "";
+    }
+
+    /**
+     * 读取整数字段，不存在或为空时返回 0。
+     *
+     * @param map 原始消息内容
+     * @param key 字段名
+     * @return 整数字段值
+     */
+    private int getOptionalInt(ReadableMap map, String key) {
+        if (map.hasKey(key) && !map.isNull(key)) {
+            return map.getInt(key);
+        }
+        return 0;
+    }
+
+    /**
+     * 读取文件路径并兼容 content:// 和 file://。
+     *
+     * @param map 原始消息内容
+     * @param key 字段名
+     * @return 原生 SDK 可读取的本地文件路径
+     */
+    private String getOptionalFilePath(ReadableMap map, String key) {
+        String path = getOptionalString(map, key);
+        if (path.isEmpty()) {
+            return "";
+        }
+        return FileUtils.convertContentUriToFile(getReactApplicationContext(), path);
     }
 
     private MessageContent convertMapToMessageContent(ReadableMap map) {
@@ -632,6 +686,30 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
                     voice.setExtra(map.getString("extra"));
                 }
                 return voice;
+            case "jg:video":
+                VideoMessage video = new VideoMessage();
+                String localPath = getOptionalFilePath(map, "localPath");
+                if (localPath.isEmpty()) {
+                    localPath = getOptionalFilePath(map, "local");
+                }
+                video.setLocalPath(localPath);
+                video.setUrl(getOptionalString(map, "url"));
+                String snapshotUrl = getOptionalString(map, "snapshotUrl");
+                if (snapshotUrl.isEmpty()) {
+                    snapshotUrl = getOptionalString(map, "poster");
+                }
+                video.setSnapshotUrl(snapshotUrl);
+                video.setSnapshotLocalPath(getOptionalFilePath(map, "snapshotLocalPath"));
+                video.setWidth(getOptionalInt(map, "width"));
+                video.setHeight(getOptionalInt(map, "height"));
+                if (map.hasKey("size") && !map.isNull("size")) {
+                    video.setSize((long) map.getDouble("size"));
+                }
+                video.setDuration(getOptionalInt(map, "duration"));
+                if (map.hasKey("extra")) {
+                    video.setExtra(map.getString("extra"));
+                }
+                return video;
             case "jg:streamtext":
                 StreamTextMessage streamText = new StreamTextMessage();
                 if (map.hasKey("content")) {

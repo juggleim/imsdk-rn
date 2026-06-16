@@ -101,8 +101,8 @@
     JVideoMessage *video = (JVideoMessage *)content;
     NSDictionary *dic = @{
       @"url" : video.url ?: @"",
-      @"local" : video.localPath ?: @"",
-      @"poster" : video.snapshotUrl ?: @"",
+      @"localPath" : video.localPath ?: @"",
+      @"snapshotUrl" : video.snapshotUrl ?: @"",
       @"height" : @(video.height),
       @"width" : @(video.width),
       @"size" : @(video.size),
