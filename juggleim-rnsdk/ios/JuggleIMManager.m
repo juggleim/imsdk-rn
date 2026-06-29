@@ -1,4 +1,5 @@
 #import "JuggleIMManager.h"
+#import "JRNCustomMessageContent.h"
 #import <JuggleIM/JuggleIM.h>
 #import <React/RCTEventEmitter.h>
 
@@ -44,6 +45,15 @@ RCT_EXPORT_METHOD(registerCustomMessageType : (NSString *)contentType) {
     return;
   }
   self.customMessageTypes[contentType] = contentType;
+
+  // fix: 向原生 SDK 注册自定义消息类。
+  // 原因: 未注册的自定义类型，SDK 无法解析会话列表的 lastMessage（详见
+  //       JMessageProtocol.h registerContentType: 注释），导致 lastMessage
+  //       退化为空壳、content.contentType 变为 "jg:unknown"（详情页走 getMessages
+  //       不受影响，故仅会话列表显示 unknown；Android SDK 无此限制故正常）。
+  Class cls = [JRNCustomMessageContent registerableClassForContentType:contentType];
+  [JIM.shared.messageManager registerContentType:cls];
+
   NSLog(@"注册自定义消息类型: %@", contentType);
 }
 
@@ -416,8 +426,7 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
 - (NSDictionary *)convertMessageToDictionary:(JMessage *)message {
   NSMutableDictionary *dict = [NSMutableDictionary dictionary];
   dict[@"messageId"] = message.messageId ?: @"";
-  dict[@"clientMsgNo"] =
-      [NSString stringWithFormat:@"%lld", message.clientMsgNo];
+  dict[@"clientMsgNo"] = @(message.clientMsgNo);
   dict[@"timestamp"] = @(message.timestamp);
   dict[@"senderUserId"] = message.senderUserId ?: @"";
   dict[@"conversation"] =
