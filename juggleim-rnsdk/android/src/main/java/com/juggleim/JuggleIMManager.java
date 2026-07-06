@@ -148,6 +148,23 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 清除应用角标数字
+     *
+     * @param promise 清理结果回调，成功返回 true
+     */
+    @ReactMethod
+    public void clearBadgeNumber(Promise promise) {
+        try {
+            // 简要描述：极光推送维护厂商角标数字，打开 App 后将角标归零。
+            JPushInterface.setBadgeNumber(getReactApplicationContext(), 0);
+            promise.resolve(true);
+        } catch (Exception e) {
+            Log.e("JuggleIM", "清除应用角标数字失败", e);
+            promise.reject("clear_badge_error", "清除应用角标数字失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 注册自定义消息类型
      *
      * @param contentType 消息类型标识符

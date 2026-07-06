@@ -60,6 +60,13 @@ export default class JuggleIM {
    * @param enableJGPush 是否开启极光推送
    */
   static initWithPush(appKey: string, enableJGPush: boolean): void;
+
+  /**
+   * 清除 Android 应用角标数字
+   * @returns 清理结果
+   */
+  static clearBadgeNumber(): Promise<Boolean>;
+
   /**
    * 注册自定义消息类型
    * @param contentType 消息类型标识符(不能以 "jg:" 开头)

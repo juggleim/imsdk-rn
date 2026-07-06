@@ -67,6 +67,17 @@ class JuggleIM {
   }
 
   /**
+   * 清除 Android 应用角标数字
+   * @returns {Promise<boolean>} 清理结果
+   */
+  static clearBadgeNumber() {
+    if (Platform.OS === "android") {
+      return JMI.clearBadgeNumber();
+    }
+    return Promise.resolve(true);
+  }
+
+  /**
    * 连接到服务器
    * @param {string} token - 用户token
    * @returns {void}
