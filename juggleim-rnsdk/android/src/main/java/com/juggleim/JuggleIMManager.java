@@ -148,20 +148,35 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 设置应用角标数字
+     *
+     * @param badgeNumber 应用角标数字，必须大于等于 0
+     * @param promise 设置结果回调，成功返回 true
+     */
+    @ReactMethod
+    public void setBadgeNumber(int badgeNumber, Promise promise) {
+        if (badgeNumber < 0) {
+            promise.reject("invalid_badge_number", "应用角标数字不能小于 0");
+            return;
+        }
+        try {
+            // 简要描述：极光推送维护厂商角标数字，RN 传入的数字直接同步到厂商角标。
+            JPushInterface.setBadgeNumber(getReactApplicationContext(), badgeNumber);
+            promise.resolve(true);
+        } catch (Exception e) {
+            Log.e("JuggleIM", "设置应用角标数字失败", e);
+            promise.reject("set_badge_error", "设置应用角标数字失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 清除应用角标数字
      *
      * @param promise 清理结果回调，成功返回 true
      */
     @ReactMethod
     public void clearBadgeNumber(Promise promise) {
-        try {
-            // 简要描述：极光推送维护厂商角标数字，打开 App 后将角标归零。
-            JPushInterface.setBadgeNumber(getReactApplicationContext(), 0);
-            promise.resolve(true);
-        } catch (Exception e) {
-            Log.e("JuggleIM", "清除应用角标数字失败", e);
-            promise.reject("clear_badge_error", "清除应用角标数字失败: " + e.getMessage(), e);
-        }
+        setBadgeNumber(0, promise);
     }
 
     /**

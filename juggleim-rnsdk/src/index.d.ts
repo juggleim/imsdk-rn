@@ -68,6 +68,13 @@ export default class JuggleIM {
   static clearBadgeNumber(): Promise<Boolean>;
 
   /**
+   * 设置 Android 应用角标数字
+   * @param badgeNumber 应用角标数字，必须是大于等于 0 的整数
+   * @returns 设置结果
+   */
+  static setBadgeNumber(badgeNumber: number): Promise<Boolean>;
+
+  /**
    * 注册自定义消息类型
    * @param contentType 消息类型标识符(不能以 "jg:" 开头)
    * @param messageClass 自定义消息类的构造函数

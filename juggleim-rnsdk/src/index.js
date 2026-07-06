@@ -78,6 +78,21 @@ class JuggleIM {
   }
 
   /**
+   * 设置 Android 应用角标数字
+   * @param {number} badgeNumber - 应用角标数字，必须是大于等于 0 的整数
+   * @returns {Promise<boolean>} 设置结果
+   */
+  static setBadgeNumber(badgeNumber) {
+    if (typeof badgeNumber !== "number" || !Number.isFinite(badgeNumber) || !Number.isInteger(badgeNumber) || badgeNumber < 0) {
+      return Promise.reject(new Error("应用角标数字必须是大于等于 0 的整数"));
+    }
+    if (Platform.OS === "android") {
+      return JMI.setBadgeNumber(badgeNumber);
+    }
+    return Promise.resolve(true);
+  }
+
+  /**
    * 连接到服务器
    * @param {string} token - 用户token
    * @returns {void}
