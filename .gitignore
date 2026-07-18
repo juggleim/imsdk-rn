@@ -20,3 +20,4 @@ DEMO/.bundle
 DEMO/android/.idea
 DEMO/ios/DEMO.xcworkspace/xcuserdata
 .claude
+.codex

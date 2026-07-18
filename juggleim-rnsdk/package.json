@@ -1,7 +1,7 @@
 {
   "name": "juggleim-rnsdk",
   "version": "1.0.5",
-  "description": "React Native wrapper for Juggle IM SDK",
+  "description": "React Native chat and instant messaging SDK for iOS and Android with TypeScript support",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "react-native": "src/index.js",
@@ -25,15 +25,22 @@
   },
   "keywords": [
     "react-native",
+    "react-native-chat",
+    "react-native-im-sdk",
     "juggle",
     "juggleim",
-    "im",
-    "messaging",
-    "chat",
-    "sdk"
+    "instant-messaging",
+    "realtime-chat",
+    "chat-sdk",
+    "ios",
+    "android",
+    "typescript",
+    "voice-call",
+    "video-call",
+    "chatroom"
   ],
   "author": "Juggle IM",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.60.0"

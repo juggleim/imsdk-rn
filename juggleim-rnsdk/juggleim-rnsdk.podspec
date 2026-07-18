@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = "https://github.com/juggleim/imsdk-rn"
-  s.license      = "MIT"
+  s.license      = "Apache-2.0"
   s.authors      = { "Juggle IM" => "support@juggleim.com" }
   s.platforms    = { :ios => "9.0" }
   s.source       = { :git => "https://github.com/juggleim/imsdk-rn.git", :tag => "#{s.version}" }
