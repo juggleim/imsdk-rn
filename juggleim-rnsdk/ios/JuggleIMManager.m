@@ -2141,6 +2141,10 @@ RCT_EXPORT_METHOD(
   if (dict[@"extra"]) {
     pushData.extra = dict[@"extra"];
   }
+  // TIPS: jgOptions 为极光推送的自定义配置（JSON 字符串），透传给原生 SDK
+  if (dict[@"jgOptions"]) {
+    pushData.jgOptions = dict[@"jgOptions"];
+  }
   return pushData;
 }
 

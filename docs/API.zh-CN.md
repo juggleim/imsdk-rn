@@ -421,6 +421,27 @@ const message = await JuggleIM.sendMessage({
 });
 ```
 
+#### 携带推送配置发送
+
+发送消息时可通过 `pushData` 自定义离线推送的内容，其中 `jgOptions` 用于透传极光推送（JPush）的自定义配置，需原生 SDK 1.9.1 及以上版本。
+
+```javascript
+const message = await JuggleIM.sendMessage({
+  conversationType: 1,
+  conversationId: 'user123',
+  content: {
+    contentType: 'text',
+    content: 'Hello World!'
+  } as TextMessageContent,
+  pushData: {
+    content: '你收到一条新消息',
+    extra: JSON.stringify({ from: 'user123' }),
+    // 极光推送自定义配置，JSON 字符串
+    jgOptions: JSON.stringify({ classification: 1 })
+  }
+});
+```
+
 ### 发送图片消息
 
 ```javascript
@@ -943,6 +964,18 @@ export interface MessageMentionInfo {
    */
   type: number;
   targetUsers: UserInfo[];
+}
+```
+
+#### 推送数据 (PushData)
+```typescript
+export interface PushData {
+  /** 推送内容，用于通知栏展示 */
+  content: string;
+  /** 推送附加字段，可携带自定义 JSON 字符串 */
+  extra: string;
+  /** 极光推送（JPush）的自定义配置，JSON 字符串，需原生 SDK 1.9.1 及以上版本 */
+  jgOptions?: string;
 }
 ```
 

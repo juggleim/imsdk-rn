@@ -407,10 +407,14 @@ export interface MessageMentionInfo {
 
 /**
  * 推送数据
+ * @property {string} content - 推送内容，用于通知栏展示
+ * @property {string} extra - 推送附加字段，可携带自定义 JSON 字符串
+ * @property {string} [jgOptions] - 极光推送（JPush）的自定义配置，JSON 字符串，需原生 SDK 1.9.1 及以上版本
  */
 export interface PushData {
     content: string;
     extra: string;
+    jgOptions?: string;
 }
 
 export interface MentionMsg {

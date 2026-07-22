@@ -326,6 +326,20 @@ export default class JuggleIM {
    * @param {SendMessageObject} message  发送消息对象
    * @param {SendMessageCallback} [callback] 发送消息回调函数
    * @returns {Promise<Message>} 发送的消息对象
+   * @example
+   * ```typescript
+   * const message = await JuggleIM.sendMessage({
+   *   conversationType: 1,
+   *   conversationId: 'user123',
+   *   content: new TextMessageContent('Hello'),
+   *   pushData: {
+   *     content: 'New message',
+   *     extra: '',
+   *     // 极光推送自定义配置（JSON 字符串），需原生 SDK 1.9.1 及以上版本
+   *     jgOptions: JSON.stringify({ classification: 1 })
+   *   }
+   * });
+   * ```
    */
   static sendMessage(
     message: SendMessageObject,

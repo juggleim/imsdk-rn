@@ -1508,6 +1508,10 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         if (pushDataMap.hasKey("extra")) {
             pushData.setExtra(pushDataMap.getString("extra"));
         }
+        // TIPS: jgOptions 为极光推送的自定义配置（JSON 字符串），透传给原生 SDK
+        if (pushDataMap.hasKey("jgOptions")) {
+            pushData.setJgOptions(pushDataMap.getString("jgOptions"));
+        }
         return pushData;
     }
 
@@ -2361,6 +2365,10 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
         }
         if (pushDataMap.hasKey("extra")) {
             pushData.setExtra(pushDataMap.getString("extra"));
+        }
+        // TIPS: jgOptions 为极光推送的自定义配置（JSON 字符串），透传给原生 SDK
+        if (pushDataMap.hasKey("jgOptions")) {
+            pushData.setJgOptions(pushDataMap.getString("jgOptions"));
         }
         return pushData;
     }

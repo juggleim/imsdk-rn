@@ -847,6 +847,20 @@ class JuggleIM {
    * @param {SendMessageObject} message
    * @param {import("juggleim-rnsdk").SendMessageCallback} callback - 回调对象
    * @returns {import("juggleim-rnsdk").Message} - 消息对象
+   * @example
+   * ```javascript
+   * const message = await JuggleIM.sendMessage({
+   *   conversationType: 1,
+   *   conversationId: 'user123',
+   *   content: new TextMessageContent('Hello'),
+   *   pushData: {
+   *     content: 'New message',
+   *     extra: '',
+   *     // 极光推送自定义配置（JSON 字符串），需原生 SDK 1.9.1 及以上版本
+   *     jgOptions: JSON.stringify({ classification: 1 })
+   *   }
+   * });
+   * ```
    */
   static async sendMessage(
     message,

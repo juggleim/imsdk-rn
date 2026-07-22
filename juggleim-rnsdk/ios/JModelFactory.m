@@ -661,6 +661,8 @@
   JPushData *data = [JPushData new];
   data.content = dic[@"content"];
   data.extra = dic[@"extra"];
+  // TIPS: jgOptions 为极光推送的自定义配置（JSON 字符串），透传给原生 SDK
+  data.jgOptions = dic[@"jgOptions"];
   return data;
 }
 
