@@ -311,6 +311,17 @@ export interface MessageResponse {
 }
 
 /**
+ * @ 消息响应对象
+ * @interface MentionMessageResponse
+ * @property {Message[]} messages - @ 消息列表
+ * @property {boolean} isFinished - 是否已全部拉取完毕，true 表示没有更多数据
+ */
+export interface MentionMessageResponse {
+    messages: Message[];
+    isFinished: boolean;
+}
+
+/**
  * 用户信息
  * @property {string} userId - 用户ID
  * @property {string} nickname - 昵称

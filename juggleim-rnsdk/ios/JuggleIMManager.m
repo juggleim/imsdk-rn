@@ -1554,6 +1554,49 @@ RCT_EXPORT_METHOD(getMessages : (NSDictionary *)conversationDict direction : (
 }
 
 /**
+ * 获取会话中未读的 @ 消息列表
+ * conversationDict 会话对象
+ * count 拉取数量，超过 100 按 100 处理
+ * time 消息时间戳，传 0 表示当前时间
+ * direction 拉取方向：0-比 time 更新的消息，1-比 time 更旧的消息
+ * 成功返回 { messages, isFinished }
+ */
+RCT_EXPORT_METHOD(getMentionMessageList : (NSDictionary *)
+                      conversationDict count : (int)count time : (double)
+                          time direction : (int)
+                              direction resolver : (RCTPromiseResolveBlock)
+                                  resolve rejecter : (RCTPromiseRejectBlock)
+                                      reject) {
+  @try {
+    JConversation *conversation =
+        [self convertDictionaryToConversation:conversationDict];
+    JPullDirection pullDirection =
+        direction == 0 ? JPullDirectionNewer : JPullDirectionOlder;
+
+    [JIM.shared.messageManager getMentionMessages:conversation
+        count:count
+        time:(long long)time
+        direction:pullDirection
+        success:^(NSArray<JMessage *> *messages, BOOL isFinished) {
+          NSMutableArray *messageArray = [NSMutableArray array];
+          for (JMessage *msg in messages) {
+            [messageArray addObject:[self convertMessageToDictionary:msg]];
+          }
+          resolve(@{
+            @"messages" : messageArray,
+            @"isFinished" : @(isFinished)
+          });
+        }
+        error:^(JErrorCode code) {
+          reject([NSString stringWithFormat:@"%ld", (long)code],
+                 @"getMentionMessageList failed", nil);
+        }];
+  } @catch (NSException *exception) {
+    reject(@"GET_MENTION_MESSAGES_ERROR", exception.reason, nil);
+  }
+}
+
+/**
  * 撤回消息
  */
 RCT_EXPORT_METHOD(recallMessage : (NSString *)messageId extras : (

@@ -626,6 +626,27 @@ const messageResponse = await JuggleIM.getMessageList({
 });
 ```
 
+### 获取 @ 消息列表
+
+获取会话中未读的 @ 消息。
+
+```javascript
+/**
+ * @ 消息响应对象
+ * @interface MentionMessageResponse
+ * @property {Message[]} messages - @ 消息列表
+ * @property {boolean} isFinished - 是否已全部拉取完毕，true 表示没有更多数据
+ */
+const mentionResponse = await JuggleIM.getMentionMessageList({
+  conversationType: 2,
+  conversationId: 'group123'
+},
+  20,        // count: 拉取数量，超过 100 按 100 处理
+  0,         // time: 消息时间戳，传 0 表示当前时间
+  1          // direction: 1 获取更早的消息(向前翻页), 0 获取更新的消息(向后翻页)
+);
+```
+
 ### 撤回消息
 
 ```javascript

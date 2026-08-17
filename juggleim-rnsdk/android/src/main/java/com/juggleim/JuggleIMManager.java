@@ -1769,6 +1769,51 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 获取会话中未读的 @ 消息列表
+     *
+     * @param conversationMap 会话对象
+     * @param count           拉取数量，超过 100 按 100 处理
+     * @param time            消息时间戳，传 0 表示当前时间
+     * @param direction       拉取方向：0-比 time 更新的消息，1-比 time 更旧的消息
+     * @param promise         Promise 对象，成功返回 { messages, isFinished }
+     */
+    @ReactMethod
+    public void getMentionMessageList(ReadableMap conversationMap, int count, double time, int direction,
+            Promise promise) {
+        try {
+            Conversation conversation = convertMapToConversation(conversationMap);
+            JIMConst.PullDirection pullDirection = direction == 0 ? JIMConst.PullDirection.NEWER
+                    : JIMConst.PullDirection.OLDER;
+
+            JIM.getInstance().getMessageManager().getMentionMessageList(
+                    conversation,
+                    count,
+                    (long) time,
+                    pullDirection,
+                    new IMessageManager.IGetMessagesWithFinishCallback() {
+                        @Override
+                        public void onSuccess(List<Message> messages, boolean isFinished) {
+                            WritableMap result = new WritableNativeMap();
+                            WritableArray messageArray = new WritableNativeArray();
+                            for (Message msg : messages) {
+                                messageArray.pushMap(convertMessageToMap(msg));
+                            }
+                            result.putArray("messages", messageArray);
+                            result.putBoolean("isFinished", isFinished);
+                            promise.resolve(result);
+                        }
+
+                        @Override
+                        public void onError(int errorCode) {
+                            promise.reject(String.valueOf(errorCode), "getMentionMessageList failed");
+                        }
+                    });
+        } catch (Exception e) {
+            promise.reject("GET_MENTION_MESSAGES_ERROR", e.getMessage());
+        }
+    }
+
+    /**
      * 撤回消息
      */
     @ReactMethod

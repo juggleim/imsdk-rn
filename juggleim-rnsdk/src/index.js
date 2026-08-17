@@ -1288,6 +1288,32 @@ class JuggleIM {
   }
 
   /**
+   * 获取会话中未读的 @ 消息列表
+   * @param {Object} conversation - 会话对象
+   * @param {number} count - 拉取数量，超过 100 按 100 处理
+   * @param {number} time - 消息时间戳，传 0 表示当前时间
+   * @param {number} direction - 拉取方向，0 比 time 更新的消息，1 比 time 更旧的消息
+   * @returns {Promise<Object>} { messages: Message[], isFinished: boolean }
+   */
+  static getMentionMessageList(conversation, count = 20, time = 0, direction = 1) {
+    return new Promise((resolve, reject) => {
+      JMI.getMentionMessageList(conversation, count, time, direction).then(async (res) => {
+        // TIPS: 与 getMessageList 一致，先补齐发送者资料再返回，避免 @ 消息列表出现占位昵称/头像。
+        for (const msg of (res?.messages || [])) {
+          const userInfo = await JMI.getUserInfo(msg.senderUserId);
+          msg.senderUserName = userInfo?.nickname;
+          msg.senderUserAvatar = userInfo?.avatar;
+          msg.senderUserExtra = userInfo?.extra;
+        }
+        resolve(res);
+      }).catch(err => {
+        console.error(err);
+        reject(err);
+      });
+    });
+  }
+
+  /**
    * 撤回消息
    * @param {String} messageId - 消息ID
    * @param {Object} extras - kv 扩展信息

@@ -32,6 +32,7 @@ import {
   UpdateMessageCallback,
   GetMessageOptions,
   MessageResponse,
+  MentionMessageResponse,
   GroupInfo,
   GroupMember,
   UserInfo,
@@ -459,6 +460,21 @@ export default class JuggleIM {
     direction: number,
     options: GetMessageOptions
   ): Promise<MessageResponse>;
+
+  /**
+   * 获取会话中未读的 @ 消息列表
+   * @param {Conversation} conversation 会话
+   * @param {number} count 拉取数量，超过 100 按 100 处理，默认 20
+   * @param {number} time 消息时间戳，传 0 表示当前时间，默认 0
+   * @param {number} direction 拉取方向，0 比 time 更新的消息，1 比 time 更旧的消息，默认 1
+   * @returns {Promise<MentionMessageResponse>} @ 消息响应对象，包含消息列表和是否已拉取完毕
+   */
+  static getMentionMessageList(
+    conversation: Conversation,
+    count?: number,
+    time?: number,
+    direction?: number
+  ): Promise<MentionMessageResponse>;
 
   /**
    * 撤回消息
