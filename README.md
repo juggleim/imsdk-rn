@@ -131,6 +131,14 @@ The original detailed README content is preserved in the [complete API guide](do
 
 JuggleIM can serve as the messaging layer for social apps, community products, customer support, marketplace chat, team collaboration, in-app messaging, AI assistants with streaming responses, and apps that need embedded voice or video calls.
 
+## Need a Complete Messaging App?
+
+JuggleIM SDK is designed for developers who want to add messaging capabilities to their own applications.
+
+If you're building a standalone messenger, **JuggleChat** provides production-ready commercial source code for Android, iOS, Web, and Desktop, helping you avoid building common messaging product features from scratch.
+
+👉 [Explore JuggleChat Commercial Source Code](https://juggle.im/#/jugglechat)
+
 ## Contributing
 
 Issues and pull requests are welcome.
