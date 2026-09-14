@@ -131,6 +131,14 @@ JuggleIM.sendMessage(
 
 JuggleIM 可作为社交应用、兴趣社区、在线客服、电商聊天、团队协作、App 内消息、AI 流式助手以及内嵌音视频通话产品的即时通讯基础能力。
 
+## 需要完整的即时通讯应用？
+
+JuggleIM SDK 适用于希望在现有应用中集成即时通讯能力的开发者。
+
+如果你正在开发一款独立的即时通讯产品，且不希望从零开始实现常见的 IM 产品功能，**JuggleChat** 提供 Android、iOS、Web 和 Desktop 等各端产品级商业源码，帮助你更快完成产品开发和上线。
+
+👉 [了解 JuggleChat 商业源码](https://juggle.im/#/jugglechat)
+
 ## 参与贡献
 
 欢迎提交 Issue 和 Pull Request。
