@@ -12,7 +12,8 @@
   },
   "files": [
     "src",
-    "android",
+    "android/src",
+    "android/build.gradle",
     "ios",
     "juggleim-rnsdk.podspec",
     "README.md"
