@@ -292,6 +292,38 @@ class JuggleIM {
   }
 
   /**
+   * 添加消息同步监听器，请在连接服务器前调用
+   * @param {string} key - 唯一的监听器标识
+   * @param {object} listener - 消息同步监听器
+   * @param {function} listener.onMessageSyncComplete - 消息同步完成回调，无参数
+   * @returns {function} 返回取消监听的函数
+   */
+  static addMessageSyncListener(key, listener) {
+    // TIPS：先订阅事件再注册原生监听，避免遗漏注册后立即触发的同步完成事件。
+    const subscription = juggleIMEmitter.addListener(
+      "MessageSyncComplete",
+      (event) => {
+        if (Platform.OS === "android" && event.key !== key) return;
+        listener.onMessageSyncComplete();
+      }
+    );
+
+    if (Platform.OS === "android") {
+      JMI.addMessageSyncListener(key);
+    } else if (Platform.OS === "ios") {
+      JMI.addMessageSyncDelegate();
+    }
+
+    return () => {
+      subscription.remove();
+      if (Platform.OS === "android") {
+        JMI.removeMessageSyncListener(key);
+      }
+      // TIPS：iOS SDK 使用弱引用代理且未提供移除接口，取消 JS 订阅即可停止业务回调。
+    };
+  }
+
+  /**
    * 添加消息阅读状态监听器
    * @param {string} key - 监听器标识
    * @param {object} listener - 监听器回调函数对象

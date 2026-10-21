@@ -8,6 +8,7 @@ export * from './moment/types';
 import {
   ConnectionStatusListener,
   MessageListener,
+  MessageSyncListener,
   MessageReadReceiptListener,
   MessageDestroyListener,
   StreamMessageListener,
@@ -126,6 +127,17 @@ export default class JuggleIM {
   static addMessageListener(
     key: string,
     listener: MessageListener
+  ): () => void;
+
+  /**
+   * 添加消息同步监听器，请在连接服务器前调用
+   * @param key 唯一的监听器标识
+   * @param listener 消息同步监听器，完成时调用无参数的 onMessageSyncComplete
+   * @returns 返回取消监听的函数
+   */
+  static addMessageSyncListener(
+    key: string,
+    listener: MessageSyncListener
   ): () => void;
 
   /**

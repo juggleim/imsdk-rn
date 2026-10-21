@@ -676,6 +676,16 @@ export interface MessageListener {
 }
 
 /**
+ * 消息同步监听器
+ */
+export interface MessageSyncListener {
+    /**
+     * 消息同步完成回调，无参数；请在连接服务器前注册监听。
+     */
+    onMessageSyncComplete: () => void;
+}
+
+/**
  * 消息阅读状态监听器回调函数
  */
 export interface MessageReadReceiptListener {

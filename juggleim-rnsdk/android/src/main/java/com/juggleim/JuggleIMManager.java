@@ -368,6 +368,36 @@ public class JuggleIMManager extends ReactContextBaseJavaModule {
     }
 
     /**
+     * 添加消息同步监听器
+     *
+     * @param key 唯一的监听器标识
+     */
+    @ReactMethod
+    public void addMessageSyncListener(String key) {
+        JIM.getInstance().getMessageManager().addSyncListener(key, new IMessageManager.IMessageSyncListener() {
+            /**
+             * 将消息同步完成事件通知给 RN 层
+             */
+            @Override
+            public void onMessageSyncComplete() {
+                WritableMap params = new WritableNativeMap();
+                params.putString("key", key);
+                sendEvent("MessageSyncComplete", params);
+            }
+        });
+    }
+
+    /**
+     * 移除消息同步监听器
+     *
+     * @param key 监听器标识
+     */
+    @ReactMethod
+    public void removeMessageSyncListener(String key) {
+        JIM.getInstance().getMessageManager().removeSyncListener(key);
+    }
+
+    /**
      * 添加消息阅读状态监听器
      *
      * @param key 监听器标识

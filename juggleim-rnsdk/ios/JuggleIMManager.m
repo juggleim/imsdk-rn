@@ -7,6 +7,7 @@
  * Juggle IM React Native iOS 模块
  */
 @interface JuggleIMManager () <JConnectionDelegate, JMessageDelegate,
+                               JMessageSyncDelegate,
                                JMessageReadReceiptDelegate,
                                JMessageDestroyDelegate, JConversationDelegate,
                                JStreamMessageDelegate>
@@ -78,6 +79,7 @@ RCT_EXPORT_METHOD(disconnect : (BOOL)pushable) {
     @"MessageReactionAdded",
     @"MessageReactionRemoved",
     @"MessageSetTop",
+    @"MessageSyncComplete",
     @"MessagesRead",
     @"GroupMessagesRead",
     @"MessageDestroyTimeUpdated",
@@ -108,6 +110,13 @@ RCT_EXPORT_METHOD(addConnectionDelegate) {
  */
 RCT_EXPORT_METHOD(addMessageDelegate) {
   [JIM.shared.messageManager addDelegate:self];
+}
+
+/**
+ * 添加消息同步监听器
+ */
+RCT_EXPORT_METHOD(addMessageSyncDelegate) {
+  [JIM.shared.messageManager addSyncDelegate:self];
 }
 
 /**
@@ -188,6 +197,15 @@ RCT_EXPORT_METHOD(addConversationDelegate) {
   default:
     return @"unknown";
   }
+}
+
+#pragma mark - JMessageSyncDelegate
+
+/**
+ * 将消息同步完成事件通知给 RN 层
+ */
+- (void)messageSyncDidComplete {
+  [self sendEventWithName:@"MessageSyncComplete" body:@{}];
 }
 
 #pragma mark - JMessageDelegate

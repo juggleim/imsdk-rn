@@ -99,6 +99,28 @@ const unsubscribe = JuggleIM.addMessageListener('listener_key', {
 // unsubscribe();
 ```
 
+### 消息同步完成监听
+
+在初始化 SDK 后、调用 `connect` 前注册监听。SDK 完成本轮消息同步后触发无参数的
+`onMessageSyncComplete`，可在此时重新读取会话列表或未读数。
+该回调对应 iOS 的 `messageSyncDidComplete` 和 Android 的 `onMessageSyncComplete`，
+需要通过独立的 `addMessageSyncListener` 注册。
+
+```javascript
+const unsubscribe = JuggleIM.addMessageSyncListener('message_sync_key', {
+  onMessageSyncComplete: () => {
+    console.log('消息同步完成');
+  }
+});
+
+JuggleIM.connect('your_token');
+
+// 页面卸载或不再需要监听时调用
+// unsubscribe();
+```
+
+每个监听器使用不同的 `key`；取消一个监听器不会影响其他监听器。
+
 ### 消息阅读状态监听
 
 ```javascript
